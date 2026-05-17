@@ -483,24 +483,25 @@ const AdminDashboardStep = ({
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto h-full flex flex-col justify-center py-6 px-4">
-      <div className="grid md:grid-cols-2 gap-12 items-start">
+    <div className="w-full max-w-6xl mx-auto px-6 py-8 flex flex-col" style={{ height: 'calc(100vh - 0px)' }}>
+      <div className="grid md:grid-cols-2 gap-10 flex-1 min-h-0">
+
         {/* Left – Data Extraction */}
-        <div className="space-y-6">
+        <div className="flex flex-col gap-5 min-h-0">
           <div>
-            <h2 className="text-3xl font-bold text-primary mb-2">Data Extraction</h2>
-            <p className="text-on-surface-variant">Upload documents or requests to train Albie.</p>
+            <h2 className="text-2xl font-bold text-primary mb-1">Data Extraction</h2>
+            <p className="text-on-surface-variant text-sm">Upload documents or requests to train Albie.</p>
           </div>
 
-          <div className="border-2 border-dashed border-outline-variant rounded-3xl p-12 flex flex-col items-center justify-center text-center gap-4 bg-white/50 hover:border-primary transition-colors group cursor-pointer">
-            <div className="w-16 h-16 bg-surface-container-low rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Icon name="upload_file" className="text-3xl text-primary" />
+          <div className="flex-1 border-2 border-dashed border-outline-variant rounded-3xl flex flex-col items-center justify-center text-center gap-4 bg-white/50 hover:border-primary transition-colors group cursor-pointer min-h-0">
+            <div className="w-14 h-14 bg-surface-container-low rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Icon name="upload_file" className="text-2xl text-primary" />
             </div>
             <div>
-              <p className="font-bold text-primary">Drop files here</p>
+              <p className="font-bold text-primary text-sm">Drop files here</p>
               <p className="text-xs text-on-surface-variant">PDF, DOCX or Images up to 20MB</p>
             </div>
-            <button className="mt-2 text-primary font-bold text-sm underline underline-offset-4">
+            <button className="text-primary font-bold text-sm underline underline-offset-4">
               Browse files
             </button>
           </div>
@@ -511,7 +512,7 @@ const AdminDashboardStep = ({
               setTimeout(() => setAnalyzing(false), 2000);
             }}
             disabled={analyzing}
-            className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg ${
+            className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shrink-0 ${
               analyzing
                 ? 'bg-surface-container-highest text-on-surface-variant cursor-not-allowed'
                 : 'bg-primary text-on-primary hover:opacity-90 active:scale-[0.98] cursor-pointer'
@@ -519,10 +520,7 @@ const AdminDashboardStep = ({
           >
             {analyzing ? (
               <>
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-                >
+                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
                   <Icon name="sync" className="text-xl" />
                 </motion.div>
                 Analyzing with Albie...
@@ -537,10 +535,10 @@ const AdminDashboardStep = ({
         </div>
 
         {/* Right – Module toggles */}
-        <div className="space-y-4">
-          <h2 className="text-3xl font-bold text-primary">Onboarding Modules</h2>
+        <div className="flex flex-col gap-4 min-h-0">
+          <h2 className="text-2xl font-bold text-primary shrink-0">Onboarding Modules</h2>
 
-          <div className="bg-white border border-outline-variant rounded-2xl overflow-hidden shadow-sm">
+          <div className="flex-1 bg-white border border-outline-variant rounded-2xl overflow-y-auto custom-scrollbar shadow-sm min-h-0">
             {ALL_MODULES.map((m, i) => {
               const isEnabled = enabledModules.includes(m.id);
               return (
@@ -550,18 +548,12 @@ const AdminDashboardStep = ({
                     i < ALL_MODULES.length - 1 ? 'border-b border-outline-variant' : ''
                   } ${isEnabled ? 'bg-primary/5' : 'bg-white'}`}
                 >
-                  <div
-                    className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors ${
-                      isEnabled ? 'bg-secondary text-white' : 'bg-surface-container-low text-primary/30'
-                    }`}
-                  >
+                  <div className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors ${
+                    isEnabled ? 'bg-secondary text-white' : 'bg-surface-container-low text-primary/30'
+                  }`}>
                     <Icon name={m.icon} className="text-base" />
                   </div>
-                  <p
-                    className={`flex-grow font-bold text-sm ${
-                      isEnabled ? 'text-primary' : 'text-on-surface-variant'
-                    }`}
-                  >
+                  <p className={`flex-grow font-bold text-sm ${isEnabled ? 'text-primary' : 'text-on-surface-variant'}`}>
                     {m.title}
                   </p>
                   <Toggle checked={isEnabled} onChange={() => handleToggle(m.id)} />
@@ -572,12 +564,13 @@ const AdminDashboardStep = ({
 
           <button
             onClick={onCreate}
-            className="w-full py-4 bg-secondary text-on-secondary rounded-2xl font-bold text-base shadow-xl shadow-secondary/20 hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-3 cursor-pointer"
+            className="w-full py-4 bg-secondary text-on-secondary rounded-2xl font-bold text-base shadow-xl shadow-secondary/20 hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-3 cursor-pointer shrink-0"
           >
             Create Onboarding
             <Icon name="rocket_launch" className="text-xl" />
           </button>
         </div>
+
       </div>
     </div>
   );
@@ -973,7 +966,7 @@ const RoomInformationStep = () => {
   const [rooms, setRooms] = useState([
     { id: 1, name: 'Standard King', type: 'Standard Room', bed: 'King', bedrooms: 1 },
   ]);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(true);
   const [facilities, setFacilities] = useState<string[]>(['WiFi', 'Smart TV', 'Air Conditioning']);
 
   const facilityList = [
@@ -1516,7 +1509,7 @@ const TaxesFeesStep = () => {
   const [taxes, setTaxes] = useState([
     { id: 1, name: 'VAT', type: 'Value Added Tax (VAT)', chargeType: 'Percentage', value: '21' },
   ]);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(true);
   const [chargeType, setChargeType] = useState('Percentage');
 
   const taxTypes = [
@@ -1625,49 +1618,84 @@ const TaxesFeesStep = () => {
 const ReviewStep = ({
   clientModules,
   onEdit,
+  verified,
+  onToggleVerify,
 }: {
   clientModules: string[];
   onEdit: (moduleId: string) => void;
+  verified: Set<string>;
+  onToggleVerify: (id: string) => void;
 }) => {
   const activeModules = ALL_MODULES.filter((m) => clientModules.includes(m.id));
+  const allVerified = activeModules.every((m) => verified.has(m.id));
 
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col py-4">
-      <div className="mb-6 shrink-0">
-        <h1 className="font-display-lg text-xl text-primary font-bold">Review Configuration</h1>
-        <p className="text-on-surface-variant text-xs">
-          Verify your setup before initializing the booking engine.
-        </p>
+      <div className="mb-6 shrink-0 flex items-end justify-between">
+        <div>
+          <h1 className="font-display-lg text-xl text-primary font-bold">Review Configuration</h1>
+          <p className="text-on-surface-variant text-xs">
+            Click the checkmark on each module to confirm it's ready.
+          </p>
+        </div>
+        <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+          allVerified
+            ? 'bg-green-100 text-green-700'
+            : 'bg-surface-container-highest text-on-surface-variant'
+        }`}>
+          {verified.size} / {activeModules.length} verified
+        </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20 md:pb-10">
-        {activeModules.map((m) => (
-          <div
-            key={m.id}
-            className="bg-white border border-outline-variant rounded-2xl overflow-hidden shadow-sm flex flex-col"
-          >
-            <div className="bg-surface-container-low/30 px-5 py-4 border-b border-outline-variant flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <Icon name={m.icon} className="text-primary text-lg" />
-                <h2 className="font-bold text-primary text-xs uppercase tracking-wider">
-                  {m.title}
-                </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-28">
+        {activeModules.map((m) => {
+          const isVerified = verified.has(m.id);
+          return (
+            <div
+              key={m.id}
+              className={`bg-white border-2 rounded-2xl overflow-hidden shadow-sm flex flex-col transition-all duration-300 ${
+                isVerified ? 'border-green-400' : 'border-outline-variant'
+              }`}
+            >
+              <div className="bg-surface-container-low/30 px-5 py-4 border-b border-outline-variant flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <Icon name={m.icon} className="text-primary text-lg" />
+                  <h2 className="font-bold text-primary text-xs uppercase tracking-wider">
+                    {m.title}
+                  </h2>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => onEdit(m.id)}
+                    className="text-[10px] font-bold text-primary underline underline-offset-4 hover:text-secondary transition-colors cursor-pointer"
+                  >
+                    EDIT
+                  </button>
+                  {/* Verify checkmark button */}
+                  <button
+                    onClick={() => onToggleVerify(m.id)}
+                    title={isVerified ? 'Mark as unverified' : 'Mark as verified'}
+                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-200 cursor-pointer ${
+                      isVerified
+                        ? 'bg-green-500 border-green-500 text-white'
+                        : 'bg-white border-outline-variant text-transparent hover:border-primary'
+                    }`}
+                  >
+                    <Icon name="check" className="text-sm" />
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={() => onEdit(m.id)}
-                className="text-[10px] font-bold text-primary underline underline-offset-4 hover:text-secondary transition-colors cursor-pointer"
-              >
-                EDIT
-              </button>
-            </div>
-            <div className="p-5 flex-grow flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center shrink-0">
-                <Icon name="check_circle" className="text-secondary text-base" />
+              <div className="p-5 flex-grow flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                  isVerified ? 'bg-green-100' : 'bg-surface-container-low'
+                }`}>
+                  <Icon name={isVerified ? 'check_circle' : m.icon} className={`text-base ${isVerified ? 'text-green-500' : 'text-primary/30'}`} />
+                </div>
+                <p className="text-xs text-on-surface-variant leading-relaxed">{m.description}</p>
               </div>
-              <p className="text-xs text-on-surface-variant leading-relaxed">{m.description}</p>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -1699,6 +1727,9 @@ export default function App() {
   const [enabledModules, setEnabledModules] = useState<string[]>(DEFAULT_ENABLED);
   // Modules locked in when admin clicks "Create Onboarding" (drives client flow)
   const [clientModules, setClientModules] = useState<string[]>(DEFAULT_ENABLED);
+  // Review step verification
+  const [verifiedModules, setVerifiedModules] = useState<Set<string>>(new Set());
+  const [showVerifyWarning, setShowVerifyWarning] = useState(false);
 
   // Step encoding:
   //   0         → Role Selection
@@ -1718,14 +1749,29 @@ export default function App() {
 
   const handleAdminCreate = () => {
     setClientModules([...enabledModules]);
+    setVerifiedModules(new Set());
     setCurrentStep(1);
   };
 
   const handleNext = () => {
+    if (currentStep === reviewStep) {
+      if (verifiedModules.size < clientModules.length) {
+        setShowVerifyWarning(true);
+        return;
+      }
+    }
     if (currentStep < successStep) {
       setCurrentStep((s) => s + 1);
       window.scrollTo(0, 0);
     }
+  };
+
+  const handleToggleVerify = (id: string) => {
+    setVerifiedModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   };
 
   const handleBack = () => {
@@ -1840,7 +1886,12 @@ export default function App() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
                     >
-                      <ReviewStep clientModules={clientModules} onEdit={handleEditModule} />
+                      <ReviewStep
+                        clientModules={clientModules}
+                        onEdit={handleEditModule}
+                        verified={verifiedModules}
+                        onToggleVerify={handleToggleVerify}
+                      />
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1861,6 +1912,33 @@ export default function App() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Verify warning modal */}
+      {showVerifyWarning && (
+        <div className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center shrink-0">
+                <Icon name="warning" className="text-amber-500 text-xl" />
+              </div>
+              <h2 className="font-bold text-primary text-lg leading-tight">Verification required</h2>
+            </div>
+            <p className="text-on-surface-variant text-sm mb-6 leading-relaxed">
+              You must verify all modules by clicking the checkmark before continuing.
+            </p>
+            <button
+              onClick={() => setShowVerifyWarning(false)}
+              className="w-full bg-primary text-on-primary rounded-xl py-3 font-bold text-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+            >
+              Got it
+            </button>
+          </motion.div>
+        </div>
+      )}
 
       {/* Navigation buttons (Back / Continue) */}
       {isNavigable && (
