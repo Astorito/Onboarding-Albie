@@ -149,7 +149,7 @@ const ConfigSection = ({
         <Icon name={icon} className="text-3xl text-primary/10" />
       </div>
     </div>
-    <div className="w-full md:w-2/3 p-6 bg-white overflow-y-auto max-h-[58vh] md:max-h-none custom-scrollbar">
+    <div className="w-full md:w-2/3 p-6 bg-white">
       {children}
     </div>
   </div>
@@ -537,45 +537,33 @@ const AdminDashboardStep = ({
         </div>
 
         {/* Right – Module toggles */}
-        <div className="space-y-5">
-          <div>
-            <h2 className="text-3xl font-bold text-primary mb-1">Onboarding Modules</h2>
-            <p className="text-on-surface-variant text-sm">
-              Enable or disable steps for the client flow. ({enabledModules.length} active)
-            </p>
-          </div>
+        <div className="space-y-4">
+          <h2 className="text-3xl font-bold text-primary">Onboarding Modules</h2>
 
-          <div className="flex flex-col gap-3 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar">
-            {ALL_MODULES.map((m) => {
+          <div className="bg-white border border-outline-variant rounded-2xl overflow-hidden shadow-sm">
+            {ALL_MODULES.map((m, i) => {
               const isEnabled = enabledModules.includes(m.id);
               return (
                 <div
                   key={m.id}
-                  className={`flex items-center p-4 rounded-2xl border-2 transition-all duration-300 gap-4 ${
-                    isEnabled
-                      ? 'border-primary bg-primary/5 shadow-md'
-                      : 'border-outline-variant bg-white'
-                  }`}
+                  className={`flex items-center px-5 py-3.5 gap-4 transition-colors ${
+                    i < ALL_MODULES.length - 1 ? 'border-b border-outline-variant' : ''
+                  } ${isEnabled ? 'bg-primary/5' : 'bg-white'}`}
                 >
                   <div
-                    className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center transition-colors ${
-                      isEnabled ? 'bg-secondary text-white' : 'bg-surface-container-low text-primary/40'
+                    className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors ${
+                      isEnabled ? 'bg-secondary text-white' : 'bg-surface-container-low text-primary/30'
                     }`}
                   >
-                    <Icon name={m.icon} className="text-xl" />
+                    <Icon name={m.icon} className="text-base" />
                   </div>
-                  <div className="flex-grow min-w-0">
-                    <p
-                      className={`font-bold text-sm ${
-                        isEnabled ? 'text-primary' : 'text-on-surface-variant'
-                      }`}
-                    >
-                      {m.title}
-                    </p>
-                    <p className="text-[10px] text-on-surface-variant leading-tight truncate">
-                      {m.description}
-                    </p>
-                  </div>
+                  <p
+                    className={`flex-grow font-bold text-sm ${
+                      isEnabled ? 'text-primary' : 'text-on-surface-variant'
+                    }`}
+                  >
+                    {m.title}
+                  </p>
                   <Toggle checked={isEnabled} onChange={() => handleToggle(m.id)} />
                 </div>
               );
@@ -584,7 +572,7 @@ const AdminDashboardStep = ({
 
           <button
             onClick={onCreate}
-            className="w-full py-5 bg-secondary text-on-secondary rounded-2xl font-bold text-lg shadow-xl shadow-secondary/20 hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-3 cursor-pointer"
+            className="w-full py-4 bg-secondary text-on-secondary rounded-2xl font-bold text-base shadow-xl shadow-secondary/20 hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-3 cursor-pointer"
           >
             Create Onboarding
             <Icon name="rocket_launch" className="text-xl" />
@@ -1644,7 +1632,7 @@ const ReviewStep = ({
   const activeModules = ALL_MODULES.filter((m) => clientModules.includes(m.id));
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col py-4 overflow-y-auto custom-scrollbar">
+    <div className="w-full max-w-6xl mx-auto flex flex-col py-4">
       <div className="mb-6 shrink-0">
         <h1 className="font-display-lg text-xl text-primary font-bold">Review Configuration</h1>
         <p className="text-on-surface-variant text-xs">
@@ -1824,13 +1812,15 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex-grow flex flex-col pt-8 pb-4 px-margin-mobile md:px-margin-desktop w-full max-h-full overflow-hidden"
+              className="flex-grow overflow-y-auto custom-scrollbar"
             >
-              <div className="pt-2 shrink-0">
+              {/* Progress bar — sticky at top */}
+              <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pt-6 pb-3 px-margin-mobile md:px-margin-desktop">
                 <ProgressBar currentStep={progressCurrent} totalSteps={progressTotal} />
               </div>
 
-              <div className="flex-grow flex flex-col items-center justify-start md:justify-center overflow-y-auto custom-scrollbar pt-4">
+              {/* Content — scrolls freely, padding-bottom for nav buttons */}
+              <div className="px-margin-mobile md:px-margin-desktop pb-28">
                 <AnimatePresence mode="wait">
                   {isModuleStep && currentModuleId && (
                     <motion.div
@@ -1838,7 +1828,6 @@ export default function App() {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
-                      className="w-full flex flex-col items-center"
                     >
                       {MODULE_COMPONENTS[currentModuleId]}
                     </motion.div>
@@ -1850,7 +1839,6 @@ export default function App() {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
-                      className="w-full flex flex-col items-center"
                     >
                       <ReviewStep clientModules={clientModules} onEdit={handleEditModule} />
                     </motion.div>
