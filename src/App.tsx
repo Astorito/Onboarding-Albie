@@ -1713,7 +1713,7 @@ export default function App() {
   const successStep = reviewStep + 1;
 
   const handleRoleSelect = (role: 'admin' | 'client') => {
-    setCurrentStep(role === 'admin' ? 10 : 1);
+    setCurrentStep(role === 'admin' ? 99 : 1);
   };
 
   const handleAdminCreate = () => {
@@ -1789,7 +1789,7 @@ export default function App() {
           )}
 
           {/* Admin Dashboard */}
-          {currentStep === 10 && (
+          {currentStep === 99 && (
             <motion.div
               key="admin"
               initial={{ opacity: 0, y: 20 }}
