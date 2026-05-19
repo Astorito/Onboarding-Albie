@@ -300,56 +300,311 @@ export const ALL_MODULES = [
 const DEFAULT_ENABLED = ['general', 'brand', 'cancellation', 'rooms', 'occupancy', 'addons', 'rates', 'taxes'];
 
 // ---------------------------------------------------------------------------
-// Static screens
+// Intro screens (new flow)
 // ---------------------------------------------------------------------------
 
-const RoleSelectionStep = ({ onSelect }: { onSelect: (role: 'admin' | 'client') => void }) => (
+// Mock pre-fill data for the AI URL analysis
+const MOCK_PREFILL = {
+  propertyName: 'The Grand Pavilion Hotel',
+  description: 'A luxury boutique hotel in the heart of the city, offering world-class amenities and personalised service.',
+  address: 'Bredgade 34',
+  city: 'Copenhagen',
+  stateProvince: 'Capital Region',
+  country: 'Denmark',
+  zipCode: '1260',
+  phone: '+45 33 00 00 00',
+  notificationEmail: 'reservations@grandpavilion.com',
+  websiteUrl: 'https://www.grandpavilion.com',
+};
+
+export type PrefillData = typeof MOCK_PREFILL;
+
+// Step 0 – Property Type
+const PropertyTypeStep = ({ onSelect }: { onSelect: (type: 'independent' | 'group') => void }) => (
   <main className="h-full flex flex-col items-center justify-center px-margin-mobile">
     <div className="text-center mb-10">
       <div className="font-headline-lg text-headline-lg font-bold text-primary mb-2">Albie</div>
-      <h2 className="font-display-lg text-3xl md:text-5xl text-primary mb-2">Identify your session</h2>
+      <h2 className="font-display-lg text-3xl md:text-5xl text-primary mb-2">What type of property are you?</h2>
       <p className="text-on-surface-variant max-w-md mx-auto">
-        Choose your profile to continue with the architectural experience.
+        Select the option that best describes your accommodation setup.
       </p>
     </div>
 
     <div className="grid md:grid-cols-2 gap-8 w-full max-w-4xl">
       <button
-        onClick={() => onSelect('admin')}
+        onClick={() => onSelect('independent')}
         className="group relative flex flex-col items-center p-10 bg-white border-2 border-outline-variant rounded-[40px] hover:border-primary transition-all duration-300 shadow-sm hover:shadow-xl active:scale-95 text-left overflow-hidden cursor-pointer"
       >
         <div className="w-20 h-20 bg-secondary-container rounded-3xl flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform">
-          <Icon name="design_services" className="text-4xl text-secondary" />
+          <Icon name="hotel" className="text-4xl text-secondary" />
         </div>
-        <h3 className="text-2xl font-bold text-primary mb-2">Administrator</h3>
+        <h3 className="text-2xl font-bold text-primary mb-2">Independent</h3>
         <p className="text-center text-on-surface-variant text-sm leading-relaxed mb-4">
-          Exclusive access for the design team and technical management of the platform.
+          A single property with its own identity, operating independently.
         </p>
         <div className="mt-auto flex items-center gap-2 text-primary font-bold text-sm">
-          Enter Design Suite <Icon name="arrow_forward" className="text-sm" />
+          Continue as Independent <Icon name="arrow_forward" className="text-sm" />
         </div>
         <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-primary/5 rounded-full blur-2xl" />
       </button>
 
       <button
-        onClick={() => onSelect('client')}
+        onClick={() => onSelect('group')}
         className="group relative flex flex-col items-center p-10 bg-white border-2 border-outline-variant rounded-[40px] hover:border-primary transition-all duration-300 shadow-sm hover:shadow-xl active:scale-95 text-left overflow-hidden cursor-pointer"
       >
         <div className="w-20 h-20 bg-secondary/10 rounded-3xl flex items-center justify-center mb-6 group-hover:-rotate-6 transition-transform">
-          <Icon name="person" className="text-4xl text-secondary" />
+          <Icon name="domain" className="text-4xl text-secondary" />
         </div>
-        <h3 className="text-2xl font-bold text-primary mb-2">Client</h3>
+        <h3 className="text-2xl font-bold text-primary mb-2">Group</h3>
         <p className="text-center text-on-surface-variant text-sm leading-relaxed mb-4">
-          Start the onboarding process to configure your personalized booking engine.
+          A collection of independent properties managed under a single group account.
         </p>
         <div className="mt-auto flex items-center gap-2 text-primary font-bold text-sm">
-          Get Started <Icon name="arrow_forward" className="text-sm" />
+          Continue as Group <Icon name="arrow_forward" className="text-sm" />
         </div>
         <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-secondary/5 rounded-full blur-2xl" />
       </button>
     </div>
   </main>
 );
+
+// Step 1 – URL Analysis
+const URLAnalysisStep = ({
+  onComplete,
+  onSkip,
+}: {
+  onComplete: (data: PrefillData) => void;
+  onSkip: () => void;
+}) => {
+  const [url, setUrl] = useState('');
+  const [analyzing, setAnalyzing] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const handleAnalyze = () => {
+    if (!url.trim()) return;
+    setAnalyzing(true);
+    setTimeout(() => {
+      setAnalyzing(false);
+      setDone(true);
+      onComplete(MOCK_PREFILL);
+    }, 2500);
+  };
+
+  return (
+    <main className="h-full flex flex-col items-center justify-center px-margin-mobile">
+      <div className="w-full max-w-2xl">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-secondary-container mb-6">
+            <Icon name="travel_explore" className="text-3xl text-secondary" />
+          </div>
+          <h2 className="font-display-lg text-3xl md:text-4xl text-primary mb-3">
+            Let Albie read your website
+          </h2>
+          <p className="text-on-surface-variant max-w-md mx-auto text-sm leading-relaxed">
+            Enter your property's website URL and Albie will automatically extract and pre-fill your onboarding details.
+          </p>
+        </div>
+
+        <div className="bg-white border border-outline-variant rounded-2xl p-8 shadow-sm space-y-5">
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <TextInput
+                type="url"
+                placeholder="https://www.yourhotel.com"
+                value={url}
+                onChange={(e) => setUrl((e.target as HTMLInputElement).value)}
+                className={done ? 'border-green-400 bg-green-50' : ''}
+              />
+            </div>
+            <button
+              onClick={handleAnalyze}
+              disabled={analyzing || !url.trim() || done}
+              className={`shrink-0 px-6 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all cursor-pointer ${
+                done
+                  ? 'bg-green-500 text-white cursor-default'
+                  : analyzing
+                  ? 'bg-surface-container-highest text-on-surface-variant cursor-not-allowed'
+                  : 'bg-primary text-on-primary hover:opacity-90 active:scale-95'
+              }`}
+            >
+              {done ? (
+                <><Icon name="check" className="text-base" /> Done</>
+              ) : analyzing ? (
+                <>
+                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
+                    <Icon name="sync" className="text-base" />
+                  </motion.div>
+                  Analyzing…
+                </>
+              ) : (
+                <><Icon name="auto_awesome" className="text-base" /> Analyze</>
+              )}
+            </button>
+          </div>
+
+          {done && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-xl"
+            >
+              <Icon name="check_circle" className="text-green-500 text-xl shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-green-800 text-sm">Data extracted successfully</p>
+                <p className="text-green-700 text-xs mt-0.5">
+                  We found <strong>{MOCK_PREFILL.propertyName}</strong>. Your General Information fields have been pre-filled — review and edit them as needed.
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {analyzing && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center gap-3 p-4 bg-surface-container-low rounded-xl"
+            >
+              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}>
+                <Icon name="travel_explore" className="text-primary text-xl" />
+              </motion.div>
+              <div>
+                <p className="font-bold text-primary text-sm">Reading your website…</p>
+                <p className="text-on-surface-variant text-xs">Extracting property details, contact info, and description.</p>
+              </div>
+            </motion.div>
+          )}
+
+          <div className="pt-2 border-t border-outline-variant flex items-center justify-between">
+            <p className="text-xs text-on-surface-variant">Analysis runs in seconds. No data is stored at this stage.</p>
+            <button
+              onClick={onSkip}
+              className="text-xs font-bold text-on-surface-variant underline underline-offset-4 hover:text-primary transition-colors cursor-pointer"
+            >
+              Skip for now
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+};
+
+// Step 2 (Group only) – Group Members
+const GroupMembersStep = ({
+  members,
+  setMembers,
+  onContinue,
+}: {
+  members: { id: number; name: string; url: string }[];
+  setMembers: React.Dispatch<React.SetStateAction<{ id: number; name: string; url: string }[]>>;
+  onContinue: () => void;
+}) => {
+  const [name, setName] = useState('');
+  const [url, setUrl] = useState('');
+  const [showWarning, setShowWarning] = useState(false);
+
+  const addMember = () => {
+    if (!name.trim()) return;
+    setMembers((prev) => [...prev, { id: Date.now(), name: name.trim(), url: url.trim() }]);
+    setName('');
+    setUrl('');
+    setShowWarning(false);
+  };
+
+  return (
+    <main className="h-full flex flex-col items-center justify-center px-margin-mobile py-8">
+      <div className="w-full max-w-2xl">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-secondary-container flex items-center justify-center">
+              <Icon name="domain" className="text-secondary text-xl" />
+            </div>
+            <h2 className="font-display-lg text-2xl md:text-3xl text-primary font-bold">Group Properties</h2>
+          </div>
+          <p className="text-on-surface-variant text-sm">
+            Add the independent properties that belong to this group. You can always add more later.
+          </p>
+        </div>
+
+        {/* Member list */}
+        <div className="space-y-3 mb-5">
+          {members.length === 0 && (
+            <div className="text-center py-8 border-2 border-dashed border-outline-variant rounded-2xl text-on-surface-variant text-sm">
+              No properties added yet. Add at least one below.
+            </div>
+          )}
+          {members.map((m) => (
+            <div key={m.id} className="flex items-center gap-4 p-4 bg-white border border-outline-variant rounded-2xl shadow-sm">
+              <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
+                <Icon name="hotel" className="text-secondary text-lg" />
+              </div>
+              <div className="flex-grow min-w-0">
+                <p className="font-bold text-primary text-sm">{m.name}</p>
+                {m.url && <p className="text-[11px] text-on-surface-variant truncate">{m.url}</p>}
+              </div>
+              <button
+                onClick={() => setMembers((prev) => prev.filter((x) => x.id !== m.id))}
+                className="p-2 text-primary/30 hover:text-red-500 transition-colors cursor-pointer"
+              >
+                <Icon name="delete" className="text-sm" />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Add form */}
+        <div className="bg-white border border-outline-variant rounded-2xl p-5 shadow-sm space-y-3">
+          <p className="font-bold text-primary text-xs uppercase tracking-wider">Add a property</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <FormField label="Property Name" required>
+              <TextInput
+                placeholder="Hotel Montserrat"
+                value={name}
+                onChange={(e) => setName((e.target as HTMLInputElement).value)}
+              />
+            </FormField>
+            <FormField label="Website URL">
+              <TextInput
+                type="url"
+                placeholder="https://www.hotelmontserrat.com"
+                value={url}
+                onChange={(e) => setUrl((e.target as HTMLInputElement).value)}
+              />
+            </FormField>
+          </div>
+          <button
+            onClick={addMember}
+            disabled={!name.trim()}
+            className="w-full py-2.5 bg-primary text-on-primary rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Icon name="add_circle" className="text-base" />
+            Add Property
+          </button>
+        </div>
+
+        {showWarning && (
+          <p className="mt-3 text-xs text-amber-600 font-bold flex items-center gap-1">
+            <Icon name="warning" className="text-base" />
+            Please add at least one property before continuing.
+          </p>
+        )}
+
+        <div className="mt-8 flex justify-end">
+          <button
+            onClick={() => {
+              if (members.length === 0) { setShowWarning(true); return; }
+              onContinue();
+            }}
+            className="group flex items-center gap-2 bg-secondary text-on-secondary rounded-xl px-10 py-4 font-bold hover:opacity-95 transition-all active:scale-95 duration-200 cursor-pointer shadow-xl shadow-secondary/20"
+          >
+            Continue
+            <Icon name="arrow_forward" className="group-hover:translate-x-1 transition-transform" />
+          </button>
+        </div>
+      </div>
+    </main>
+  );
+};
 
 const WelcomeStep = ({ onNext }: { onNext: () => void }) => (
   <main className="h-full flex items-center justify-center overflow-hidden px-margin-mobile">
@@ -460,128 +715,11 @@ const SuccessStep = () => {
 };
 
 // ---------------------------------------------------------------------------
-// Admin Dashboard
-// ---------------------------------------------------------------------------
-
-const AdminDashboardStep = ({
-  enabledModules,
-  setEnabledModules,
-  onCreate,
-}: {
-  enabledModules: string[];
-  setEnabledModules: (mods: string[]) => void;
-  onCreate: () => void;
-}) => {
-  const [analyzing, setAnalyzing] = useState(false);
-
-  const handleToggle = (id: string) => {
-    setEnabledModules(
-      enabledModules.includes(id)
-        ? enabledModules.filter((m) => m !== id)
-        : [...enabledModules, id]
-    );
-  };
-
-  return (
-    <div className="w-full max-w-6xl mx-auto px-6 py-8 flex flex-col" style={{ height: 'calc(100vh - 0px)' }}>
-      <div className="grid md:grid-cols-2 gap-10 flex-1 min-h-0">
-
-        {/* Left – Data Extraction */}
-        <div className="flex flex-col gap-5 min-h-0">
-          <div>
-            <h2 className="text-2xl font-bold text-primary mb-1">Data Extraction</h2>
-            <p className="text-on-surface-variant text-sm">Upload documents or requests to train Albie.</p>
-          </div>
-
-          <div className="flex-1 border-2 border-dashed border-outline-variant rounded-3xl flex flex-col items-center justify-center text-center gap-4 bg-white/50 hover:border-primary transition-colors group cursor-pointer min-h-0">
-            <div className="w-14 h-14 bg-surface-container-low rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Icon name="upload_file" className="text-2xl text-primary" />
-            </div>
-            <div>
-              <p className="font-bold text-primary text-sm">Drop files here</p>
-              <p className="text-xs text-on-surface-variant">PDF, DOCX or Images up to 20MB</p>
-            </div>
-            <button className="text-primary font-bold text-sm underline underline-offset-4">
-              Browse files
-            </button>
-          </div>
-
-          <button
-            onClick={() => {
-              setAnalyzing(true);
-              setTimeout(() => setAnalyzing(false), 2000);
-            }}
-            disabled={analyzing}
-            className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shrink-0 ${
-              analyzing
-                ? 'bg-surface-container-highest text-on-surface-variant cursor-not-allowed'
-                : 'bg-primary text-on-primary hover:opacity-90 active:scale-[0.98] cursor-pointer'
-            }`}
-          >
-            {analyzing ? (
-              <>
-                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
-                  <Icon name="sync" className="text-xl" />
-                </motion.div>
-                Analyzing with Albie...
-              </>
-            ) : (
-              <>
-                <Icon name="auto_awesome" className="text-xl" />
-                Analyze with Albie
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Right – Module toggles */}
-        <div className="flex flex-col gap-4 min-h-0">
-          <h2 className="text-2xl font-bold text-primary shrink-0">Onboarding Modules</h2>
-
-          <div className="flex-1 bg-white border border-outline-variant rounded-2xl overflow-y-auto custom-scrollbar shadow-sm min-h-0">
-            {ALL_MODULES.map((m, i) => {
-              const isEnabled = enabledModules.includes(m.id);
-              return (
-                <div
-                  key={m.id}
-                  className={`flex items-center px-5 py-3.5 gap-4 transition-colors ${
-                    i < ALL_MODULES.length - 1 ? 'border-b border-outline-variant' : ''
-                  } ${isEnabled ? 'bg-primary/5' : 'bg-white'}`}
-                >
-                  <div className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-colors ${
-                    isEnabled ? 'bg-secondary text-white' : 'bg-surface-container-low text-primary/30'
-                  }`}>
-                    <Icon name={m.icon} className="text-base" />
-                  </div>
-                  <p className={`flex-grow font-bold text-sm ${isEnabled ? 'text-primary' : 'text-on-surface-variant'}`}>
-                    {m.title}
-                  </p>
-                  <Toggle checked={isEnabled} onChange={() => handleToggle(m.id)} />
-                </div>
-              );
-            })}
-          </div>
-
-          <button
-            onClick={onCreate}
-            className="w-full py-4 bg-secondary text-on-secondary rounded-2xl font-bold text-base shadow-xl shadow-secondary/20 hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-3 cursor-pointer shrink-0"
-          >
-            Create Onboarding
-            <Icon name="rocket_launch" className="text-xl" />
-          </button>
-        </div>
-
-      </div>
-    </div>
-  );
-};
-
-// ---------------------------------------------------------------------------
 // Module step components
 // ---------------------------------------------------------------------------
 
 // 1 – General Information
-const GeneralInformationStep = () => (
+const GeneralInformationStep = ({ prefill = {} }: { prefill?: Partial<PrefillData> }) => (
   <div className="w-full max-w-6xl mx-auto flex flex-col py-4">
     <div className="mb-4 shrink-0">
       <h1 className="font-display-lg text-xl text-primary font-bold">General Information</h1>
@@ -596,27 +734,27 @@ const GeneralInformationStep = () => (
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
         <FormField label="Property Name" required className="col-span-2">
-          <TextInput placeholder="The Grand Pavilion Hotel" />
+          <TextInput placeholder="The Grand Pavilion Hotel" defaultValue={prefill.propertyName ?? ''} key={prefill.propertyName} />
         </FormField>
 
         <FormField label="Property Description" required className="col-span-2">
-          <TextareaInput rows={3} placeholder="A brief description of your property..." />
+          <TextareaInput rows={3} placeholder="A brief description of your property..." defaultValue={prefill.description ?? ''} key={prefill.description} />
         </FormField>
 
         <FormField label="Address" required className="col-span-2">
-          <TextInput placeholder="Bredgade 34" />
+          <TextInput placeholder="Bredgade 34" defaultValue={prefill.address ?? ''} key={prefill.address} />
         </FormField>
 
         <FormField label="City" required>
-          <TextInput placeholder="Copenhagen" />
+          <TextInput placeholder="Copenhagen" defaultValue={prefill.city ?? ''} key={prefill.city} />
         </FormField>
 
         <FormField label="State / Province" required>
-          <TextInput placeholder="Capital Region" />
+          <TextInput placeholder="Capital Region" defaultValue={prefill.stateProvince ?? ''} key={prefill.stateProvince} />
         </FormField>
 
         <FormField label="Country" required>
-          <SelectInput>
+          <SelectInput defaultValue={prefill.country ?? ''}>
             <option value="">Select Country</option>
             <option>Denmark</option>
             <option>Spain</option>
@@ -630,7 +768,7 @@ const GeneralInformationStep = () => (
         </FormField>
 
         <FormField label="ZIP / Postal Code" required>
-          <TextInput placeholder="1260" />
+          <TextInput placeholder="1260" defaultValue={prefill.zipCode ?? ''} key={prefill.zipCode} />
         </FormField>
 
         <FormField label="Timezone" required>
@@ -680,15 +818,15 @@ const GeneralInformationStep = () => (
         </FormField>
 
         <FormField label="Phone Number" required>
-          <TextInput type="tel" placeholder="+45 000 000 000" />
+          <TextInput type="tel" placeholder="+45 000 000 000" defaultValue={prefill.phone ?? ''} key={prefill.phone} />
         </FormField>
 
         <FormField label="Notification Email" required>
-          <TextInput type="email" placeholder="reservations@yourhotel.com" />
+          <TextInput type="email" placeholder="reservations@yourhotel.com" defaultValue={prefill.notificationEmail ?? ''} key={prefill.notificationEmail} />
         </FormField>
 
         <FormField label="Website URL" required className="col-span-2">
-          <TextInput type="url" placeholder="https://www.yourhotel.com" />
+          <TextInput type="url" placeholder="https://www.yourhotel.com" defaultValue={prefill.websiteUrl ?? ''} key={prefill.websiteUrl} />
         </FormField>
 
         <FormField label="Property Terms & Conditions" required className="col-span-2">
@@ -1702,68 +1840,61 @@ const ReviewStep = ({
 };
 
 // ---------------------------------------------------------------------------
-// Module step component map
-// ---------------------------------------------------------------------------
-
-const MODULE_COMPONENTS: Record<string, React.ReactNode> = {
-  general: <GeneralInformationStep />,
-  brand: <WebsiteBrandStep />,
-  dns: <DnsTrackingStep />,
-  cancellation: <CancellationPoliciesStep />,
-  rooms: <RoomInformationStep />,
-  occupancy: <RoomOccupancyStep />,
-  experiences: <ExperiencesStep />,
-  addons: <AddOnsStep />,
-  rates: <RatesPackagesStep />,
-  taxes: <TaxesFeesStep />,
-};
-
-// ---------------------------------------------------------------------------
 // Root App
 // ---------------------------------------------------------------------------
 
 export default function App() {
-  // Modules the admin has toggled on/off in the dashboard
-  const [enabledModules, setEnabledModules] = useState<string[]>(DEFAULT_ENABLED);
-  // Modules locked in when admin clicks "Create Onboarding" (drives client flow)
-  const [clientModules, setClientModules] = useState<string[]>(DEFAULT_ENABLED);
+  // Property type selection
+  const [propertyType, setPropertyType] = useState<'independent' | 'group' | null>(null);
+  // Group member properties
+  const [groupMembers, setGroupMembers] = useState<{ id: number; name: string; url: string }[]>([]);
+  // AI-pre-filled data from URL analysis
+  const [prefillData, setPrefillData] = useState<Partial<PrefillData>>({});
   // Review step verification
   const [verifiedModules, setVerifiedModules] = useState<Set<string>>(new Set());
   const [showVerifyWarning, setShowVerifyWarning] = useState(false);
 
-  // Step encoding:
-  //   0         → Role Selection
-  //   1         → Welcome
-  //   10        → Admin Dashboard
-  //   2 … N+1  → Module steps (N = clientModules.length)
-  //   N+2       → Review
-  //   N+3       → Success
   const [currentStep, setCurrentStep] = useState(0);
 
-  const reviewStep = 2 + clientModules.length;
+  // Step encoding:
+  //   0              → PropertyTypeStep
+  //   1              → URLAnalysisStep
+  //   2 (group only) → GroupMembersStep
+  //   welcomeStep    → WelcomeStep
+  //   firstModule…   → Module steps (DEFAULT_ENABLED)
+  //   reviewStep     → ReviewStep
+  //   successStep    → SuccessStep
+  const groupOffset = propertyType === 'group' ? 1 : 0;
+  const welcomeStep = 2 + groupOffset;       // 2 (independent) or 3 (group)
+  const firstModule = welcomeStep + 1;       // 3 (independent) or 4 (group)
+  const reviewStep  = firstModule + DEFAULT_ENABLED.length;
   const successStep = reviewStep + 1;
 
-  const handleRoleSelect = (role: 'admin' | 'client') => {
-    setCurrentStep(role === 'admin' ? 99 : 1);
+  // Module components (inside App so `general` can close over prefillData)
+  const moduleComponents: Record<string, React.ReactNode> = {
+    general: <GeneralInformationStep prefill={prefillData} />,
+    brand: <WebsiteBrandStep />,
+    dns: <DnsTrackingStep />,
+    cancellation: <CancellationPoliciesStep />,
+    rooms: <RoomInformationStep />,
+    occupancy: <RoomOccupancyStep />,
+    experiences: <ExperiencesStep />,
+    addons: <AddOnsStep />,
+    rates: <RatesPackagesStep />,
+    taxes: <TaxesFeesStep />,
   };
 
-  const handleAdminCreate = () => {
-    setClientModules([...enabledModules]);
-    setVerifiedModules(new Set());
-    setCurrentStep(1);
-  };
+  const goNext = () => { window.scrollTo(0, 0); setCurrentStep((s) => s + 1); };
+  const goBack = () => { window.scrollTo(0, 0); setCurrentStep((s) => s - 1); };
 
   const handleNext = () => {
     if (currentStep === reviewStep) {
-      if (verifiedModules.size < clientModules.length) {
+      if (verifiedModules.size < DEFAULT_ENABLED.length) {
         setShowVerifyWarning(true);
         return;
       }
     }
-    if (currentStep < successStep) {
-      setCurrentStep((s) => s + 1);
-      window.scrollTo(0, 0);
-    }
+    if (currentStep < successStep) goNext();
   };
 
   const handleToggleVerify = (id: string) => {
@@ -1774,32 +1905,28 @@ export default function App() {
     });
   };
 
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep((s) => s - 1);
-      window.scrollTo(0, 0);
-    }
-  };
-
   const handleEditModule = (moduleId: string) => {
-    const idx = clientModules.indexOf(moduleId);
-    if (idx !== -1) setCurrentStep(2 + idx);
+    const idx = DEFAULT_ENABLED.indexOf(moduleId);
+    if (idx !== -1) setCurrentStep(firstModule + idx);
   };
 
-  const isModuleStep = currentStep >= 2 && currentStep < reviewStep;
-  const isNavigable = currentStep > 1 && currentStep < successStep;
-  const currentModuleId = isModuleStep ? clientModules[currentStep - 2] : null;
+  const isModuleStep = currentStep >= firstModule && currentStep < reviewStep;
+  // Show floating nav buttons from the first module step through review
+  const isNavigable  = currentStep > welcomeStep && currentStep < successStep;
+  const currentModuleId = isModuleStep ? DEFAULT_ENABLED[currentStep - firstModule] : null;
 
-  // ProgressBar: step 2 = step "1 of N+1", reviewStep = step "N+1 of N+1"
-  const progressCurrent = currentStep - 1;
-  const progressTotal = reviewStep;
+  // ProgressBar: 1-indexed from first module to review (= DEFAULT_ENABLED.length+1)
+  const progressCurrent = isModuleStep
+    ? currentStep - firstModule + 1
+    : DEFAULT_ENABLED.length + 1;
+  const progressTotal = DEFAULT_ENABLED.length + 2; // gives 100% at review
 
   return (
     <div className="h-screen overflow-hidden bg-background text-on-background font-hanken antialiased flex flex-col">
-      {/* Global back-to-role button */}
-      {currentStep > 0 && (
+      {/* Small back button for intro steps 1 – welcomeStep */}
+      {currentStep >= 1 && currentStep <= welcomeStep && (
         <button
-          onClick={() => setCurrentStep(0)}
+          onClick={goBack}
           className="fixed top-6 left-6 z-50 p-3 flex items-center justify-center text-primary hover:bg-surface-container-low transition-all rounded-full opacity-40 hover:opacity-100 cursor-pointer shadow-sm hover:shadow-md bg-white/50 backdrop-blur-sm"
         >
           <Icon name="arrow_back" className="text-2xl" />
@@ -1808,21 +1935,57 @@ export default function App() {
 
       <div className="flex-grow flex flex-col overflow-hidden relative">
         <AnimatePresence mode="wait">
-          {/* Role Selection */}
+
+          {/* Step 0 – Property Type */}
           {currentStep === 0 && (
             <motion.div
-              key="role"
+              key="property-type"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="h-full"
             >
-              <RoleSelectionStep onSelect={handleRoleSelect} />
+              <PropertyTypeStep
+                onSelect={(type) => { setPropertyType(type); goNext(); }}
+              />
+            </motion.div>
+          )}
+
+          {/* Step 1 – URL Analysis */}
+          {currentStep === 1 && (
+            <motion.div
+              key="url-analysis"
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.03 }}
+              className="h-full"
+            >
+              <URLAnalysisStep
+                onComplete={(data) => { setPrefillData(data); goNext(); }}
+                onSkip={goNext}
+              />
+            </motion.div>
+          )}
+
+          {/* Step 2 – Group Members (group path only) */}
+          {currentStep === 2 && propertyType === 'group' && (
+            <motion.div
+              key="group-members"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="h-full overflow-y-auto custom-scrollbar"
+            >
+              <GroupMembersStep
+                members={groupMembers}
+                setMembers={setGroupMembers}
+                onContinue={goNext}
+              />
             </motion.div>
           )}
 
           {/* Welcome */}
-          {currentStep === 1 && (
+          {currentStep === welcomeStep && (
             <motion.div
               key="welcome"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -1830,29 +1993,12 @@ export default function App() {
               exit={{ opacity: 0, scale: 1.05 }}
               className="h-full"
             >
-              <WelcomeStep onNext={handleNext} />
+              <WelcomeStep onNext={goNext} />
             </motion.div>
           )}
 
-          {/* Admin Dashboard */}
-          {currentStep === 99 && (
-            <motion.div
-              key="admin"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="h-full overflow-y-auto custom-scrollbar"
-            >
-              <AdminDashboardStep
-                enabledModules={enabledModules}
-                setEnabledModules={setEnabledModules}
-                onCreate={handleAdminCreate}
-              />
-            </motion.div>
-          )}
-
-          {/* Client flow: module steps + review */}
-          {currentStep > 1 && currentStep < successStep && (
+          {/* Module steps + Review */}
+          {currentStep > welcomeStep && currentStep < successStep && (
             <motion.div
               key="stepper"
               initial={{ opacity: 0 }}
@@ -1875,7 +2021,7 @@ export default function App() {
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -20 }}
                     >
-                      {MODULE_COMPONENTS[currentModuleId]}
+                      {moduleComponents[currentModuleId]}
                     </motion.div>
                   )}
 
@@ -1887,7 +2033,7 @@ export default function App() {
                       exit={{ opacity: 0, x: -20 }}
                     >
                       <ReviewStep
-                        clientModules={clientModules}
+                        clientModules={DEFAULT_ENABLED}
                         onEdit={handleEditModule}
                         verified={verifiedModules}
                         onToggleVerify={handleToggleVerify}
@@ -1910,6 +2056,7 @@ export default function App() {
               <SuccessStep />
             </motion.div>
           )}
+
         </AnimatePresence>
       </div>
 
@@ -1940,11 +2087,11 @@ export default function App() {
         </div>
       )}
 
-      {/* Navigation buttons (Back / Continue) */}
+      {/* Floating navigation (Back / Continue) */}
       {isNavigable && (
         <div className="contents">
           <button
-            onClick={handleBack}
+            onClick={goBack}
             className="fixed bottom-6 left-6 md:bottom-8 md:left-8 z-50 group flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-primary text-primary rounded-xl px-6 py-3 font-bold hover:bg-surface-container-low transition-all active:scale-95 duration-200 cursor-pointer shadow-lg"
           >
             <Icon name="arrow_back" className="group-hover:-translate-x-1 transition-transform" />
