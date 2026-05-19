@@ -323,56 +323,72 @@ const MOCK_PREFILL = {
 
 export type PrefillData = typeof MOCK_PREFILL;
 
-// Step 0 – Property Type
+// Step 1 – Property Type
 const PropertyTypeStep = ({ onSelect }: { onSelect: (type: 'independent' | 'group') => void }) => (
-  <main className="h-full flex flex-col items-center justify-center px-margin-mobile">
-    <div className="text-center mb-10">
-      <div className="font-headline-lg text-headline-lg font-bold text-primary mb-2">Albie</div>
-      <h2 className="font-display-lg text-3xl md:text-5xl text-primary mb-2">What type of property are you?</h2>
-      <p className="text-on-surface-variant max-w-md mx-auto">
-        Select the option that best describes your accommodation setup.
-      </p>
-    </div>
+  <main className="h-full flex items-center justify-center overflow-hidden px-margin-mobile md:px-margin-desktop">
+    <div className="w-full max-w-container-max-width grid md:grid-cols-12 gap-gutter items-center">
 
-    <div className="grid md:grid-cols-2 gap-8 w-full max-w-4xl">
-      <button
-        onClick={() => onSelect('independent')}
-        className="group relative flex flex-col items-center p-10 bg-white border-2 border-outline-variant rounded-[40px] hover:border-primary transition-all duration-300 shadow-sm hover:shadow-xl active:scale-95 text-left overflow-hidden cursor-pointer"
-      >
-        <div className="w-20 h-20 bg-secondary-container rounded-3xl flex items-center justify-center mb-6 group-hover:rotate-6 transition-transform">
-          <Icon name="hotel" className="text-4xl text-secondary" />
-        </div>
-        <h3 className="text-2xl font-bold text-primary mb-2">Independent</h3>
-        <p className="text-center text-on-surface-variant text-sm leading-relaxed mb-4">
-          A single property with its own identity, operating independently.
+      {/* Left: heading */}
+      <div className="md:col-span-5 flex flex-col gap-4 py-4">
+        <span className="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-lg font-label-md inline-block w-fit text-xs font-bold tracking-wider uppercase">
+          Step 1 of 2
+        </span>
+        <h2 className="font-display-lg text-4xl lg:text-5xl text-primary font-bold leading-tight">
+          What type of property are you?
+        </h2>
+        <p className="font-body-md text-on-surface-variant max-w-sm leading-relaxed">
+          Select the option that best describes your accommodation setup to personalise your onboarding.
         </p>
-        <div className="mt-auto flex items-center gap-2 text-primary font-bold text-sm">
-          Continue as Independent <Icon name="arrow_forward" className="text-sm" />
-        </div>
-        <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-primary/5 rounded-full blur-2xl" />
-      </button>
+      </div>
 
-      <button
-        onClick={() => onSelect('group')}
-        className="group relative flex flex-col items-center p-10 bg-white border-2 border-outline-variant rounded-[40px] hover:border-primary transition-all duration-300 shadow-sm hover:shadow-xl active:scale-95 text-left overflow-hidden cursor-pointer"
-      >
-        <div className="w-20 h-20 bg-secondary/10 rounded-3xl flex items-center justify-center mb-6 group-hover:-rotate-6 transition-transform">
-          <Icon name="domain" className="text-4xl text-secondary" />
-        </div>
-        <h3 className="text-2xl font-bold text-primary mb-2">Group</h3>
-        <p className="text-center text-on-surface-variant text-sm leading-relaxed mb-4">
-          A collection of independent properties managed under a single group account.
-        </p>
-        <div className="mt-auto flex items-center gap-2 text-primary font-bold text-sm">
-          Continue as Group <Icon name="arrow_forward" className="text-sm" />
-        </div>
-        <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-secondary/5 rounded-full blur-2xl" />
-      </button>
+      {/* Right: cards */}
+      <div className="md:col-span-7 grid sm:grid-cols-2 gap-5">
+        {/* Independent */}
+        <button
+          onClick={() => onSelect('independent')}
+          className="group relative flex flex-col p-8 bg-white border-2 border-outline-variant rounded-3xl hover:border-secondary transition-all duration-200 shadow-sm hover:shadow-xl active:scale-[0.98] text-left cursor-pointer overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-secondary/0 group-hover:bg-secondary/5 rounded-3xl transition-colors duration-200" />
+          <div className="relative z-10 flex flex-col h-full">
+            <div className="w-14 h-14 bg-secondary-container rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-200">
+              <Icon name="hotel" className="text-3xl text-secondary" />
+            </div>
+            <h3 className="text-xl font-bold text-primary mb-2">Independent</h3>
+            <p className="text-on-surface-variant text-sm leading-relaxed flex-1">
+              A single property with its own identity, operating on its own.
+            </p>
+            <div className="mt-6 flex items-center gap-1.5 text-primary font-bold text-sm group-hover:gap-3 transition-all duration-200">
+              Select <Icon name="arrow_forward" className="text-base" />
+            </div>
+          </div>
+        </button>
+
+        {/* Group */}
+        <button
+          onClick={() => onSelect('group')}
+          className="group relative flex flex-col p-8 bg-white border-2 border-outline-variant rounded-3xl hover:border-secondary transition-all duration-200 shadow-sm hover:shadow-xl active:scale-[0.98] text-left cursor-pointer overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-secondary/0 group-hover:bg-secondary/5 rounded-3xl transition-colors duration-200" />
+          <div className="relative z-10 flex flex-col h-full">
+            <div className="w-14 h-14 bg-secondary-container rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-200">
+              <Icon name="domain" className="text-3xl text-secondary" />
+            </div>
+            <h3 className="text-xl font-bold text-primary mb-2">Group</h3>
+            <p className="text-on-surface-variant text-sm leading-relaxed flex-1">
+              Multiple properties managed together under a single group account.
+            </p>
+            <div className="mt-6 flex items-center gap-1.5 text-primary font-bold text-sm group-hover:gap-3 transition-all duration-200">
+              Select <Icon name="arrow_forward" className="text-base" />
+            </div>
+          </div>
+        </button>
+      </div>
+
     </div>
   </main>
 );
 
-// Step 1 – URL Analysis
+// Step 2 – URL Analysis
 const URLAnalysisStep = ({
   onComplete,
   onSkip,
@@ -395,40 +411,42 @@ const URLAnalysisStep = ({
   };
 
   return (
-    <main className="h-full flex flex-col items-center justify-center px-margin-mobile">
-      <div className="w-full max-w-2xl">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-secondary-container mb-6">
-            <Icon name="travel_explore" className="text-3xl text-secondary" />
-          </div>
-          <h2 className="font-display-lg text-3xl md:text-4xl text-primary mb-3">
-            Let Albie read your website
-          </h2>
-          <p className="text-on-surface-variant max-w-md mx-auto text-sm leading-relaxed">
-            Enter your property's website URL and Albie will automatically extract and pre-fill your onboarding details.
-          </p>
-        </div>
+    <main className="h-full flex items-center justify-center overflow-hidden px-margin-mobile md:px-margin-desktop">
+      <div className="w-full max-w-container-max-width grid md:grid-cols-12 gap-gutter items-center">
 
-        <div className="bg-white border border-outline-variant rounded-2xl p-8 shadow-sm space-y-5">
+        {/* Left: content */}
+        <div className="md:col-span-6 flex flex-col gap-6 py-4">
+          <div className="flex flex-col gap-3">
+            <span className="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-lg font-label-md inline-block w-fit text-xs font-bold tracking-wider uppercase">
+              Step 2 of 2
+            </span>
+            <h2 className="font-display-lg text-4xl lg:text-5xl text-primary font-bold leading-tight">
+              Let Albie read<br />your website
+            </h2>
+            <p className="font-body-md text-on-surface-variant max-w-md leading-relaxed">
+              Paste your property's URL and Albie will automatically extract and pre-fill your onboarding details — saving you time.
+            </p>
+          </div>
+
+          {/* Input + button */}
           <div className="flex gap-3">
-            <div className="flex-1">
-              <TextInput
-                type="url"
-                placeholder="https://www.yourhotel.com"
-                value={url}
-                onChange={(e) => setUrl((e.target as HTMLInputElement).value)}
-                className={done ? 'border-green-400 bg-green-50' : ''}
-              />
-            </div>
+            <TextInput
+              type="url"
+              placeholder="https://www.yourhotel.com"
+              value={url}
+              onChange={(e) => setUrl((e.target as HTMLInputElement).value)}
+              onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleAnalyze()}
+              className={`flex-1 ${done ? 'border-secondary bg-secondary-container/30' : ''}`}
+            />
             <button
               onClick={handleAnalyze}
               disabled={analyzing || !url.trim() || done}
-              className={`shrink-0 px-6 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all cursor-pointer ${
+              className={`shrink-0 px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all cursor-pointer ${
                 done
-                  ? 'bg-green-500 text-white cursor-default'
+                  ? 'bg-secondary text-on-secondary cursor-default'
                   : analyzing
                   ? 'bg-surface-container-highest text-on-surface-variant cursor-not-allowed'
-                  : 'bg-primary text-on-primary hover:opacity-90 active:scale-95'
+                  : 'bg-primary text-on-primary hover:opacity-90 active:scale-95 shadow-md shadow-primary/20'
               }`}
             >
               {done ? (
@@ -446,30 +464,15 @@ const URLAnalysisStep = ({
             </button>
           </div>
 
-          {done && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-xl"
-            >
-              <Icon name="check_circle" className="text-green-500 text-xl shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-green-800 text-sm">Data extracted successfully</p>
-                <p className="text-green-700 text-xs mt-0.5">
-                  We found <strong>{MOCK_PREFILL.propertyName}</strong>. Your General Information fields have been pre-filled — review and edit them as needed.
-                </p>
-              </div>
-            </motion.div>
-          )}
-
+          {/* Status: analyzing */}
           {analyzing && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-center gap-3 p-4 bg-surface-container-low rounded-xl"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-3 p-4 bg-surface-container-low border border-outline-variant rounded-2xl"
             >
-              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}>
-                <Icon name="travel_explore" className="text-primary text-xl" />
+              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}>
+                <Icon name="travel_explore" className="text-secondary text-2xl" />
               </motion.div>
               <div>
                 <p className="font-bold text-primary text-sm">Reading your website…</p>
@@ -478,16 +481,66 @@ const URLAnalysisStep = ({
             </motion.div>
           )}
 
-          <div className="pt-2 border-t border-outline-variant flex items-center justify-between">
-            <p className="text-xs text-on-surface-variant">Analysis runs in seconds. No data is stored at this stage.</p>
+          {/* Status: done */}
+          {done && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-start gap-3 p-4 bg-secondary-container border border-secondary/30 rounded-2xl"
+            >
+              <Icon name="check_circle" className="text-secondary text-2xl shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-primary text-sm">Data extracted successfully</p>
+                <p className="text-on-surface-variant text-xs mt-0.5">
+                  We found <strong>{MOCK_PREFILL.propertyName}</strong>. Your General Information fields have been pre-filled — review and edit them as needed.
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Skip */}
+          <div className="flex items-center gap-3">
             <button
               onClick={onSkip}
-              className="text-xs font-bold text-on-surface-variant underline underline-offset-4 hover:text-primary transition-colors cursor-pointer"
+              className="font-bold text-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center gap-1.5 group"
             >
               Skip for now
+              <Icon name="arrow_forward" className="text-sm group-hover:translate-x-1 transition-transform" />
             </button>
+            <span className="text-outline-variant text-xs">— you can fill in the details manually</span>
           </div>
         </div>
+
+        {/* Right: visual card */}
+        <div className="md:col-span-6 hidden md:flex flex-col gap-4">
+          <div className="bg-secondary-container rounded-3xl p-8 flex flex-col gap-5 shadow-inner">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+                <Icon name="auto_awesome" className="text-on-primary text-xl" />
+              </div>
+              <div>
+                <p className="font-bold text-primary text-sm">AI-powered extraction</p>
+                <p className="text-on-surface-variant text-xs">Fields pre-filled from your site</p>
+              </div>
+            </div>
+            {[
+              { label: 'Property Name', value: 'The Grand Pavilion Hotel', icon: 'apartment' },
+              { label: 'City', value: 'Copenhagen, Denmark', icon: 'location_on' },
+              { label: 'Phone', value: '+45 33 00 00 00', icon: 'call' },
+              { label: 'Email', value: 'reservations@grandpavilion.com', icon: 'mail' },
+            ].map((row) => (
+              <div key={row.label} className="flex items-center gap-3 bg-white/60 rounded-xl px-4 py-3 border border-white/80">
+                <Icon name={row.icon} className="text-primary/50 text-base shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{row.label}</p>
+                  <p className="text-primary text-sm font-semibold truncate">{row.value}</p>
+                </div>
+                <Icon name="check_circle" className="text-secondary text-base ml-auto shrink-0" />
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </main>
   );
@@ -1861,16 +1914,15 @@ export default function App() {
   const [currentStep, setCurrentStep] = useState(0);
 
   // Step encoding:
-  //   0              → PropertyTypeStep
-  //   1              → URLAnalysisStep
-  //   2 (group only) → GroupMembersStep
-  //   welcomeStep    → WelcomeStep
+  //   0              → WelcomeStep
+  //   1              → PropertyTypeStep
+  //   2              → URLAnalysisStep
+  //   3 (group only) → GroupMembersStep
   //   firstModule…   → Module steps (DEFAULT_ENABLED)
   //   reviewStep     → ReviewStep
   //   successStep    → SuccessStep
   const groupOffset = propertyType === 'group' ? 1 : 0;
-  const welcomeStep = 2 + groupOffset;       // 2 (independent) or 3 (group)
-  const firstModule = welcomeStep + 1;       // 3 (independent) or 4 (group)
+  const firstModule = 3 + groupOffset;       // 3 (independent) or 4 (group)
   const reviewStep  = firstModule + DEFAULT_ENABLED.length;
   const successStep = reviewStep + 1;
 
@@ -1916,7 +1968,7 @@ export default function App() {
 
   const isModuleStep = currentStep >= firstModule && currentStep < reviewStep;
   // Show floating nav buttons from the first module step through review
-  const isNavigable  = currentStep > welcomeStep && currentStep < successStep;
+  const isNavigable  = currentStep >= firstModule && currentStep < successStep;
   const currentModuleId = isModuleStep ? DEFAULT_ENABLED[currentStep - firstModule] : null;
 
   // ProgressBar: 1-indexed from first module to review (= DEFAULT_ENABLED.length+1)
@@ -1927,8 +1979,8 @@ export default function App() {
 
   return (
     <div className="h-screen overflow-hidden bg-background text-on-background font-hanken antialiased flex flex-col">
-      {/* Small back button for intro steps 1 – welcomeStep */}
-      {currentStep >= 1 && currentStep <= welcomeStep && (
+      {/* Small back button for intro steps 1–(firstModule-1) */}
+      {currentStep >= 1 && currentStep < firstModule && (
         <button
           onClick={goBack}
           className="fixed top-6 left-6 z-50 p-3 flex items-center justify-center text-primary hover:bg-surface-container-low transition-all rounded-full opacity-40 hover:opacity-100 cursor-pointer shadow-sm hover:shadow-md bg-white/50 backdrop-blur-sm"
@@ -1940,13 +1992,26 @@ export default function App() {
       <div className="flex-grow flex flex-col overflow-hidden relative">
         <AnimatePresence mode="wait">
 
-          {/* Step 0 – Property Type */}
+          {/* Step 0 – Welcome */}
           {currentStep === 0 && (
             <motion.div
+              key="welcome"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              className="h-full"
+            >
+              <WelcomeStep onNext={goNext} />
+            </motion.div>
+          )}
+
+          {/* Step 1 – Property Type */}
+          {currentStep === 1 && (
+            <motion.div
               key="property-type"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
               className="h-full"
             >
               <PropertyTypeStep
@@ -1955,13 +2020,13 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* Step 1 – URL Analysis */}
-          {currentStep === 1 && (
+          {/* Step 2 – URL Analysis */}
+          {currentStep === 2 && (
             <motion.div
               key="url-analysis"
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.03 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
               className="h-full"
             >
               <URLAnalysisStep
@@ -1971,8 +2036,8 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* Step 2 – Group Members (group path only) */}
-          {currentStep === 2 && propertyType === 'group' && (
+          {/* Step 3 – Group Members (group path only) */}
+          {currentStep === 3 && propertyType === 'group' && (
             <motion.div
               key="group-members"
               initial={{ opacity: 0, x: 20 }}
@@ -1988,21 +2053,8 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* Welcome */}
-          {currentStep === welcomeStep && (
-            <motion.div
-              key="welcome"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.05 }}
-              className="h-full"
-            >
-              <WelcomeStep onNext={goNext} />
-            </motion.div>
-          )}
-
           {/* Module steps + Review */}
-          {currentStep > welcomeStep && currentStep < successStep && (
+          {currentStep >= firstModule && currentStep < successStep && (
             <motion.div
               key="stepper"
               initial={{ opacity: 0 }}
