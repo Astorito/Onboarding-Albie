@@ -84,7 +84,11 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void 
 
 const Header = () => (
   <header className="fixed top-0 w-full bg-surface border-b border-outline-variant flex justify-between items-center px-margin-mobile md:px-margin-desktop h-20 z-50">
-    <div className="font-headline-lg text-headline-lg font-bold text-primary">Albie</div>
+    <img
+      src="https://albiebytag.com/wp-content/uploads/2024/09/Albie-logo.svg"
+      alt="Albie by TAG"
+      className="h-8 w-auto"
+    />
     <div className="flex items-center gap-stack-md">
       <button className="flex items-center justify-center p-2 text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-full">
         <Icon name="help" />
