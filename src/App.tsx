@@ -307,21 +307,41 @@ const DEFAULT_ENABLED = ['general', 'brand', 'cancellation', 'rooms', 'occupancy
 // Intro screens (new flow)
 // ---------------------------------------------------------------------------
 
-// Mock pre-fill data for the AI URL analysis
-const MOCK_PREFILL = {
-  propertyName: 'The Grand Pavilion Hotel',
-  description: 'A luxury boutique hotel in the heart of the city, offering world-class amenities and personalised service.',
-  address: 'Bredgade 34',
-  city: 'Copenhagen',
-  stateProvince: 'Capital Region',
-  country: 'Denmark',
-  zipCode: '1260',
-  phone: '+45 33 00 00 00',
-  notificationEmail: 'reservations@grandpavilion.com',
-  websiteUrl: 'https://www.grandpavilion.com',
-};
+// All fields that the AI can pre-fill from a hotel website
+export interface PrefillData {
+  propertyName:      string | null;
+  description:       string | null;
+  address:           string | null;
+  city:              string | null;
+  stateProvince:     string | null;
+  country:           string | null;
+  zipCode:           string | null;
+  timezone:          string | null;  // IANA id  e.g. "Europe/Madrid"
+  currency:          string | null;  // ISO 4217  e.g. "EUR"
+  language:          string | null;  // BCP 47    e.g. "es"
+  phone:             string | null;
+  notificationEmail: string | null;
+  websiteUrl:        string | null;
+  siteTitle:         string | null;
+}
 
-export type PrefillData = typeof MOCK_PREFILL;
+// Demo data shown in the URLAnalysisStep preview card (not used as fallback)
+const MOCK_PREFILL: PrefillData = {
+  propertyName:      'The Grand Pavilion Hotel',
+  description:       'A luxury boutique hotel in the heart of the city, offering world-class amenities and personalised service.',
+  address:           'Bredgade 34',
+  city:              'Copenhagen',
+  stateProvince:     'Capital Region',
+  country:           'Denmark',
+  zipCode:           '1260',
+  timezone:          'Europe/Copenhagen',
+  currency:          'DKK',
+  language:          'da',
+  phone:             '+45 33 00 00 00',
+  notificationEmail: 'reservations@grandpavilion.com',
+  websiteUrl:        'https://www.grandpavilion.com',
+  siteTitle:         'The Grand Pavilion Hotel',
+};
 
 // Step 1 – Property Type
 const PropertyTypeStep = ({ onSelect }: { onSelect: (type: 'independent' | 'group') => void }) => (
@@ -399,15 +419,29 @@ const URLAnalysisStep = ({
   const [url, setUrl] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [done, setDone] = useState(false);
+  const [foundName, setFoundName] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!url.trim()) return;
     setAnalyzing(true);
-    setTimeout(() => {
-      setAnalyzing(false);
+    setApiError(null);
+    try {
+      const res = await fetch('/api/analyze-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+      setFoundName(data.propertyName ?? url);
       setDone(true);
-      onComplete(MOCK_PREFILL);
-    }, 2500);
+      onComplete(data as PrefillData);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'Analysis failed. Please try again.');
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   return (
@@ -492,8 +526,23 @@ const URLAnalysisStep = ({
               <div>
                 <p className="font-bold text-primary text-sm">Data extracted successfully</p>
                 <p className="text-on-surface-variant text-xs mt-0.5">
-                  We found <strong>{MOCK_PREFILL.propertyName}</strong>. Your General Information fields have been pre-filled — review and edit them as needed.
+                  We found <strong>{foundName}</strong>. Your fields have been pre-filled — review and edit them as needed.
                 </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Status: error */}
+          {apiError && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-2xl"
+            >
+              <Icon name="error" className="text-red-500 text-2xl shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-red-700 text-sm">Could not analyze the URL</p>
+                <p className="text-red-600 text-xs mt-0.5">{apiError}</p>
               </div>
             </motion.div>
           )}
@@ -811,16 +860,41 @@ const GeneralInformationStep = ({ prefill = {} }: { prefill?: Partial<PrefillDat
         </FormField>
 
         <FormField label="Country" required>
-          <SelectInput defaultValue={prefill.country ?? ''}>
+          <SelectInput defaultValue={prefill.country ?? ''} key={prefill.country}>
             <option value="">Select Country</option>
-            <option>Denmark</option>
-            <option>Spain</option>
-            <option>United Kingdom</option>
-            <option>United States</option>
-            <option>France</option>
-            <option>Germany</option>
-            <option>Italy</option>
-            <option>Portugal</option>
+            <option value="Argentina">Argentina</option>
+            <option value="Australia">Australia</option>
+            <option value="Austria">Austria</option>
+            <option value="Belgium">Belgium</option>
+            <option value="Brazil">Brazil</option>
+            <option value="Canada">Canada</option>
+            <option value="Chile">Chile</option>
+            <option value="Colombia">Colombia</option>
+            <option value="Denmark">Denmark</option>
+            <option value="Finland">Finland</option>
+            <option value="France">France</option>
+            <option value="Germany">Germany</option>
+            <option value="Greece">Greece</option>
+            <option value="Ireland">Ireland</option>
+            <option value="Italy">Italy</option>
+            <option value="Japan">Japan</option>
+            <option value="Mexico">Mexico</option>
+            <option value="Netherlands">Netherlands</option>
+            <option value="New Zealand">New Zealand</option>
+            <option value="Norway">Norway</option>
+            <option value="Peru">Peru</option>
+            <option value="Poland">Poland</option>
+            <option value="Portugal">Portugal</option>
+            <option value="Singapore">Singapore</option>
+            <option value="South Africa">South Africa</option>
+            <option value="Spain">Spain</option>
+            <option value="Sweden">Sweden</option>
+            <option value="Switzerland">Switzerland</option>
+            <option value="Turkey">Turkey</option>
+            <option value="United Arab Emirates">United Arab Emirates</option>
+            <option value="United Kingdom">United Kingdom</option>
+            <option value="United States">United States</option>
+            <option value="Uruguay">Uruguay</option>
           </SelectInput>
         </FormField>
 
@@ -829,48 +903,100 @@ const GeneralInformationStep = ({ prefill = {} }: { prefill?: Partial<PrefillDat
         </FormField>
 
         <FormField label="Timezone" required>
-          <SelectInput>
+          <SelectInput defaultValue={prefill.timezone ?? ''} key={prefill.timezone}>
             <option value="">Select Timezone</option>
-            <option>UTC+1 – Central European Time (CET)</option>
-            <option>UTC+2 – Eastern European Time (EET)</option>
-            <option>UTC+0 – Greenwich Mean Time (GMT)</option>
-            <option>UTC-5 – Eastern Standard Time (EST)</option>
-            <option>UTC-6 – Central Standard Time (CST)</option>
-            <option>UTC-8 – Pacific Standard Time (PST)</option>
+            <option value="Pacific/Honolulu">UTC−10 – Hawaii Time</option>
+            <option value="America/Anchorage">UTC−9 – Alaska Time</option>
+            <option value="America/Los_Angeles">UTC−8 – Pacific Time (US)</option>
+            <option value="America/Denver">UTC−7 – Mountain Time (US)</option>
+            <option value="America/Chicago">UTC−6 – Central Time (US)</option>
+            <option value="America/New_York">UTC−5 – Eastern Time (US)</option>
+            <option value="America/Santiago">UTC−4 – Chile Standard Time</option>
+            <option value="America/Argentina/Buenos_Aires">UTC−3 – Argentina Time</option>
+            <option value="America/Sao_Paulo">UTC−3 – Brasilia Time</option>
+            <option value="Atlantic/Azores">UTC−1 – Azores Time</option>
+            <option value="Europe/London">UTC±0 – Greenwich Mean Time</option>
+            <option value="Europe/Lisbon">UTC±0 – Western European Time</option>
+            <option value="Europe/Paris">UTC+1 – Central European Time</option>
+            <option value="Europe/Copenhagen">UTC+1 – Central European Time (DK)</option>
+            <option value="Europe/Madrid">UTC+1 – Central European Time (ES)</option>
+            <option value="Europe/Berlin">UTC+1 – Central European Time (DE)</option>
+            <option value="Europe/Rome">UTC+1 – Central European Time (IT)</option>
+            <option value="Europe/Amsterdam">UTC+1 – Central European Time (NL)</option>
+            <option value="Europe/Stockholm">UTC+1 – Central European Time (SE)</option>
+            <option value="Europe/Oslo">UTC+1 – Central European Time (NO)</option>
+            <option value="Europe/Zurich">UTC+1 – Central European Time (CH)</option>
+            <option value="Europe/Athens">UTC+2 – Eastern European Time (GR)</option>
+            <option value="Europe/Helsinki">UTC+2 – Eastern European Time (FI)</option>
+            <option value="Europe/Istanbul">UTC+3 – Turkey Time</option>
+            <option value="Asia/Dubai">UTC+4 – Gulf Standard Time</option>
+            <option value="Asia/Kolkata">UTC+5:30 – India Standard Time</option>
+            <option value="Asia/Singapore">UTC+8 – Singapore Time</option>
+            <option value="Asia/Tokyo">UTC+9 – Japan Standard Time</option>
+            <option value="Australia/Sydney">UTC+10 – Australian Eastern Time</option>
+            <option value="Pacific/Auckland">UTC+12 – New Zealand Time</option>
           </SelectInput>
         </FormField>
 
         <FormField label="Currency" required>
-          <SelectInput>
+          <SelectInput defaultValue={prefill.currency ?? ''} key={prefill.currency}>
             <option value="">Select Currency</option>
-            <option>EUR – Euro (€)</option>
-            <option>DKK – Danish Krone (kr)</option>
-            <option>USD – US Dollar ($)</option>
-            <option>GBP – British Pound (£)</option>
-            <option>SEK – Swedish Krona (kr)</option>
-            <option>NOK – Norwegian Krone (kr)</option>
+            <option value="AED">AED – UAE Dirham (د.إ)</option>
+            <option value="ARS">ARS – Argentine Peso ($)</option>
+            <option value="AUD">AUD – Australian Dollar ($)</option>
+            <option value="BRL">BRL – Brazilian Real (R$)</option>
+            <option value="CAD">CAD – Canadian Dollar ($)</option>
+            <option value="CHF">CHF – Swiss Franc (Fr)</option>
+            <option value="CLP">CLP – Chilean Peso ($)</option>
+            <option value="COP">COP – Colombian Peso ($)</option>
+            <option value="DKK">DKK – Danish Krone (kr)</option>
+            <option value="EUR">EUR – Euro (€)</option>
+            <option value="GBP">GBP – British Pound (£)</option>
+            <option value="JPY">JPY – Japanese Yen (¥)</option>
+            <option value="MXN">MXN – Mexican Peso ($)</option>
+            <option value="NOK">NOK – Norwegian Krone (kr)</option>
+            <option value="NZD">NZD – New Zealand Dollar ($)</option>
+            <option value="PEN">PEN – Peruvian Sol (S/)</option>
+            <option value="PLN">PLN – Polish Złoty (zł)</option>
+            <option value="SEK">SEK – Swedish Krona (kr)</option>
+            <option value="SGD">SGD – Singapore Dollar ($)</option>
+            <option value="TRY">TRY – Turkish Lira (₺)</option>
+            <option value="USD">USD – US Dollar ($)</option>
+            <option value="UYU">UYU – Uruguayan Peso ($U)</option>
+            <option value="ZAR">ZAR – South African Rand (R)</option>
           </SelectInput>
         </FormField>
 
         <FormField label="Language" required>
-          <SelectInput>
+          <SelectInput defaultValue={prefill.language ?? ''} key={prefill.language}>
             <option value="">Select Language</option>
-            <option>English</option>
-            <option>Spanish</option>
-            <option>Danish</option>
-            <option>French</option>
-            <option>German</option>
-            <option>Italian</option>
-            <option>Portuguese</option>
+            <option value="ar">Arabic (العربية)</option>
+            <option value="da">Danish (Dansk)</option>
+            <option value="nl">Dutch (Nederlands)</option>
+            <option value="en">English</option>
+            <option value="fi">Finnish (Suomi)</option>
+            <option value="fr">French (Français)</option>
+            <option value="de">German (Deutsch)</option>
+            <option value="el">Greek (Ελληνικά)</option>
+            <option value="it">Italian (Italiano)</option>
+            <option value="ja">Japanese (日本語)</option>
+            <option value="no">Norwegian (Norsk)</option>
+            <option value="pl">Polish (Polski)</option>
+            <option value="pt">Portuguese (Português)</option>
+            <option value="ru">Russian (Русский)</option>
+            <option value="es">Spanish (Español)</option>
+            <option value="sv">Swedish (Svenska)</option>
+            <option value="tr">Turkish (Türkçe)</option>
+            <option value="zh">Chinese (中文)</option>
           </SelectInput>
         </FormField>
 
         <FormField label="Date Format" required>
           <SelectInput>
             <option value="">Select Format</option>
-            <option>DD/MM/YYYY</option>
-            <option>MM/DD/YYYY</option>
-            <option>YYYY-MM-DD</option>
+            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
           </SelectInput>
         </FormField>
 
@@ -898,7 +1024,7 @@ const GeneralInformationStep = ({ prefill = {} }: { prefill?: Partial<PrefillDat
 );
 
 // 2 – Website & Brand Customization
-const WebsiteBrandStep = () => {
+const WebsiteBrandStep = ({ prefill = {} }: { prefill?: Partial<PrefillData> }) => {
   const fonts = [
     'Hanken Grotesk',
     'Inter',
@@ -926,7 +1052,11 @@ const WebsiteBrandStep = () => {
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <FormField label="Site Title" required className="col-span-2">
-            <TextInput placeholder="The Grand Pavilion – Official Booking" />
+            <TextInput
+              placeholder="The Grand Pavilion – Official Booking"
+              defaultValue={prefill.siteTitle ?? ''}
+              key={prefill.siteTitle}
+            />
           </FormField>
 
           <FormField label="Primary Color" required>
@@ -1929,7 +2059,7 @@ export default function App() {
   // Module components (inside App so `general` can close over prefillData)
   const moduleComponents: Record<string, React.ReactNode> = {
     general: <GeneralInformationStep prefill={prefillData} />,
-    brand: <WebsiteBrandStep />,
+    brand: <WebsiteBrandStep prefill={prefillData} />,
     dns: <DnsTrackingStep />,
     cancellation: <CancellationPoliciesStep />,
     rooms: <RoomInformationStep />,
