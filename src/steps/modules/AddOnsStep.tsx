@@ -1,22 +1,14 @@
-import { useState } from 'react';
+import { type Dispatch, type SetStateAction } from 'react';
 import { Icon, Toggle } from '../../components/ui/primitives';
 
-type AddonConfig = { enabled: boolean; price: string };
+export type AddonConfig = { enabled: boolean; price: string };
 
-export const AddOnsStep = () => {
-  const [addons, setAddons] = useState<Record<string, AddonConfig>>({
-    'Early Check-In': { enabled: true, price: '30' },
-    'Late Check-Out': { enabled: true, price: '30' },
-    'Airport Transfer': { enabled: false, price: '' },
-    'Breakfast Upgrade': { enabled: true, price: '25' },
-    Parking: { enabled: false, price: '' },
-    'Pet Fee': { enabled: false, price: '' },
-    'Extra Child': { enabled: true, price: '20' },
-    'Infant Crib': { enabled: false, price: '' },
-    'Extra Bed': { enabled: false, price: '' },
-    'Babysitting Service': { enabled: false, price: '' },
-  });
+interface Props {
+  addons: Record<string, AddonConfig>;
+  setAddons: Dispatch<SetStateAction<Record<string, AddonConfig>>>;
+}
 
+export const AddOnsStep = ({ addons, setAddons }: Props) => {
   const iconMap: Record<string, string> = {
     'Early Check-In': 'login',
     'Late Check-Out': 'logout',

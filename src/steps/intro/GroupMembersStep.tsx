@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import { Icon, TextInput, FormField } from '../../components/ui/primitives';
 import { GroupMember } from '../../types';
 
@@ -8,7 +8,7 @@ export const GroupMembersStep = ({
   onContinue,
 }: {
   members: GroupMember[];
-  setMembers: React.Dispatch<React.SetStateAction<GroupMember[]>>;
+  setMembers: Dispatch<SetStateAction<GroupMember[]>>;
   onContinue: () => void;
 }) => {
   const [name, setName] = useState('');

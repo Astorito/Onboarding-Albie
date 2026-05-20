@@ -1,11 +1,21 @@
-import { useState } from 'react';
+import { useState, Fragment, type Dispatch, type SetStateAction } from 'react';
 import { FormField, TextInput, TextareaInput, SelectInput } from '../../components/ui/primitives';
 import { ConfigSection, ItemCard, AddItemButton, FormActions } from '../../components/ui/layout';
 
-export const CancellationPoliciesStep = () => {
-  const [policies, setPolicies] = useState([
-    { id: 1, name: 'Flexible Policy', window: '24', penalty: 'No penalty', isDefault: true },
-  ]);
+export type CancellationPolicy = {
+  id: number;
+  name: string;
+  window: string;
+  penalty: string;
+  isDefault: boolean;
+};
+
+interface Props {
+  policies: CancellationPolicy[];
+  setPolicies: Dispatch<SetStateAction<CancellationPolicy[]>>;
+}
+
+export const CancellationPoliciesStep = ({ policies, setPolicies }: Props) => {
   const [showForm, setShowForm] = useState(false);
   const [penaltyType, setPenaltyType] = useState('No penalty');
 
@@ -30,16 +40,15 @@ export const CancellationPoliciesStep = () => {
       {!showForm ? (
         <div className="space-y-3">
           {policies.map((p) => (
-            <ItemCard
-              key={p.id}
-              icon="gavel"
-              title={
-                p.name + (p.isDefault ? ' · Default' : '')
-              }
-              subtitle={`Cancellation window: ${p.window}h · Penalty: ${p.penalty}`}
-              onEdit={() => {}}
-              onDelete={() => setPolicies((prev) => prev.filter((x) => x.id !== p.id))}
-            />
+            <Fragment key={p.id}>
+              <ItemCard
+                icon="gavel"
+                title={p.name + (p.isDefault ? ' · Default' : '')}
+                subtitle={`Cancellation window: ${p.window}h · Penalty: ${p.penalty}`}
+                onEdit={() => {}}
+                onDelete={() => setPolicies((prev) => prev.filter((x) => x.id !== p.id))}
+              />
+            </Fragment>
           ))}
           <AddItemButton label="Add Cancellation Policy" onClick={() => setShowForm(true)} />
         </div>

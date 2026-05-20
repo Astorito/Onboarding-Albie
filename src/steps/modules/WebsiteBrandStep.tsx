@@ -23,88 +23,94 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: Partial<PrefillDa
           Define the visual identity for your guest-facing booking engine.
         </p>
       </div>
-      <ConfigSection
-        title="Brand Identity"
-        description="Upload your logo, set brand colors, and choose typography for the booking experience."
-        icon="palette"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-          <FormField label="Site Title" required className="col-span-2">
-            <TextInput
-              placeholder="The Grand Pavilion – Official Booking"
-              defaultValue={prefill.siteTitle ?? ''}
-              key={prefill.siteTitle}
-            />
-          </FormField>
-
-          <FormField label="Primary Color" required>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                defaultValue="#5b6300"
-                className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
+      <form id="form-brand" onSubmit={(e) => e.preventDefault()}>
+        <ConfigSection
+          title="Brand Identity"
+          description="Upload your logo, set brand colors, and choose typography for the booking experience."
+          icon="palette"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            <FormField label="Site Title" required className="col-span-2">
+              <TextInput
+                name="siteTitle"
+                placeholder="The Grand Pavilion – Official Booking"
+                defaultValue={prefill.siteTitle ?? ''}
+                key={prefill.siteTitle}
               />
-              <TextInput placeholder="#5b6300" />
-            </div>
-          </FormField>
+            </FormField>
 
-          <FormField label="Secondary Color" required>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                defaultValue="#dfec60"
-                className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
-              />
-              <TextInput placeholder="#dfec60" />
-            </div>
-          </FormField>
+            <FormField label="Primary Color" required>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  name="primaryColorPicker"
+                  defaultValue="#5b6300"
+                  className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
+                />
+                <TextInput name="primaryColor" placeholder="#5b6300" defaultValue="#5b6300" />
+              </div>
+            </FormField>
 
-          <FormField label="Accent Color" required>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                defaultValue="#00191a"
-                className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
-              />
-              <TextInput placeholder="#00191a" />
-            </div>
-          </FormField>
+            <FormField label="Secondary Color" required>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  name="secondaryColorPicker"
+                  defaultValue="#dfec60"
+                  className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
+                />
+                <TextInput name="secondaryColor" placeholder="#dfec60" defaultValue="#dfec60" />
+              </div>
+            </FormField>
 
-          <FormField label="Font Family" required>
-            <SelectInput>
-              {fonts.map((f) => (
-                <option key={f}>{f}</option>
-              ))}
-            </SelectInput>
-          </FormField>
+            <FormField label="Accent Color" required>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  name="accentColorPicker"
+                  defaultValue="#00191a"
+                  className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
+                />
+                <TextInput name="accentColor" placeholder="#00191a" defaultValue="#00191a" />
+              </div>
+            </FormField>
 
-          <FormField label="Button Style">
-            <SelectInput>
-              {buttonStyles.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </SelectInput>
-          </FormField>
+            <FormField label="Font Family" required>
+              <SelectInput name="fontFamily">
+                {fonts.map((f) => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
+              </SelectInput>
+            </FormField>
 
-          <FormField label="Logo Upload" required>
-            <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-outline-variant rounded-xl cursor-pointer hover:border-primary transition-colors group">
-              <Icon name="upload" className="text-2xl text-primary/40 group-hover:text-primary mb-1" />
-              <span className="text-xs text-on-surface-variant font-bold">Click to upload</span>
-              <span className="text-[10px] text-on-surface-variant">SVG, PNG or JPG (max 2MB)</span>
-              <input type="file" className="hidden" accept=".svg,.png,.jpg,.jpeg" />
-            </label>
-          </FormField>
+            <FormField label="Button Style">
+              <SelectInput name="buttonStyle">
+                {buttonStyles.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </SelectInput>
+            </FormField>
 
-          <FormField label="Favicon Upload" required>
-            <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-outline-variant rounded-xl cursor-pointer hover:border-primary transition-colors group">
-              <Icon name="upload" className="text-2xl text-primary/40 group-hover:text-primary mb-1" />
-              <span className="text-xs text-on-surface-variant font-bold">Click to upload</span>
-              <span className="text-[10px] text-on-surface-variant">ICO or PNG 32×32px</span>
-              <input type="file" className="hidden" accept=".ico,.png" />
-            </label>
-          </FormField>
-        </div>
-      </ConfigSection>
+            <FormField label="Logo Upload" required>
+              <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-outline-variant rounded-xl cursor-pointer hover:border-primary transition-colors group">
+                <Icon name="upload" className="text-2xl text-primary/40 group-hover:text-primary mb-1" />
+                <span className="text-xs text-on-surface-variant font-bold">Click to upload</span>
+                <span className="text-[10px] text-on-surface-variant">SVG, PNG or JPG (max 2MB)</span>
+                <input type="file" className="hidden" accept=".svg,.png,.jpg,.jpeg" />
+              </label>
+            </FormField>
+
+            <FormField label="Favicon Upload" required>
+              <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-outline-variant rounded-xl cursor-pointer hover:border-primary transition-colors group">
+                <Icon name="upload" className="text-2xl text-primary/40 group-hover:text-primary mb-1" />
+                <span className="text-xs text-on-surface-variant font-bold">Click to upload</span>
+                <span className="text-[10px] text-on-surface-variant">ICO or PNG 32×32px</span>
+                <input type="file" className="hidden" accept=".ico,.png" />
+              </label>
+            </FormField>
+          </div>
+        </ConfigSection>
+      </form>
     </div>
   );
 };

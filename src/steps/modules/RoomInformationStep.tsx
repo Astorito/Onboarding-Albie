@@ -1,12 +1,23 @@
-import { useState } from 'react';
+import { useState, Fragment, type Dispatch, type SetStateAction } from 'react';
 import { Icon, FormField, TextInput, SelectInput } from '../../components/ui/primitives';
 import { ConfigSection, ItemCard, AddItemButton, FormActions } from '../../components/ui/layout';
 
-export const RoomInformationStep = () => {
-  const [rooms, setRooms] = useState([
-    { id: 1, name: 'Standard King', type: 'Standard Room', bed: 'King', bedrooms: 1 },
-  ]);
-  const [showForm, setShowForm] = useState(true);
+export type RoomItem = {
+  id: number;
+  name: string;
+  type: string;
+  bed: string;
+  bedrooms: number;
+  facilities?: string[];
+};
+
+interface Props {
+  rooms: RoomItem[];
+  setRooms: Dispatch<SetStateAction<RoomItem[]>>;
+}
+
+export const RoomInformationStep = ({ rooms, setRooms }: Props) => {
+  const [showForm, setShowForm] = useState(rooms.length === 0);
   const [facilities, setFacilities] = useState<string[]>(['WiFi', 'Smart TV', 'Air Conditioning']);
 
   const facilityList = [
@@ -30,7 +41,7 @@ export const RoomInformationStep = () => {
   const saveRoom = () => {
     setRooms((prev) => [
       ...prev,
-      { id: Date.now(), name: 'New Room', type: 'Standard Room', bed: 'Queen', bedrooms: 1 },
+      { id: Date.now(), name: 'New Room', type: 'Standard Room', bed: 'Queen', bedrooms: 1, facilities },
     ]);
     setShowForm(false);
     setFacilities(['WiFi', 'Smart TV', 'Air Conditioning']);
@@ -48,14 +59,15 @@ export const RoomInformationStep = () => {
       {!showForm ? (
         <div className="space-y-3">
           {rooms.map((r) => (
-            <ItemCard
-              key={r.id}
-              icon="bed"
-              title={r.name}
-              subtitle={`${r.type} · ${r.bed} bed · ${r.bedrooms} bedroom(s)`}
-              onEdit={() => {}}
-              onDelete={() => setRooms((prev) => prev.filter((x) => x.id !== r.id))}
-            />
+            <Fragment key={r.id}>
+              <ItemCard
+                icon="bed"
+                title={r.name}
+                subtitle={`${r.type} · ${r.bed} bed · ${r.bedrooms} bedroom(s)`}
+                onEdit={() => {}}
+                onDelete={() => setRooms((prev) => prev.filter((x) => x.id !== r.id))}
+              />
+            </Fragment>
           ))}
           <AddItemButton label="Add Room Type" onClick={() => setShowForm(true)} />
         </div>

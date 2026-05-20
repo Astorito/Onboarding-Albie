@@ -1,5 +1,6 @@
 // Vercel Serverless Function — POST /api/submit
-// Appends one row to the Albie Onboarding Google Sheet.
+// Upserts one row in the Albie Onboarding Google Sheet.
+// Matches by Session ID (column A): updates existing row or appends a new one.
 //
 // Required env vars:
 //   GOOGLE_SHEET_ID             — ID from the sheet URL (between /d/ and /edit)
@@ -9,7 +10,8 @@ import { google } from 'googleapis';
 
 // ─── Column headers (must match the sheet's first row exactly) ───────────────
 export const SHEET_HEADERS = [
-  // Meta
+  // Identity
+  'Session ID',
   'Timestamp',
   'Property Type',
   // General Information
@@ -60,6 +62,7 @@ export const SHEET_HEADERS = [
 
 // ─── Payload type ─────────────────────────────────────────────────────────────
 export interface SubmitPayload {
+  sessionId: string;
   propertyType: 'independent' | 'group';
   general: {
     propertyName?: string;
@@ -108,6 +111,7 @@ export interface SubmitPayload {
 function rowFromPayload(payload: SubmitPayload): string[] {
   const { general, brand, dns, occupancy } = payload;
   return [
+    payload.sessionId,
     new Date().toISOString(),
     payload.propertyType ?? '',
     // General
@@ -171,33 +175,56 @@ export default async function handler(req: any, res: any) {
   if (!payload?.propertyType) {
     return res.status(400).json({ error: 'Invalid payload: propertyType is required.' });
   }
+  if (!payload?.sessionId) {
+    return res.status(400).json({ error: 'Invalid payload: sessionId is required.' });
+  }
 
   try {
-    // Parse credentials — Vercel stores multi-line private_key with literal \n
     const credentials = JSON.parse(serviceAccountJson);
     if (credentials.private_key) {
       credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
     }
 
-    // Authenticate with Google
     const auth = new google.auth.GoogleAuth({
       credentials,
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
     });
 
     const sheets = google.sheets({ version: 'v4', auth });
+    const rowData = rowFromPayload(payload);
 
-    // Append one row to the first sheet
-    await sheets.spreadsheets.values.append({
+    // ── Look for an existing row with this sessionId (column A) ────────────
+    const searchRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: 'Sheet1!A1',
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [rowFromPayload(payload)],
-      },
+      range: 'Sheet1!A:A',
     });
 
-    return res.status(200).json({ success: true });
+    const existingRows = searchRes.data.values ?? [];
+    // Row 0 is the header; data starts at index 1
+    const matchIndex = existingRows.findIndex(
+      (row, i) => i > 0 && row[0] === payload.sessionId
+    );
+
+    if (matchIndex > 0) {
+      // ── Update existing row ─────────────────────────────────────────────
+      const sheetRowNumber = matchIndex + 1; // convert to 1-based
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: sheetId,
+        range: `Sheet1!A${sheetRowNumber}`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [rowData] },
+      });
+      return res.status(200).json({ success: true, action: 'updated', row: sheetRowNumber });
+    } else {
+      // ── Append new row ──────────────────────────────────────────────────
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: sheetId,
+        range: 'Sheet1!A1',
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [rowData] },
+      });
+      return res.status(200).json({ success: true, action: 'created' });
+    }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('[submit]', message);

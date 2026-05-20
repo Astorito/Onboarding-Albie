@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import { motion } from 'motion/react';
 import { Icon, TextInput } from '../../components/ui/primitives';
 import { PrefillData } from '../../types';
@@ -63,7 +63,7 @@ export const URLAnalysisStep = ({
               placeholder="https://www.yourhotel.com"
               value={url}
               onChange={(e) => setUrl((e.target as HTMLInputElement).value)}
-              onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleAnalyze()}
+              onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleAnalyze()}
               className={`flex-1 ${done ? 'border-secondary bg-secondary-container/30' : ''}`}
             />
             <button

@@ -9,36 +9,38 @@ export const RoomOccupancyStep = () => (
         Set occupancy limits for adults, children, and total guests per room.
       </p>
     </div>
-    <ConfigSection
-      title="Capacity Settings"
-      description="Define the minimum and maximum occupancy rules that apply across your room inventory."
-      icon="group"
-    >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-        <FormField label="Minimum Adults" required>
-          <TextInput type="number" min={1} placeholder="1" />
-        </FormField>
+    <form id="form-occupancy" onSubmit={(e) => e.preventDefault()}>
+      <ConfigSection
+        title="Capacity Settings"
+        description="Define the minimum and maximum occupancy rules that apply across your room inventory."
+        icon="group"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          <FormField label="Minimum Adults" required>
+            <TextInput name="minAdults" type="number" min={1} placeholder="1" />
+          </FormField>
 
-        <FormField label="Maximum Adults" required>
-          <TextInput type="number" min={1} placeholder="2" />
-        </FormField>
+          <FormField label="Maximum Adults" required>
+            <TextInput name="maxAdults" type="number" min={1} placeholder="2" />
+          </FormField>
 
-        <FormField label="Maximum Total Occupants" required>
-          <TextInput type="number" min={1} placeholder="3" />
-        </FormField>
+          <FormField label="Maximum Total Occupants" required>
+            <TextInput name="maxOccupants" type="number" min={1} placeholder="3" />
+          </FormField>
 
-        <FormField label="Children Capacity" required>
-          <TextInput type="number" min={0} placeholder="1" />
-        </FormField>
+          <FormField label="Children Capacity" required>
+            <TextInput name="childrenCapacity" type="number" min={0} placeholder="1" />
+          </FormField>
 
-        <FormField
-          label="Included Occupancy"
-          className="col-span-2"
-          hint="Number of guests included in the base rate without additional charges."
-        >
-          <TextInput type="number" min={1} placeholder="2" />
-        </FormField>
-      </div>
-    </ConfigSection>
+          <FormField
+            label="Included Occupancy"
+            className="col-span-2"
+            hint="Number of guests included in the base rate without additional charges."
+          >
+            <TextInput name="includedOccupancy" type="number" min={1} placeholder="2" />
+          </FormField>
+        </div>
+      </ConfigSection>
+    </form>
   </div>
 );

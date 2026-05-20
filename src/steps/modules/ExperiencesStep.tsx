@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { FormField, TextInput, TextareaInput, SelectInput } from '../../components/ui/primitives';
 import { ConfigSection, ItemCard, AddItemButton, FormActions } from '../../components/ui/layout';
 
@@ -28,14 +28,15 @@ export const ExperiencesStep = () => {
       {!showForm ? (
         <div className="space-y-3">
           {experiences.map((e) => (
-            <ItemCard
-              key={e.id}
-              icon="local_activity"
-              title={e.description}
-              subtitle={`Group: ${e.group}`}
-              onEdit={() => {}}
-              onDelete={() => setExperiences((prev) => prev.filter((x) => x.id !== e.id))}
-            />
+            <Fragment key={e.id}>
+              <ItemCard
+                icon="local_activity"
+                title={e.description}
+                subtitle={`Group: ${e.group}`}
+                onEdit={() => {}}
+                onDelete={() => setExperiences((prev) => prev.filter((x) => x.id !== e.id))}
+              />
+            </Fragment>
           ))}
           <AddItemButton label="Add Experience" onClick={() => setShowForm(true)} />
         </div>

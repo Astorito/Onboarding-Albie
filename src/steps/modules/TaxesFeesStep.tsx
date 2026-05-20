@@ -1,12 +1,22 @@
-import { useState } from 'react';
+import { useState, Fragment, type Dispatch, type SetStateAction } from 'react';
 import { FormField, TextInput, TextareaInput, SelectInput } from '../../components/ui/primitives';
 import { ConfigSection, ItemCard, AddItemButton, FormActions } from '../../components/ui/layout';
 
-export const TaxesFeesStep = () => {
-  const [taxes, setTaxes] = useState([
-    { id: 1, name: 'VAT', type: 'Value Added Tax (VAT)', chargeType: 'Percentage', value: '21' },
-  ]);
-  const [showForm, setShowForm] = useState(true);
+export type TaxItem = {
+  id: number;
+  name: string;
+  type: string;
+  chargeType: string;
+  value: string;
+};
+
+interface Props {
+  taxes: TaxItem[];
+  setTaxes: Dispatch<SetStateAction<TaxItem[]>>;
+}
+
+export const TaxesFeesStep = ({ taxes, setTaxes }: Props) => {
+  const [showForm, setShowForm] = useState(taxes.length === 0);
   const [chargeType, setChargeType] = useState('Percentage');
 
   const taxTypes = [
@@ -41,14 +51,15 @@ export const TaxesFeesStep = () => {
       {!showForm ? (
         <div className="space-y-3">
           {taxes.map((t) => (
-            <ItemCard
-              key={t.id}
-              icon="payments"
-              title={t.name}
-              subtitle={`${t.type} · ${t.chargeType} ${t.value}${t.chargeType === 'Percentage' ? '%' : ''}`}
-              onEdit={() => {}}
-              onDelete={() => setTaxes((prev) => prev.filter((x) => x.id !== t.id))}
-            />
+            <Fragment key={t.id}>
+              <ItemCard
+                icon="payments"
+                title={t.name}
+                subtitle={`${t.type} · ${t.chargeType} ${t.value}${t.chargeType === 'Percentage' ? '%' : ''}`}
+                onEdit={() => {}}
+                onDelete={() => setTaxes((prev) => prev.filter((x) => x.id !== t.id))}
+              />
+            </Fragment>
           ))}
           <AddItemButton label="Add Tax or Fee" onClick={() => setShowForm(true)} />
         </div>
