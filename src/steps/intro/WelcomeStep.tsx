@@ -2,12 +2,14 @@ import { Icon } from '../../components/ui/primitives';
 
 export const WelcomeStep = ({ onNext }: { onNext: () => void }) => (
   <main className="h-full flex items-center justify-center overflow-hidden px-margin-mobile relative">
-    {/* Logo — top left, small */}
-    <img
-      src="https://albiebytag.com/wp-content/uploads/2024/09/Albie-logo.svg"
-      alt="Albie by TAG"
-      className="absolute top-6 left-6 h-8 w-auto"
-    />
+    {/* Logo — top left, small, on dark pill so colors are visible */}
+    <div className="absolute top-5 left-6 bg-primary rounded-xl px-3 py-1.5">
+      <img
+        src="https://albiebytag.com/wp-content/uploads/2024/09/Albie-logo.svg"
+        alt="Albie by TAG"
+        className="h-7 w-auto"
+      />
+    </div>
     <div className="max-w-container-max-width w-full grid md:grid-cols-12 gap-gutter items-center">
       <div className="md:col-span-6 flex flex-col items-start gap-6 py-4">
         <div className="flex flex-col gap-2">

@@ -43,7 +43,7 @@ export const URLAnalysisStep = ({
       <img
         src="https://albiebytag.com/wp-content/uploads/2024/09/Albie-logo.svg"
         alt="Albie by TAG"
-        className="absolute top-6 right-6 h-9 w-auto"
+        className="hidden"
       />
       <div className="w-full max-w-container-max-width grid md:grid-cols-12 gap-gutter items-center">
 
