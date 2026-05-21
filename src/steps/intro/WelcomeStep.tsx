@@ -5,6 +5,11 @@ export const WelcomeStep = ({ onNext }: { onNext: () => void }) => (
     <div className="max-w-container-max-width w-full grid md:grid-cols-12 gap-gutter items-center">
       <div className="md:col-span-6 flex flex-col items-start gap-6 py-4">
         <div className="flex flex-col gap-2">
+          <img
+            src="https://albiebytag.com/wp-content/uploads/2024/09/Albie-logo.svg"
+            alt="Albie by TAG"
+            className="h-10 w-auto mb-2"
+          />
           <span className="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-lg font-label-md inline-block w-fit">
             ESTIMATE TIME: 8 MINUTES
           </span>

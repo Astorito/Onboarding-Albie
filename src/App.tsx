@@ -314,7 +314,14 @@ export default function App() {
           {/* Module steps + Review */}
           {currentStep >= firstModule && currentStep < successStep && (
             <motion.div key="stepper" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-grow overflow-y-auto custom-scrollbar">
-              <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pt-6 pb-3 px-margin-mobile md:px-margin-desktop">
+              <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pt-4 pb-3 px-margin-mobile md:px-margin-desktop">
+                <div className="flex items-center mb-3 w-full max-w-[600px] mx-auto">
+                  <img
+                    src="https://albiebytag.com/wp-content/uploads/2024/09/Albie-logo.svg"
+                    alt="Albie by TAG"
+                    className="h-6 w-auto opacity-80"
+                  />
+                </div>
                 <ProgressBar currentStep={progressCurrent} totalSteps={progressTotal} />
               </div>
 

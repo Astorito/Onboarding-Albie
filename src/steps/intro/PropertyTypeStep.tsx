@@ -1,7 +1,12 @@
 import { Icon } from '../../components/ui/primitives';
 
 export const PropertyTypeStep = ({ onSelect }: { onSelect: (type: 'independent' | 'group') => void }) => (
-  <main className="h-full flex items-center justify-center overflow-hidden px-margin-mobile md:px-margin-desktop">
+  <main className="h-full flex items-center justify-center overflow-hidden px-margin-mobile md:px-margin-desktop relative">
+    <img
+      src="https://albiebytag.com/wp-content/uploads/2024/09/Albie-logo.svg"
+      alt="Albie by TAG"
+      className="absolute top-6 right-6 h-7 w-auto opacity-70"
+    />
     <div className="w-full max-w-container-max-width grid md:grid-cols-12 gap-gutter items-center">
 
       {/* Left: heading */}
