@@ -54,8 +54,15 @@ const DEFAULT_TAXES: TaxItem[] = [
 ];
 
 export default function App() {
-  // ── Session ID — generated once per browser session ──────────────────────
-  const [sessionId] = useState(() => `albie_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
+  // ── Session ID — persisted in localStorage so same row is reused on revisit ─
+  const [sessionId] = useState(() => {
+    const STORAGE_KEY = 'albie_session_id';
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return stored;
+    const newId = `albie_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    localStorage.setItem(STORAGE_KEY, newId);
+    return newId;
+  });
 
   // ── Auto-save indicator ───────────────────────────────────────────────────
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -132,16 +139,20 @@ export default function App() {
   const goBack = () => { window.scrollTo(0, 0); setCurrentStep((s) => s - 1); };
 
   // ── Build full submit payload ─────────────────────────────────────────────
-  const buildPayload = (extraForms?: Record<string, Record<string, string>>) => {
+  const buildPayload = (
+    extraForms?: Record<string, Record<string, string>>,
+    overrides?: { propertyType?: 'independent' | 'group' },
+  ) => {
     const forms = extraForms ?? savedForms;
     const g = forms.general   ?? {};
     const b = forms.brand     ?? {};
     const d = forms.dns       ?? {};
     const o = forms.occupancy ?? {};
+    const pt = overrides?.propertyType ?? propertyType ?? 'independent';
 
     return {
       sessionId,
-      propertyType: propertyType ?? 'independent',
+      propertyType: pt,
       general: {
         propertyName:      g.propertyName      || prefillData.propertyName      || '',
         description:       g.description       || prefillData.description       || '',
@@ -293,7 +304,12 @@ export default function App() {
           {/* Step 1 – Property Type */}
           {currentStep === 1 && (
             <motion.div key="property-type" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full">
-              <PropertyTypeStep onSelect={(type) => { setPropertyType(type); goNext(); }} />
+              <PropertyTypeStep onSelect={(type) => {
+                setPropertyType(type);
+                goNext();
+                // Save immediately — creates the Sheets row before any form is filled
+                saveInBackground(buildPayload(undefined, { propertyType: type }));
+              }} />
             </motion.div>
           )}
 
@@ -347,7 +363,9 @@ export default function App() {
 
           {/* Success */}
           {currentStep === successStep && (
-            <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full">
+            <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full"
+              onAnimationStart={() => localStorage.removeItem('albie_session_id')}
+            >
               <SuccessStep />
             </motion.div>
           )}
