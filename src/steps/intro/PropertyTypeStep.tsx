@@ -5,7 +5,8 @@ export const PropertyTypeStep = ({ onSelect }: { onSelect: (type: 'independent' 
     <img
       src="https://albiebytag.com/wp-content/uploads/2024/09/Albie-logo.svg"
       alt="Albie by TAG"
-      className="absolute top-6 right-6 h-7 w-auto opacity-70"
+      className="absolute top-6 right-6 h-8 w-auto"
+      style={{ filter: 'brightness(0) saturate(100%)' }}
     />
     <div className="w-full max-w-container-max-width grid md:grid-cols-12 gap-gutter items-center">
 

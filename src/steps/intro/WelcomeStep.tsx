@@ -8,7 +8,8 @@ export const WelcomeStep = ({ onNext }: { onNext: () => void }) => (
           <img
             src="https://albiebytag.com/wp-content/uploads/2024/09/Albie-logo.svg"
             alt="Albie by TAG"
-            className="h-10 w-auto mb-2"
+            className="h-12 w-auto mb-2"
+            style={{ filter: 'brightness(0) saturate(100%)' }}
           />
           <span className="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-lg font-label-md inline-block w-fit">
             ESTIMATE TIME: 8 MINUTES

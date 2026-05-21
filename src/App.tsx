@@ -319,7 +319,8 @@ export default function App() {
                   <img
                     src="https://albiebytag.com/wp-content/uploads/2024/09/Albie-logo.svg"
                     alt="Albie by TAG"
-                    className="h-6 w-auto opacity-80"
+                    className="h-7 w-auto"
+                    style={{ filter: 'brightness(0) saturate(100%)' }}
                   />
                 </div>
                 <ProgressBar currentStep={progressCurrent} totalSteps={progressTotal} />
