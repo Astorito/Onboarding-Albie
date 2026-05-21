@@ -3,11 +3,11 @@ import { Icon } from '../../components/ui/primitives';
 export const WelcomeStep = ({ onNext }: { onNext: () => void }) => (
   <main className="h-full flex items-center justify-center overflow-hidden px-margin-mobile relative">
     {/* Logo — top left, small, on dark pill so colors are visible */}
-    <div className="absolute top-5 left-6 bg-primary rounded-xl px-3 py-1.5">
+    <div className="absolute top-5 left-6">
       <img
-        src="https://albiebytag.com/wp-content/uploads/2024/09/Albie-logo.svg"
+        src="/albie-logo-dark.svg"
         alt="Albie by TAG"
-        className="h-7 w-auto"
+        className="h-8 w-auto"
       />
     </div>
     <div className="max-w-container-max-width w-full grid md:grid-cols-12 gap-gutter items-center">

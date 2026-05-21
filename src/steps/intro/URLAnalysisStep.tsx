@@ -41,7 +41,7 @@ export const URLAnalysisStep = ({
   return (
     <main className="h-full flex items-center justify-center overflow-hidden px-margin-mobile md:px-margin-desktop relative">
       <img
-        src="https://albiebytag.com/wp-content/uploads/2024/09/Albie-logo.svg"
+        src="/albie-logo-dark.svg"
         alt="Albie by TAG"
         className="hidden"
       />
