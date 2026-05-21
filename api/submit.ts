@@ -35,6 +35,8 @@ export const SHEET_HEADERS = [
   'Accent Color',
   'Font Family',
   'Button Style',
+  'Logo URL',
+  'Favicon URL',
   // DNS & Tracking
   'Subdomain',
   'GTM ID',
@@ -42,14 +44,8 @@ export const SHEET_HEADERS = [
   'Google Map ID',
   // Cancellation Policies (JSON array)
   'Cancellation Policies',
-  // Rooms (JSON array)
+  // Rooms (JSON array — includes per-room occupancy)
   'Rooms',
-  // Room Occupancy
-  'Min Adults',
-  'Max Adults',
-  'Max Occupants',
-  'Children Capacity',
-  'Included Occupancy',
   // Add-ons (JSON object)
   'Add-ons',
   // Rates (JSON)
@@ -86,6 +82,8 @@ export interface SubmitPayload {
     accentColor?: string;
     fontFamily?: string;
     buttonStyle?: string;
+    logoUrl?: string;
+    faviconUrl?: string;
   };
   dns: {
     subdomain?: string;
@@ -95,13 +93,6 @@ export interface SubmitPayload {
   };
   cancellationPolicies?: object[];
   rooms?: object[];
-  occupancy?: {
-    minAdults?: string;
-    maxAdults?: string;
-    maxOccupants?: string;
-    childrenCapacity?: string;
-    includedOccupancy?: string;
-  };
   addons?: Record<string, { enabled: boolean; price: string }>;
   rates?: object;
   taxes?: object[];
@@ -109,7 +100,7 @@ export interface SubmitPayload {
 }
 
 function rowFromPayload(payload: SubmitPayload): string[] {
-  const { general, brand, dns, occupancy } = payload;
+  const { general, brand, dns } = payload;
   return [
     payload.sessionId,
     new Date().toISOString(),
@@ -135,19 +126,16 @@ function rowFromPayload(payload: SubmitPayload): string[] {
     brand?.accentColor ?? '',
     brand?.fontFamily ?? '',
     brand?.buttonStyle ?? '',
+    brand?.logoUrl ?? '',
+    brand?.faviconUrl ?? '',
     // DNS
     dns?.subdomain ?? '',
     dns?.gtmId ?? '',
     dns?.ga4Id ?? '',
     dns?.mapId ?? '',
-    // Complex fields as JSON strings
+    // Complex fields as JSON strings (rooms now includes per-room occupancy)
     JSON.stringify(payload.cancellationPolicies ?? []),
     JSON.stringify(payload.rooms ?? []),
-    occupancy?.minAdults ?? '',
-    occupancy?.maxAdults ?? '',
-    occupancy?.maxOccupants ?? '',
-    occupancy?.childrenCapacity ?? '',
-    occupancy?.includedOccupancy ?? '',
     JSON.stringify(payload.addons ?? {}),
     JSON.stringify(payload.rates ?? {}),
     JSON.stringify(payload.taxes ?? []),

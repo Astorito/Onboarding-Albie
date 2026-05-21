@@ -1,4 +1,4 @@
-import { Icon, FormField, TextInput, SelectInput } from '../../components/ui/primitives';
+import { FormField, TextInput, SelectInput } from '../../components/ui/primitives';
 import { ConfigSection } from '../../components/ui/layout';
 import { PrefillData } from '../../types';
 
@@ -30,7 +30,7 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: Partial<PrefillDa
           icon="palette"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            <FormField label="Site Title" required className="col-span-2">
+            <FormField label="Site Title" required className="col-span-2" hint="Appears in the browser tab and as the booking engine header.">
               <TextInput
                 name="siteTitle"
                 placeholder="The Grand Pavilion – Official Booking"
@@ -91,22 +91,20 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: Partial<PrefillDa
               </SelectInput>
             </FormField>
 
-            <FormField label="Logo Upload" required>
-              <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-outline-variant rounded-xl cursor-pointer hover:border-primary transition-colors group">
-                <Icon name="upload" className="text-2xl text-primary/40 group-hover:text-primary mb-1" />
-                <span className="text-xs text-on-surface-variant font-bold">Click to upload</span>
-                <span className="text-[10px] text-on-surface-variant">SVG, PNG or JPG (max 2MB)</span>
-                <input type="file" className="hidden" accept=".svg,.png,.jpg,.jpeg" />
-              </label>
+            <FormField label="Logo URL" required hint="Paste a public URL — SVG, PNG or JPG hosted anywhere (e.g. your CDN, S3, or website).">
+              <TextInput
+                name="logoUrl"
+                type="url"
+                placeholder="https://yourhotel.com/logo.svg"
+              />
             </FormField>
 
-            <FormField label="Favicon Upload" required>
-              <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-outline-variant rounded-xl cursor-pointer hover:border-primary transition-colors group">
-                <Icon name="upload" className="text-2xl text-primary/40 group-hover:text-primary mb-1" />
-                <span className="text-xs text-on-surface-variant font-bold">Click to upload</span>
-                <span className="text-[10px] text-on-surface-variant">ICO or PNG 32×32px</span>
-                <input type="file" className="hidden" accept=".ico,.png" />
-              </label>
+            <FormField label="Favicon URL" required hint="A square icon (32×32 px) ICO or PNG hosted publicly.">
+              <TextInput
+                name="faviconUrl"
+                type="url"
+                placeholder="https://yourhotel.com/favicon.ico"
+              />
             </FormField>
           </div>
         </ConfigSection>

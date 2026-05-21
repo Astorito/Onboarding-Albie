@@ -42,12 +42,12 @@ export const FormField = ({
   hint?: string;
   children: React.ReactNode;
 }) => (
-  <div className={`flex flex-col gap-1.5 ${className}`}>
-    <label className="font-bold text-primary text-xs flex items-center gap-1">
-      {label} {required && <span className="text-red-500">*</span>}
+  <div className={`flex flex-col gap-2 ${className}`}>
+    <label className="font-bold text-primary text-[11px] uppercase tracking-wider flex items-center gap-1">
+      {label} {required && <span className="text-red-500 text-sm font-black">*</span>}
     </label>
     {children}
-    {hint && <p className="text-[10px] text-on-surface-variant leading-relaxed">{hint}</p>}
+    {hint && <p className="text-[10px] text-on-surface-variant leading-relaxed italic">{hint}</p>}
   </div>
 );
 

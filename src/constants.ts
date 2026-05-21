@@ -27,13 +27,7 @@ export const ALL_MODULES = [
     id: 'rooms',
     title: 'Room Information',
     icon: 'bed',
-    description: 'Room types, beds, images, and facilities.',
-  },
-  {
-    id: 'occupancy',
-    title: 'Room Occupancy',
-    icon: 'group',
-    description: 'Capacity limits for adults, children, and total guests.',
+    description: 'Room types, beds, images, facilities, and occupancy.',
   },
   {
     id: 'experiences',
@@ -61,7 +55,7 @@ export const ALL_MODULES = [
   },
 ];
 
-export const DEFAULT_ENABLED = ['general', 'brand', 'cancellation', 'rooms', 'occupancy', 'addons', 'rates', 'taxes'];
+export const DEFAULT_ENABLED = ['general', 'brand', 'cancellation', 'rooms', 'addons', 'rates', 'taxes'];
 
 // Demo data shown in the URLAnalysisStep preview card (not used as fallback)
 export const MOCK_PREFILL = {

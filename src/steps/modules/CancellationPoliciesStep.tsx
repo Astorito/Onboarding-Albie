@@ -5,9 +5,30 @@ import { ConfigSection, ItemCard, AddItemButton, FormActions } from '../../compo
 export type CancellationPolicy = {
   id: number;
   name: string;
-  window: string;
-  penalty: string;
+  description: string;
+  window: string;          // hours
+  penaltyType: string;     // "No penalty" | "Value of First Night" | "Percentage of Total" | "Fixed Amount"
+  penaltyValue: string;    // numeric string (empty when penaltyType doesn't need a value)
+  notes: string;
   isDefault: boolean;
+};
+
+const EMPTY_FORM: Omit<CancellationPolicy, 'id'> = {
+  name: '',
+  description: '',
+  window: '',
+  penaltyType: 'No penalty',
+  penaltyValue: '',
+  notes: '',
+  isDefault: false,
+};
+
+// Legacy support: keep `penalty` readable on old data
+const penaltyLabel = (p: CancellationPolicy) => {
+  if (!p.penaltyType || p.penaltyType === 'No penalty') return 'No penalty';
+  if (p.penaltyType === 'Percentage of Total') return `${p.penaltyValue || '0'}% of total`;
+  if (p.penaltyType === 'Fixed Amount') return `Fixed ${p.penaltyValue || '0'}`;
+  return p.penaltyType;
 };
 
 interface Props {
@@ -17,22 +38,52 @@ interface Props {
 
 export const CancellationPoliciesStep = ({ policies, setPolicies }: Props) => {
   const [showForm, setShowForm] = useState(false);
-  const [penaltyType, setPenaltyType] = useState('No penalty');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState({ ...EMPTY_FORM });
+
+  const update = <K extends keyof typeof EMPTY_FORM>(k: K, v: (typeof EMPTY_FORM)[K]) =>
+    setForm((f) => ({ ...f, [k]: v }));
+
+  const startNew = () => {
+    setForm({ ...EMPTY_FORM });
+    setEditingId(null);
+    setShowForm(true);
+  };
+
+  const startEdit = (p: CancellationPolicy) => {
+    setForm({
+      name: p.name,
+      description: p.description ?? '',
+      window: p.window,
+      penaltyType: p.penaltyType ?? 'No penalty',
+      penaltyValue: p.penaltyValue ?? '',
+      notes: p.notes ?? '',
+      isDefault: p.isDefault,
+    });
+    setEditingId(p.id);
+    setShowForm(true);
+  };
+
+  const cancel = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setForm({ ...EMPTY_FORM });
+  };
 
   const savePolicy = () => {
-    setPolicies((prev) => [
-      ...prev,
-      { id: Date.now(), name: 'New Policy', window: '48', penalty: penaltyType, isDefault: false },
-    ]);
-    setShowForm(false);
-    setPenaltyType('No penalty');
+    if (editingId !== null) {
+      setPolicies((prev) => prev.map((p) => (p.id === editingId ? { ...p, ...form } : p)));
+    } else {
+      setPolicies((prev) => [...prev, { id: Date.now(), ...form }]);
+    }
+    cancel();
   };
 
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col py-4">
-      <div className="mb-4 shrink-0">
-        <h1 className="font-display-lg text-xl text-primary font-bold">Cancellation Policies</h1>
-        <p className="text-on-surface-variant text-xs">
+      <div className="mb-5 shrink-0">
+        <h1 className="font-display-lg text-2xl text-primary font-bold">Cancellation Policies</h1>
+        <p className="text-on-surface-variant text-sm mt-1">
           Define refund windows and penalty conditions for your reservations.
         </p>
       </div>
@@ -44,43 +95,55 @@ export const CancellationPoliciesStep = ({ policies, setPolicies }: Props) => {
               <ItemCard
                 icon="gavel"
                 title={p.name + (p.isDefault ? ' · Default' : '')}
-                subtitle={`Cancellation window: ${p.window}h · Penalty: ${p.penalty}`}
-                onEdit={() => {}}
+                subtitle={`Window: ${p.window || '—'}h · Penalty: ${penaltyLabel(p)}`}
+                onEdit={() => startEdit(p)}
                 onDelete={() => setPolicies((prev) => prev.filter((x) => x.id !== p.id))}
               />
             </Fragment>
           ))}
-          <AddItemButton label="Add Cancellation Policy" onClick={() => setShowForm(true)} />
+          <AddItemButton label="Add Cancellation Policy" onClick={startNew} />
         </div>
       ) : (
         <ConfigSection
-          title="New Policy"
-          description="Define the conditions and penalty structure for this cancellation policy."
+          title={editingId !== null ? 'Edit Policy' : 'New Policy'}
+          description="Define when and how cancellation penalties apply to bookings under this policy."
           icon="gavel"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            <FormField label="Policy Name" required className="col-span-2">
-              <TextInput placeholder="Flexible Policy" />
-            </FormField>
-
-            <FormField label="Policy Description" required className="col-span-2">
-              <TextareaInput
-                rows={3}
-                placeholder={`e.g. Guests can cancel free of charge up to 24 hours before arrival.\nLate cancellations will incur a charge of the first night's stay.`}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+            <FormField label="Policy Name" required className="col-span-2" hint='Example: "Flexible 48-hour cancellation"'>
+              <TextInput
+                placeholder="Flexible Policy"
+                value={form.name}
+                onChange={(e) => update('name', e.target.value)}
               />
             </FormField>
 
-            <FormField label="Cancellation Window" required>
+            <FormField label="Policy Description" required className="col-span-2" hint="What the guest sees on the booking page.">
+              <TextareaInput
+                rows={3}
+                placeholder={`e.g. Guests can cancel free of charge up to 24 hours before arrival.\nLate cancellations will incur a charge of the first night's stay.`}
+                value={form.description}
+                onChange={(e) => update('description', e.target.value)}
+              />
+            </FormField>
+
+            <FormField label="Cancellation Window" required hint="Hours before arrival when free cancellation ends.">
               <div className="flex items-center gap-2">
-                <TextInput type="number" placeholder="24" className="flex-1" />
+                <TextInput
+                  type="number"
+                  placeholder="24"
+                  className="flex-1"
+                  value={form.window}
+                  onChange={(e) => update('window', e.target.value)}
+                />
                 <span className="text-sm text-on-surface-variant font-bold shrink-0">hours</span>
               </div>
             </FormField>
 
-            <FormField label="Penalty Applied" required>
+            <FormField label="Penalty Applied" required hint="What's charged if the guest cancels after the window closes.">
               <SelectInput
-                value={penaltyType}
-                onChange={(e) => setPenaltyType(e.target.value)}
+                value={form.penaltyType}
+                onChange={(e) => update('penaltyType', e.target.value)}
               >
                 <option>No penalty</option>
                 <option>Value of First Night</option>
@@ -89,26 +152,31 @@ export const CancellationPoliciesStep = ({ policies, setPolicies }: Props) => {
               </SelectInput>
             </FormField>
 
-            {(penaltyType === 'Percentage of Total' || penaltyType === 'Fixed Amount') && (
+            {(form.penaltyType === 'Percentage of Total' || form.penaltyType === 'Fixed Amount') && (
               <FormField
-                label={`Value ${penaltyType === 'Percentage of Total' ? '(%)' : '(Amount)'}`}
+                label={`Value ${form.penaltyType === 'Percentage of Total' ? '(%)' : '(Amount)'}`}
                 required
+                hint={form.penaltyType === 'Percentage of Total' ? 'A number between 1 and 100.' : 'In your property currency.'}
               >
                 <TextInput
                   type="number"
-                  placeholder={penaltyType === 'Percentage of Total' ? '25' : '150.00'}
+                  placeholder={form.penaltyType === 'Percentage of Total' ? '25' : '150.00'}
+                  value={form.penaltyValue}
+                  onChange={(e) => update('penaltyValue', e.target.value)}
                 />
               </FormField>
             )}
 
-            <FormField label="Additional Notes" className="col-span-2">
+            <FormField label="Additional Notes" className="col-span-2" hint="Optional internal notes — not shown to guests.">
               <TextareaInput
                 rows={2}
-                placeholder="Please include any special rules, exceptions, or additional cancellation conditions..."
+                placeholder="Special rules, exceptions, or extra conditions..."
+                value={form.notes}
+                onChange={(e) => update('notes', e.target.value)}
               />
             </FormField>
 
-            <FormActions onCancel={() => setShowForm(false)} onSave={savePolicy} />
+            <FormActions onCancel={cancel} onSave={savePolicy} saveLabel={editingId !== null ? 'Update' : 'Save'} />
           </div>
         </ConfigSection>
       )}

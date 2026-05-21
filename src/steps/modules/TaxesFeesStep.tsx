@@ -6,9 +6,31 @@ export type TaxItem = {
   id: number;
   name: string;
   type: string;
-  chargeType: string;
+  description: string;
+  chargeType: string;   // "Percentage" | "Fixed Amount"
   value: string;
+  quantifier: string;   // Per booking | Per room per night | Per person per night | Per stay
 };
+
+const EMPTY_FORM: Omit<TaxItem, 'id'> = {
+  name: '',
+  type: 'Other',
+  description: '',
+  chargeType: 'Percentage',
+  value: '',
+  quantifier: 'Per booking',
+};
+
+const taxTypes = [
+  'Room Tax', 'Sales Tax', 'Value Added Tax (VAT)', 'Tourism Tax', 'Occupancy Tax',
+  'State Tax', 'City Tax', 'Local Tax', 'Service Fee', 'Resort Fee', 'Package Fee',
+  'Room Service Fee', 'Cleaning Fee', 'Convenience Fee', 'Destination Fee', 'Amenity Fee',
+  'Environmental Fee', 'Eco Tax', 'Municipal Tax', 'Government Tax', 'Other',
+];
+
+const quantifiers = [
+  'Per booking', 'Per room per night', 'Per person per night', 'Per stay',
+];
 
 interface Props {
   taxes: TaxItem[];
@@ -17,34 +39,52 @@ interface Props {
 
 export const TaxesFeesStep = ({ taxes, setTaxes }: Props) => {
   const [showForm, setShowForm] = useState(taxes.length === 0);
-  const [chargeType, setChargeType] = useState('Percentage');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState({ ...EMPTY_FORM });
 
-  const taxTypes = [
-    'Room Tax', 'Sales Tax', 'Value Added Tax (VAT)', 'Tourism Tax', 'Occupancy Tax',
-    'State Tax', 'City Tax', 'Local Tax', 'Service Fee', 'Resort Fee', 'Package Fee',
-    'Room Service Fee', 'Cleaning Fee', 'Convenience Fee', 'Destination Fee', 'Amenity Fee',
-    'Environmental Fee', 'Eco Tax', 'Municipal Tax', 'Government Tax', 'Other',
-  ];
+  const update = <K extends keyof typeof EMPTY_FORM>(k: K, v: (typeof EMPTY_FORM)[K]) =>
+    setForm((f) => ({ ...f, [k]: v }));
 
-  const quantifiers = [
-    'Per booking', 'Per room per night', 'Per person per night', 'Per stay',
-  ];
+  const startNew = () => {
+    setForm({ ...EMPTY_FORM });
+    setEditingId(null);
+    setShowForm(true);
+  };
+
+  const startEdit = (t: TaxItem) => {
+    setForm({
+      name: t.name,
+      type: t.type,
+      description: t.description ?? '',
+      chargeType: t.chargeType,
+      value: t.value,
+      quantifier: t.quantifier ?? 'Per booking',
+    });
+    setEditingId(t.id);
+    setShowForm(true);
+  };
+
+  const cancel = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setForm({ ...EMPTY_FORM });
+  };
 
   const saveTax = () => {
-    setTaxes((prev) => [
-      ...prev,
-      { id: Date.now(), name: 'New Tax', type: 'Other', chargeType, value: '0' },
-    ]);
-    setShowForm(false);
-    setChargeType('Percentage');
+    if (editingId !== null) {
+      setTaxes((prev) => prev.map((t) => (t.id === editingId ? { ...t, ...form } : t)));
+    } else {
+      setTaxes((prev) => [...prev, { id: Date.now(), ...form }]);
+    }
+    cancel();
   };
 
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col py-4">
-      <div className="mb-4 shrink-0">
-        <h1 className="font-display-lg text-xl text-primary font-bold">Taxes & Fees</h1>
-        <p className="text-on-surface-variant text-xs">
-          Define tax types, charge settings, and fee structures.
+      <div className="mb-5 shrink-0">
+        <h1 className="font-display-lg text-2xl text-primary font-bold">Taxes & Fees</h1>
+        <p className="text-on-surface-variant text-sm mt-1">
+          Define each tax or fee that should be added to bookings — VAT, tourism tax, service fees, etc.
         </p>
       </div>
 
@@ -54,64 +94,76 @@ export const TaxesFeesStep = ({ taxes, setTaxes }: Props) => {
             <Fragment key={t.id}>
               <ItemCard
                 icon="payments"
-                title={t.name}
-                subtitle={`${t.type} · ${t.chargeType} ${t.value}${t.chargeType === 'Percentage' ? '%' : ''}`}
-                onEdit={() => {}}
+                title={t.name || t.type}
+                subtitle={`${t.type} · ${t.chargeType} ${t.value}${t.chargeType === 'Percentage' ? '%' : ''} · ${t.quantifier}`}
+                onEdit={() => startEdit(t)}
                 onDelete={() => setTaxes((prev) => prev.filter((x) => x.id !== t.id))}
               />
             </Fragment>
           ))}
-          <AddItemButton label="Add Tax or Fee" onClick={() => setShowForm(true)} />
+          <AddItemButton label="Add Tax or Fee" onClick={startNew} />
         </div>
       ) : (
         <ConfigSection
-          title="Tax Information"
-          description="Define the tax type, charge method, and applicable value."
+          title={editingId !== null ? 'Edit Tax' : 'Tax Information'}
+          description="Define the type, charge method, and applicable value for this tax or fee."
           icon="payments"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            <FormField label="Tax Name" required>
-              <TextInput placeholder="City Tourism Tax" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+            <FormField label="Tax Name" required hint='Friendly name. Example: "VAT 21%" or "Copenhagen Tourism Tax".'>
+              <TextInput
+                placeholder="City Tourism Tax"
+                value={form.name}
+                onChange={(e) => update('name', e.target.value)}
+              />
             </FormField>
 
-            <FormField label="Tax Type" required>
-              <SelectInput>
+            <FormField label="Tax Type" required hint="Category for reporting and grouping.">
+              <SelectInput value={form.type} onChange={(e) => update('type', e.target.value)}>
                 {taxTypes.map((t) => (
                   <option key={t}>{t}</option>
                 ))}
               </SelectInput>
             </FormField>
 
-            <FormField label="Tax Description" className="col-span-2">
-              <TextareaInput rows={2} placeholder="Brief description of this tax or fee..." />
+            <FormField label="Description" className="col-span-2" hint="Optional — appears on the booking summary.">
+              <TextareaInput
+                rows={2}
+                placeholder="Brief description of this tax or fee..."
+                value={form.description}
+                onChange={(e) => update('description', e.target.value)}
+              />
             </FormField>
 
             <FormField label="Charge Type" required>
-              <SelectInput value={chargeType} onChange={(e) => setChargeType(e.target.value)}>
+              <SelectInput value={form.chargeType} onChange={(e) => update('chargeType', e.target.value)}>
                 <option>Percentage</option>
                 <option>Fixed Amount</option>
               </SelectInput>
             </FormField>
 
             <FormField
-              label={`Tax Value ${chargeType === 'Percentage' ? '(%)' : '(Amount)'}`}
+              label={`Value ${form.chargeType === 'Percentage' ? '(%)' : '(Amount)'}`}
               required
+              hint={form.chargeType === 'Percentage' ? 'A number between 1 and 100.' : 'In your property currency.'}
             >
               <TextInput
                 type="number"
-                placeholder={chargeType === 'Percentage' ? '21' : '5.00'}
+                placeholder={form.chargeType === 'Percentage' ? '21' : '5.00'}
+                value={form.value}
+                onChange={(e) => update('value', e.target.value)}
               />
             </FormField>
 
-            <FormField label="Quantifier" required className="col-span-2">
-              <SelectInput>
+            <FormField label="Quantifier" required className="col-span-2" hint="How the tax is multiplied across a booking.">
+              <SelectInput value={form.quantifier} onChange={(e) => update('quantifier', e.target.value)}>
                 {quantifiers.map((q) => (
                   <option key={q}>{q}</option>
                 ))}
               </SelectInput>
             </FormField>
 
-            <FormActions onCancel={() => setShowForm(false)} onSave={saveTax} />
+            <FormActions onCancel={cancel} onSave={saveTax} saveLabel={editingId !== null ? 'Update' : 'Save'} />
           </div>
         </ConfigSection>
       )}

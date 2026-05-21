@@ -19,7 +19,6 @@ import { WebsiteBrandStep } from './steps/modules/WebsiteBrandStep';
 import { DnsTrackingStep } from './steps/modules/DnsTrackingStep';
 import { CancellationPoliciesStep, CancellationPolicy } from './steps/modules/CancellationPoliciesStep';
 import { RoomInformationStep, RoomItem } from './steps/modules/RoomInformationStep';
-import { RoomOccupancyStep } from './steps/modules/RoomOccupancyStep';
 import { ExperiencesStep } from './steps/modules/ExperiencesStep';
 import { AddOnsStep, AddonConfig } from './steps/modules/AddOnsStep';
 import { RatesPackagesStep, RatesData } from './steps/modules/RatesPackagesStep';
@@ -46,11 +45,28 @@ const DEFAULT_ADDONS: Record<string, AddonConfig> = {
 };
 
 const DEFAULT_POLICIES: CancellationPolicy[] = [
-  { id: 1, name: 'Flexible Policy', window: '24', penalty: 'No penalty', isDefault: true },
+  {
+    id: 1,
+    name: 'Flexible Policy',
+    description: 'Guests can cancel free of charge up to 24 hours before arrival.',
+    window: '24',
+    penaltyType: 'No penalty',
+    penaltyValue: '',
+    notes: '',
+    isDefault: true,
+  },
 ];
 
 const DEFAULT_TAXES: TaxItem[] = [
-  { id: 1, name: 'VAT', type: 'Value Added Tax (VAT)', chargeType: 'Percentage', value: '21' },
+  {
+    id: 1,
+    name: 'VAT',
+    type: 'Value Added Tax (VAT)',
+    description: '',
+    chargeType: 'Percentage',
+    value: '21',
+    quantifier: 'Per booking',
+  },
 ];
 
 export default function App() {
@@ -155,10 +171,9 @@ export default function App() {
     overrides?: { propertyType?: 'independent' | 'group' },
   ) => {
     const forms = extraForms ?? savedForms;
-    const g = forms.general   ?? {};
-    const b = forms.brand     ?? {};
-    const d = forms.dns       ?? {};
-    const o = forms.occupancy ?? {};
+    const g = forms.general ?? {};
+    const b = forms.brand   ?? {};
+    const d = forms.dns     ?? {};
     const pt = overrides?.propertyType ?? propertyType ?? 'independent';
 
     return {
@@ -186,6 +201,8 @@ export default function App() {
         accentColor:    b.accentColor    || '',
         fontFamily:     b.fontFamily     || '',
         buttonStyle:    b.buttonStyle    || '',
+        logoUrl:        b.logoUrl        || '',
+        faviconUrl:     b.faviconUrl     || '',
       },
       dns: {
         subdomain: d.subdomain || '',
@@ -195,13 +212,6 @@ export default function App() {
       },
       cancellationPolicies,
       rooms,
-      occupancy: {
-        minAdults:         o.minAdults         || '',
-        maxAdults:         o.maxAdults         || '',
-        maxOccupants:      o.maxOccupants      || '',
-        childrenCapacity:  o.childrenCapacity  || '',
-        includedOccupancy: o.includedOccupancy || '',
-      },
       addons,
       rates,
       taxes,
@@ -283,10 +293,9 @@ export default function App() {
     dns:          <DnsTrackingStep />,
     cancellation: <CancellationPoliciesStep policies={cancellationPolicies} setPolicies={setCancellationPolicies} />,
     rooms:        <RoomInformationStep rooms={rooms} setRooms={setRooms} />,
-    occupancy:    <RoomOccupancyStep />,
     experiences:  <ExperiencesStep />,
     addons:       <AddOnsStep addons={addons} setAddons={setAddons} />,
-    rates:        <RatesPackagesStep rates={rates} setRates={setRates} />,
+    rates:        <RatesPackagesStep rates={rates} setRates={setRates} rooms={rooms} />,
     taxes:        <TaxesFeesStep taxes={taxes} setTaxes={setTaxes} />,
   };
 
@@ -364,7 +373,22 @@ export default function App() {
 
                   {currentStep === reviewStep && (
                     <motion.div key="review" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                      <ReviewStep clientModules={DEFAULT_ENABLED} onEdit={handleEditModule} verified={verifiedModules} onToggleVerify={handleToggleVerify} />
+                      <ReviewStep
+                        clientModules={DEFAULT_ENABLED}
+                        onEdit={handleEditModule}
+                        verified={verifiedModules}
+                        onToggleVerify={handleToggleVerify}
+                        reviewData={{
+                          general: savedForms.general ?? {},
+                          brand:   savedForms.brand   ?? {},
+                          dns:     savedForms.dns     ?? {},
+                          cancellationPolicies,
+                          rooms,
+                          addons,
+                          rates,
+                          taxes,
+                        }}
+                      />
                     </motion.div>
                   )}
                 </AnimatePresence>
