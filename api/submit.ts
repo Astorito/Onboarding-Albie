@@ -193,10 +193,14 @@ export default async function handler(req: any, res: any) {
     const sheets = google.sheets({ version: 'v4', auth });
     const rowData = rowFromPayload(payload);
 
+    // ── Detect the first sheet's actual tab name (avoids hardcoding "Sheet1") ─
+    const meta = await sheets.spreadsheets.get({ spreadsheetId: sheetId });
+    const tabName = meta.data.sheets?.[0]?.properties?.title ?? 'Sheet1';
+
     // ── Look for an existing row with this sessionId (column A) ────────────
     const searchRes = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: 'Sheet1!A:A',
+      range: `${tabName}!A:A`,
     });
 
     const existingRows = searchRes.data.values ?? [];
@@ -210,7 +214,7 @@ export default async function handler(req: any, res: any) {
       const sheetRowNumber = matchIndex + 1; // convert to 1-based
       await sheets.spreadsheets.values.update({
         spreadsheetId: sheetId,
-        range: `Sheet1!A${sheetRowNumber}`,
+        range: `${tabName}!A${sheetRowNumber}`,
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: [rowData] },
       });
@@ -219,7 +223,7 @@ export default async function handler(req: any, res: any) {
       // ── Append new row ──────────────────────────────────────────────────
       await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
-        range: 'Sheet1!A1',
+        range: `${tabName}!A1`,
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: [rowData] },
       });
