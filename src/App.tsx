@@ -54,11 +54,22 @@ const DEFAULT_TAXES: TaxItem[] = [
 ];
 
 export default function App() {
-  // ── Session ID — persisted in localStorage so same row is reused on revisit ─
+  // ── Session ID — magic link token takes priority, then localStorage, then new ─
   const [sessionId] = useState(() => {
     const STORAGE_KEY = 'albie_session_id';
+    // ?token=xyz in URL → magic link sent by sales team
+    const urlToken = new URLSearchParams(window.location.search).get('token');
+    if (urlToken) {
+      localStorage.setItem(STORAGE_KEY, urlToken);
+      // Clean the token from the URL bar (no reload, just cosmetic)
+      const clean = window.location.pathname + window.location.hash;
+      window.history.replaceState(null, '', clean);
+      return urlToken;
+    }
+    // Returning visitor — reuse their stored session
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) return stored;
+    // First-time visitor without a magic link
     const newId = `albie_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     localStorage.setItem(STORAGE_KEY, newId);
     return newId;
