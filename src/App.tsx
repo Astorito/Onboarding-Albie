@@ -240,18 +240,27 @@ export default function App() {
       });
   }, []);
 
-  // ── Submit to Google Sheets ───────────────────────────────────────────────
+  // ── Submit to Google Sheets + trigger PDF email ──────────────────────────
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setSubmitError(null);
+    const finalPayload = buildPayload();
     try {
       const res = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildPayload()),
+        body: JSON.stringify(finalPayload),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Submit failed');
+
+      // Fire-and-forget — email failure shouldn't block the success state
+      fetch('/api/send-onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(finalPayload),
+      }).catch((e) => console.warn('[send-onboarding] failed:', e));
+
       window.scrollTo(0, 0);
       setCurrentStep(successStep);
     } catch (err) {

@@ -7,8 +7,11 @@
     "skipLibCheck": true,
     "allowJs": true,
     "esModuleInterop": true,
-    "strict": false
+    "allowSyntheticDefaultImports": true,
+    "strict": false,
+    "jsx": "react-jsx",
+    "resolveJsonModule": true
   },
-  "include": ["./**/*.ts"],
+  "include": ["./**/*.ts", "./**/*.tsx"],
   "exclude": ["node_modules"]
 }

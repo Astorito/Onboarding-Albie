@@ -27,9 +27,13 @@ export const SuccessStep = () => {
             <Icon name="celebration" className="text-[56px] text-secondary" />
           </div>
           <h1 className="font-display-lg text-5xl text-primary mb-4">Congratulations!</h1>
-          <p className="font-body-lg text-on-surface-variant mb-10 max-w-xl mx-auto">
+          <p className="font-body-lg text-on-surface-variant mb-3 max-w-xl mx-auto">
             Your onboarding process has begun. Our team is already working on your personalized
             booking engine setup.
+          </p>
+          <p className="font-body-md text-on-surface-variant mb-10 max-w-xl mx-auto flex items-center justify-center gap-2">
+            <Icon name="picture_as_pdf" className="text-secondary text-lg" />
+            We've emailed you a PDF copy of your submission for your records.
           </p>
           <div className="p-8 bg-surface-container-low border border-outline-variant rounded-3xl inline-block w-full text-left relative group">
             <Icon name="mail" className="absolute right-8 top-8 text-primary/5 text-6xl group-hover:scale-110 transition-transform duration-500" />
