@@ -2,7 +2,7 @@ import { Icon } from '../../components/ui/primitives';
 
 export const PropertyTypeStep = ({ onSelect }: { onSelect: (type: 'independent' | 'group') => void }) => (
   <main className="h-full flex items-center justify-center overflow-hidden px-margin-mobile md:px-margin-desktop relative">
-    <div className="absolute top-5 right-6">
+    <div className="absolute top-5 left-6">
       <img
         src="/albie-logo-dark.svg"
         alt="Albie by TAG"
