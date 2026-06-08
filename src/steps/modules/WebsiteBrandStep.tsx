@@ -56,10 +56,10 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: Partial<PrefillDa
                 <input
                   type="color"
                   name="secondaryColorPicker"
-                  defaultValue="#dfec60"
+                  defaultValue="#F2EA5F"
                   className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
                 />
-                <TextInput name="secondaryColor" placeholder="#dfec60" defaultValue="#dfec60" />
+                <TextInput name="secondaryColor" placeholder="#F2EA5F" defaultValue="#F2EA5F" />
               </div>
             </FormField>
 
