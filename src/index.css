@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -7,7 +7,7 @@
   --color-inverse-surface: #313030;
   --color-on-error: #ffffff;
   --color-surface-dim: #dcd9d9;
-  --color-secondary-fixed: #dfec60;
+  --color-secondary-fixed: #F2EA5F;
   --color-error: #ba1a1a;
   --color-surface-container-highest: #e5e2e1;
   --color-on-tertiary-fixed-variant: #434846;
@@ -37,10 +37,10 @@
   --color-tertiary-container: #272b2a;
   --color-on-secondary: #ffffff;
   --color-surface-container-high: #eae7e7;
-  --color-primary: #00191a;
+  --color-primary: #0D3A39;
   --color-on-primary-fixed: #002021;
   --color-on-primary-container: #769798;
-  --color-secondary-container: #dfec60;
+  --color-secondary-container: #F2EA5F;
   --color-on-tertiary: #ffffff;
   --color-primary-fixed: #c6e9ea;
   --color-on-primary: #ffffff;
@@ -50,7 +50,8 @@
   --color-inverse-on-surface: #f3f0ef;
   --color-on-surface: #1c1b1b;
 
-  --font-hanken: "Hanken Grotesk", sans-serif;
+  --font-dm-sans: "DM Sans", sans-serif;
+  --font-hanken: "DM Sans", sans-serif;
 
   --spacing-margin-desktop: 64px;
   --spacing-container-max-width: 1280px;
