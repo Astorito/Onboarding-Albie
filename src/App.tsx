@@ -476,7 +476,7 @@ export default function App() {
           <button
             onClick={handleNext}
             disabled={isSubmitting}
-            className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 group flex items-center gap-2 bg-secondary text-on-secondary rounded-xl px-10 py-4 font-bold hover:opacity-95 transition-all active:scale-95 duration-200 cursor-pointer shadow-xl shadow-secondary/20 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 group flex items-center gap-2 bg-secondary text-white rounded-xl px-10 py-4 font-bold hover:opacity-95 transition-all active:scale-95 duration-200 cursor-pointer shadow-xl disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <>

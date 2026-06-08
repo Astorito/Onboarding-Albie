@@ -61,16 +61,16 @@ export const ConfigSection = ({
   icon?: string;
 }) => (
   <div className="w-full bg-white border border-outline-variant rounded-2xl overflow-hidden shadow-sm flex flex-col md:flex-row mb-4">
-    <div className="w-full md:w-1/3 bg-secondary-container/30 p-7 border-b md:border-b-0 md:border-r border-outline-variant flex flex-col gap-4">
-      <div className="flex items-start gap-3 text-primary">
-        <div className="w-2.5 h-2.5 rounded-full bg-secondary mt-2 shrink-0" />
+    <div className="w-full md:w-1/3 p-7 border-b md:border-b-0 md:border-r border-[#245557] flex flex-col gap-4" style={{ backgroundColor: '#2F6B6D' }}>
+      <div className="flex items-start gap-3">
+        <div className="w-2.5 h-2.5 rounded-full mt-2 shrink-0" style={{ backgroundColor: '#F2EA5F' }} />
         <div>
-          <h3 className="font-bold text-lg leading-tight mb-1.5">{title}</h3>
-          <p className="text-on-surface-variant text-xs leading-relaxed">{description}</p>
+          <h3 className="font-bold text-lg leading-tight mb-1.5 text-white">{title}</h3>
+          <p className="text-white/70 text-xs leading-relaxed">{description}</p>
         </div>
       </div>
       <div className="mt-auto hidden md:block">
-        <Icon name={icon} className="text-4xl text-primary/15" />
+        <Icon name={icon} className="text-4xl text-white/20" />
       </div>
     </div>
     <div className="w-full md:w-2/3 p-7 bg-white">
