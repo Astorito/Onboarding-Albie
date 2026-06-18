@@ -18,6 +18,7 @@ import {
   getSheetsClient,
   getSpreadsheetMeta,
   findTab,
+  colIndexToLetter,
 } from '../sheets';
 import { SHEET_HEADERS } from '../submit';
 
@@ -162,17 +163,6 @@ async function main() {
   }
 
   console.log('\n✓ Sheet initialization complete.');
-}
-
-// Converts a 1-based column index to a spreadsheet column letter (1→A, 27→AA, etc.)
-function colIndexToLetter(index: number): string {
-  let letter = '';
-  while (index > 0) {
-    const rem = (index - 1) % 26;
-    letter = String.fromCharCode(65 + rem) + letter;
-    index = Math.floor((index - 1) / 26);
-  }
-  return letter;
 }
 
 main().catch(err => {

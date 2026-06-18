@@ -11,7 +11,13 @@
 import { Resend } from 'resend';
 import { renderToBuffer } from '@react-pdf/renderer';
 import * as React from 'react';
+import { Readable } from 'stream';
+import { google } from 'googleapis';
 import { OnboardingPDF } from './pdf/OnboardingPDF';
+import {
+  getAuth, getSheetsClient, ONBOARDINGS_TAB,
+  findRowBySessionId, updateCellByHeader,
+} from './sheets';
 
 function slugify(s: string): string {
   return s
@@ -59,6 +65,44 @@ function buildEmailBody(payload: any, isSandbox: boolean): string {
   </div>`;
 }
 
+// ─── Drive upload ──────────────────────────────────────────────────────────────
+async function uploadToDrive(pdfBuffer: Buffer, filename: string): Promise<string> {
+  const auth = getAuth(['https://www.googleapis.com/auth/drive.file']);
+  const drive = google.drive({ version: 'v3', auth });
+
+  const uploadRes = await drive.files.create({
+    requestBody: { name: filename, mimeType: 'application/pdf' },
+    media: { mimeType: 'application/pdf', body: Readable.from(pdfBuffer) },
+    fields: 'id,webViewLink',
+  });
+
+  const fileId = uploadRes.data.id;
+  if (!fileId) throw new Error('Drive upload returned no file ID');
+
+  await drive.permissions.create({
+    fileId,
+    requestBody: { role: 'reader', type: 'anyone' },
+  });
+
+  return uploadRes.data.webViewLink ?? `https://drive.google.com/file/d/${fileId}/view`;
+}
+
+// ─── Save PDF link to Sheets row ───────────────────────────────────────────────
+async function savePdfLink(sessionId: string, pdfLink: string): Promise<void> {
+  const sheetId = process.env.GOOGLE_SHEET_ID!;
+  const auth = getAuth();
+  const sheets = getSheetsClient(auth);
+
+  const rowNum = await findRowBySessionId(sheets, sheetId, ONBOARDINGS_TAB, sessionId);
+  if (rowNum < 1) {
+    console.warn(`[send-onboarding] Session ${sessionId} not found in sheet — skipping PDF link save`);
+    return;
+  }
+
+  await updateCellByHeader(sheets, sheetId, ONBOARDINGS_TAB, rowNum, 'PDF Link', pdfLink);
+  await updateCellByHeader(sheets, sheetId, ONBOARDINGS_TAB, rowNum, 'Status', 'completed');
+}
+
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -87,39 +131,51 @@ export default async function handler(req: any, res: any) {
   try {
     // 1. Render PDF to buffer
     const pdfBuffer = await renderToBuffer(React.createElement(OnboardingPDF, { payload }) as any);
+    const pdfFilename = `albie-onboarding-${slugify(hotelName)}.pdf`;
 
-    // 2. Compose recipients
+    // 2. Upload PDF to Google Drive (fire off in parallel with email)
+    const driveUploadPromise = uploadToDrive(pdfBuffer, pdfFilename).catch(err => {
+      console.warn('[send-onboarding] Drive upload failed (non-fatal):', err.message);
+      return null;
+    });
+
+    // 3. Compose recipients & send email
     const to  = isProduction ? hotelEmail : adminEmail;
     const bcc = isProduction ? [adminEmail] : undefined;
 
-    // 3. Send
     const resend = new Resend(apiKey);
-    const sendResult = await resend.emails.send({
-      from: `Albie Onboarding <${fromEmail}>`,
-      to,
-      bcc,
-      subject: `New onboarding: ${hotelName}`,
-      html: buildEmailBody(payload, !isProduction),
-      attachments: [
-        {
-          filename: `albie-onboarding-${slugify(hotelName)}.pdf`,
-          content: pdfBuffer,
-        },
-      ],
-    });
+    const [sendResult, driveLink] = await Promise.all([
+      resend.emails.send({
+        from: `Albie Onboarding <${fromEmail}>`,
+        to,
+        bcc,
+        subject: `New onboarding: ${hotelName}`,
+        html: buildEmailBody(payload, !isProduction),
+        attachments: [{ filename: pdfFilename, content: pdfBuffer }],
+      }),
+      driveUploadPromise,
+    ]);
 
     if (sendResult.error) {
       console.error('[send-onboarding] resend error:', sendResult.error);
       return res.status(502).json({ success: false, error: sendResult.error.message ?? 'Email send failed' });
     }
 
-    console.log(`[send-onboarding] sent (${mode}) to ${to}, id=${sendResult.data?.id}`);
+    // 4. Save Drive link in the Onboardings sheet (fire-and-forget — don't block response)
+    if (driveLink && payload.sessionId && process.env.GOOGLE_SHEET_ID) {
+      savePdfLink(payload.sessionId, driveLink).catch(err =>
+        console.warn('[send-onboarding] Sheet update failed:', err.message)
+      );
+    }
+
+    console.log(`[send-onboarding] sent (${mode}) to ${to}, id=${sendResult.data?.id}, drive=${driveLink ?? 'none'}`);
     return res.status(200).json({
       success: true,
       mode,
       to,
       bcc: bcc ?? null,
       id: sendResult.data?.id ?? null,
+      pdfLink: driveLink ?? null,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
