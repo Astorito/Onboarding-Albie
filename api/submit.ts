@@ -7,6 +7,7 @@
 //   GOOGLE_SERVICE_ACCOUNT_JSON — full JSON key file content as a single string
 
 import { google } from 'googleapis';
+import { getAuth, getSheetsClient, ONBOARDINGS_TAB, findRowBySessionId } from './sheets';
 
 // ─── Column headers (must match the sheet's first row exactly) ───────────────
 export const SHEET_HEADERS = [
@@ -151,12 +152,8 @@ export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const sheetId = process.env.GOOGLE_SHEET_ID;
-  const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
-
-  if (!sheetId || !serviceAccountJson) {
-    return res.status(500).json({
-      error: 'Missing GOOGLE_SHEET_ID or GOOGLE_SERVICE_ACCOUNT_JSON environment variables.',
-    });
+  if (!sheetId) {
+    return res.status(500).json({ error: 'Missing GOOGLE_SHEET_ID environment variable.' });
   }
 
   const payload: SubmitPayload = req.body;
@@ -168,41 +165,18 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const credentials = JSON.parse(serviceAccountJson);
-    if (credentials.private_key) {
-      credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
-    }
-
-    const auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-    });
-
-    const sheets = google.sheets({ version: 'v4', auth });
+    const auth = getAuth();
+    const sheets = getSheetsClient(auth);
     const rowData = rowFromPayload(payload);
 
-    // ── Detect the first sheet's actual tab name (avoids hardcoding "Sheet1") ─
-    const meta = await sheets.spreadsheets.get({ spreadsheetId: sheetId });
-    const tabName = meta.data.sheets?.[0]?.properties?.title ?? 'Sheet1';
-
     // ── Look for an existing row with this sessionId (column A) ────────────
-    const searchRes = await sheets.spreadsheets.values.get({
-      spreadsheetId: sheetId,
-      range: `${tabName}!A:A`,
-    });
+    const sheetRowNumber = await findRowBySessionId(sheets, sheetId, ONBOARDINGS_TAB, payload.sessionId);
 
-    const existingRows = searchRes.data.values ?? [];
-    // Row 0 is the header; data starts at index 1
-    const matchIndex = existingRows.findIndex(
-      (row, i) => i > 0 && row[0] === payload.sessionId
-    );
-
-    if (matchIndex > 0) {
-      // ── Update existing row ─────────────────────────────────────────────
-      const sheetRowNumber = matchIndex + 1; // convert to 1-based
+    if (sheetRowNumber > 0) {
+      // ── Update existing row (data cols only — admin cols stay untouched) ─
       await sheets.spreadsheets.values.update({
         spreadsheetId: sheetId,
-        range: `${tabName}!A${sheetRowNumber}`,
+        range: `${ONBOARDINGS_TAB}!A${sheetRowNumber}`,
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: [rowData] },
       });
@@ -211,7 +185,7 @@ export default async function handler(req: any, res: any) {
       // ── Append new row ──────────────────────────────────────────────────
       await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
-        range: `${tabName}!A1`,
+        range: `${ONBOARDINGS_TAB}!A1`,
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: [rowData] },
       });
