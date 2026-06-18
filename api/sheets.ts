@@ -48,6 +48,29 @@ export function findTab(meta: Awaited<ReturnType<typeof getSpreadsheetMeta>>, ta
   return meta.sheets?.find(s => s.properties?.title === tabName) ?? null;
 }
 
+// ─── Read entire tab as objects ────────────────────────────────────────────────
+export async function readSheetAsObjects(
+  sheets: ReturnType<typeof getSheetsClient>,
+  sheetId: string,
+  tabName: string
+): Promise<{ headers: string[]; rows: Record<string, string>[] }> {
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: `${tabName}!A:AZ`,
+  });
+  const [headerRow, ...dataRows] = res.data.values ?? [];
+  const headers = (headerRow ?? []) as string[];
+  const rows = (dataRows ?? []).map(row =>
+    Object.fromEntries(headers.map((h, i) => [h, (row[i] ?? '') as string]))
+  );
+  return { headers, rows };
+}
+
+// ─── Build a sparse row from an object, aligned to a header array ─────────────
+export function buildRow(headers: string[], values: Record<string, string>): string[] {
+  return headers.map(h => values[h] ?? '');
+}
+
 // ─── Row lookup ────────────────────────────────────────────────────────────────
 // Returns the 1-based sheet row number of the row matching sessionId, or -1.
 export async function findRowBySessionId(
