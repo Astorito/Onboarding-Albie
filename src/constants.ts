@@ -56,21 +56,3 @@ export const ALL_MODULES = [
 ];
 
 export const DEFAULT_ENABLED = ['general', 'brand', 'cancellation', 'rooms', 'addons', 'rates', 'taxes'];
-
-// Demo data shown in the URLAnalysisStep preview card (not used as fallback)
-export const MOCK_PREFILL = {
-  propertyName:      'The Grand Pavilion Hotel',
-  description:       'A luxury boutique hotel in the heart of the city, offering world-class amenities and personalised service.',
-  address:           'Bredgade 34',
-  city:              'Copenhagen',
-  stateProvince:     'Capital Region',
-  country:           'Denmark',
-  zipCode:           '1260',
-  timezone:          'Europe/Copenhagen',
-  currency:          'DKK',
-  language:          'da',
-  phone:             '+45 33 00 00 00',
-  notificationEmail: 'reservations@grandpavilion.com',
-  websiteUrl:        'https://www.grandpavilion.com',
-  siteTitle:         'The Grand Pavilion Hotel',
-};

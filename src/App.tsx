@@ -11,7 +11,6 @@ import { ProgressBar } from './components/ui/layout';
 
 import { WelcomeStep } from './steps/intro/WelcomeStep';
 import { PropertyTypeStep } from './steps/intro/PropertyTypeStep';
-import { URLAnalysisStep } from './steps/intro/URLAnalysisStep';
 import { GroupMembersStep } from './steps/intro/GroupMembersStep';
 
 import { GeneralInformationStep } from './steps/modules/GeneralInformationStep';
@@ -98,7 +97,8 @@ export default function App() {
   // ── Intro state ───────────────────────────────────────────────────────────
   const [propertyType, setPropertyType] = useState<'independent' | 'group' | null>(null);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
-  const [prefillData, setPrefillData] = useState<Partial<PrefillData>>({});
+  // Prefill mechanism kept for future admin-supplied data (e.g. property name via token)
+  const [prefillData] = useState<Partial<PrefillData>>({});
 
   // ── Lifted module state (persists across step navigation) ─────────────────
   const [cancellationPolicies, setCancellationPolicies] = useState<CancellationPolicy[]>(DEFAULT_POLICIES);
@@ -120,7 +120,7 @@ export default function App() {
 
   // ── Step index arithmetic ─────────────────────────────────────────────────
   const groupOffset = propertyType === 'group' ? 1 : 0;
-  const firstModule = 3 + groupOffset;
+  const firstModule = 2 + groupOffset;
   const reviewStep  = firstModule + DEFAULT_ENABLED.length;
   const successStep = reviewStep + 1;
 
@@ -342,15 +342,8 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* Step 2 – URL Analysis */}
-          {currentStep === 2 && (
-            <motion.div key="url-analysis" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full">
-              <URLAnalysisStep onComplete={(data) => { setPrefillData(data); goNext(); }} onSkip={goNext} />
-            </motion.div>
-          )}
-
-          {/* Step 3 – Group Members (group path only) */}
-          {currentStep === 3 && propertyType === 'group' && (
+          {/* Step 2 – Group Members (group path only) */}
+          {currentStep === 2 && propertyType === 'group' && (
             <motion.div key="group-members" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full overflow-y-auto custom-scrollbar">
               <GroupMembersStep members={groupMembers} setMembers={setGroupMembers} onContinue={goNext} />
             </motion.div>
