@@ -97,8 +97,91 @@ export default function App() {
   // ── Intro state ───────────────────────────────────────────────────────────
   const [propertyType, setPropertyType] = useState<'independent' | 'group' | null>(null);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
-  // Prefill mechanism kept for future admin-supplied data (e.g. property name via token)
-  const [prefillData] = useState<Partial<PrefillData>>({});
+  const [prefillData, setPrefillData] = useState<Partial<PrefillData>>({});
+
+  // ── Load server-side session data (admin pre-fill) ────────────────────────
+  // Fires once on mount. If the admin already filled some fields via this link,
+  // they're loaded from the Sheet so the hotel sees them pre-populated.
+  useEffect(() => {
+    fetch(`/api/session?token=${sessionId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data) return;
+        const g = data.general ?? {};
+        const b = data.brand   ?? {};
+        const d = data.dns     ?? {};
+
+        setPrefillData({
+          propertyName:      g.propertyName      || null,
+          description:       g.description       || null,
+          address:           g.address           || null,
+          city:              g.city              || null,
+          stateProvince:     g.stateProvince     || null,
+          country:           g.country           || null,
+          zipCode:           g.zipCode           || null,
+          timezone:          g.timezone          || null,
+          currency:          g.currency          || null,
+          language:          g.language          || null,
+          phone:             g.phone             || null,
+          notificationEmail: g.notificationEmail || null,
+          websiteUrl:        g.websiteUrl        || null,
+          siteTitle:         b.siteTitle         || null,
+        });
+
+        // Pre-populate savedForms so buildPayload returns correct data
+        // even before the hotel visits each step.
+        const formsUpdate: Record<string, Record<string, string>> = {};
+        if (Object.values(g).some(Boolean)) {
+          formsUpdate.general = {
+            propertyName:      g.propertyName      || '',
+            description:       g.description       || '',
+            address:           g.address           || '',
+            city:              g.city              || '',
+            stateProvince:     g.stateProvince     || '',
+            country:           g.country           || '',
+            zipCode:           g.zipCode           || '',
+            timezone:          g.timezone          || '',
+            currency:          g.currency          || '',
+            language:          g.language          || '',
+            phone:             g.phone             || '',
+            notificationEmail: g.notificationEmail || '',
+            websiteUrl:        g.websiteUrl        || '',
+          };
+        }
+        if (Object.values(b).some(Boolean)) {
+          formsUpdate.brand = {
+            siteTitle:      b.siteTitle      || '',
+            primaryColor:   b.primaryColor   || '',
+            secondaryColor: b.secondaryColor || '',
+            accentColor:    b.accentColor    || '',
+            fontFamily:     b.fontFamily     || '',
+            buttonStyle:    b.buttonStyle    || '',
+            logoUrl:        b.logoUrl        || '',
+            faviconUrl:     b.faviconUrl     || '',
+          };
+        }
+        if (Object.values(d).some(Boolean)) {
+          formsUpdate.dns = {
+            subdomain: d.subdomain || '',
+            gtmId:     d.gtmId     || '',
+            ga4Id:     d.ga4Id     || '',
+            mapId:     d.mapId     || '',
+          };
+        }
+        if (Object.keys(formsUpdate).length) {
+          setSavedForms(prev => ({ ...prev, ...formsUpdate }));
+        }
+
+        // Load complex state (rooms, policies, addons, rates, taxes)
+        if (data.rooms?.length)                setRooms(data.rooms);
+        if (data.cancellationPolicies?.length) setCancellationPolicies(data.cancellationPolicies);
+        if (data.addons && Object.keys(data.addons).length) setAddons(data.addons);
+        if (data.rates  && Object.keys(data.rates).length)  setRates(data.rates);
+        if (data.taxes?.length)                setTaxes(data.taxes);
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
 
   // ── Lifted module state (persists across step navigation) ─────────────────
   const [cancellationPolicies, setCancellationPolicies] = useState<CancellationPolicy[]>(DEFAULT_POLICIES);

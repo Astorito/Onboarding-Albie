@@ -4,9 +4,15 @@
 import { requireAuth } from './_auth';
 import { getAuth, getSheetsClient, ACCOUNTS_TAB, readSheetAsObjects, ACCOUNTS_HEADERS } from '../_sheets';
 
-function generateAccountId(): string {
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `acc_${rand}`;
+function generateAccountId(name: string): string {
+  const slug = name
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')  // strip accents
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 20);
+  const rand = Math.random().toString(36).slice(2, 5).toUpperCase();
+  return `acc_${slug}_${rand}`;
 }
 
 export default async function handler(req: any, res: any) {
@@ -38,7 +44,7 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: 'accountName is required' });
     }
 
-    const accountId = generateAccountId();
+    const accountId = generateAccountId(accountName.trim());
     const row = [accountId, accountName.trim(), new Date().toISOString()];
 
     await sheets.spreadsheets.values.append({
