@@ -19,8 +19,8 @@ import {
   getSpreadsheetMeta,
   findTab,
   colIndexToLetter,
-} from '../sheets';
-import { SHEET_HEADERS } from '../submit';
+} from '../api/_sheets';
+import { SHEET_HEADERS } from '../api/submit';
 
 const FULL_ONBOARDINGS_HEADERS = [...SHEET_HEADERS, ...ADMIN_COLS];
 

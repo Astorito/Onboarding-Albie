@@ -1,11 +1,11 @@
 // GET  /api/admin/onboardings — list all onboardings (requires auth)
 // POST /api/admin/onboardings — create new onboarding row (requires auth)
 
-import { requireAuth } from './auth';
+import { requireAuth } from './_auth';
 import {
   getAuth, getSheetsClient, ONBOARDINGS_TAB,
   readSheetAsObjects, buildRow, ADMIN_COLS,
-} from '../sheets';
+} from '../_sheets';
 
 function generateSessionId(): string {
   const rand = Math.random().toString(36).slice(2, 8);

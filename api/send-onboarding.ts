@@ -13,11 +13,11 @@ import { renderToBuffer } from '@react-pdf/renderer';
 import * as React from 'react';
 import { Readable } from 'stream';
 import { google } from 'googleapis';
-import { OnboardingPDF } from './pdf/OnboardingPDF';
+import { OnboardingPDF } from './_pdf/OnboardingPDF';
 import {
   getAuth, getSheetsClient, ONBOARDINGS_TAB,
   findRowBySessionId, updateCellByHeader,
-} from './sheets';
+} from './_sheets';
 
 function slugify(s: string): string {
   return s

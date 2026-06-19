@@ -1,8 +1,8 @@
 // GET  /api/admin/accounts — list all accounts (requires auth)
 // POST /api/admin/accounts — create new account (requires auth)
 
-import { requireAuth } from './auth';
-import { getAuth, getSheetsClient, ACCOUNTS_TAB, readSheetAsObjects, ACCOUNTS_HEADERS } from '../sheets';
+import { requireAuth } from './_auth';
+import { getAuth, getSheetsClient, ACCOUNTS_TAB, readSheetAsObjects, ACCOUNTS_HEADERS } from '../_sheets';
 
 function generateAccountId(): string {
   const rand = Math.random().toString(36).slice(2, 6).toUpperCase();

@@ -7,7 +7,7 @@
 //   GOOGLE_SERVICE_ACCOUNT_JSON — full JSON key file content as a single string
 
 import { google } from 'googleapis';
-import { getAuth, getSheetsClient, ONBOARDINGS_TAB, findRowBySessionId } from './sheets';
+import { getAuth, getSheetsClient, ONBOARDINGS_TAB, findRowBySessionId } from './_sheets';
 
 // ─── Column headers (must match the sheet's first row exactly) ───────────────
 export const SHEET_HEADERS = [

@@ -7,7 +7,7 @@
 // Generate a hash: node -e "require('bcryptjs').hash('yourpassword',10).then(console.log)"
 
 import * as bcrypt from 'bcryptjs';
-import { signToken } from './auth';
+import { signToken } from './_auth';
 
 interface AdminUser {
   email: string;

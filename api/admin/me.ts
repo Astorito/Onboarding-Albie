@@ -1,7 +1,7 @@
 // GET /api/admin/me — returns the logged-in admin's email, or 401.
 // Used by the frontend to check session on page load.
 
-import { requireAuth } from './auth';
+import { requireAuth } from './_auth';
 
 export default function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin ?? '*');
