@@ -50,18 +50,21 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
   const [showModal, setShowModal] = useState(false);
   const [copiedId, setCopiedId] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Onboarding | null>(null);
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  // expanded starts empty → all groups closed by default
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const fetchAll = useCallback(async () => {
     try {
-      const [data, accs] = await Promise.all([
+      const [dataResult, accsResult] = await Promise.allSettled([
         adminApi.getOnboardings(),
         adminApi.getAccounts(),
       ]);
-      setOnboardings(data.filter(o => o['Session ID']));
-      setAccounts(accs);
-    } catch {
-      // silently fail — table stays empty
+      if (dataResult.status === 'fulfilled') {
+        setOnboardings(dataResult.value.filter(o => o['Session ID']));
+      }
+      if (accsResult.status === 'fulfilled') {
+        setAccounts(accsResult.value);
+      }
     } finally {
       setLoading(false);
     }
@@ -74,7 +77,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
   );
 
   const toggleGroup = (key: string) => {
-    setCollapsed(prev => {
+    setExpanded(prev => {
       const next = new Set(prev);
       next.has(key) ? next.delete(key) : next.add(key);
       return next;
@@ -159,7 +162,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
         ) : (
           <div className="flex flex-col gap-4">
             {sortedGroups.map(([key, group]) => {
-              const isOpen = !collapsed.has(key);
+              const isOpen = expanded.has(key);
               return (
                 <section key={key} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                   {/* Group header — clickable to collapse */}
