@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { adminApi, type Onboarding } from './api';
 import { NewOnboardingModal } from './NewOnboardingModal';
+import { DeleteConfirmModal } from './DeleteConfirmModal';
 
 interface Props {
   adminEmail: string;
@@ -36,6 +37,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [copiedId, setCopiedId] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<Onboarding | null>(null);
 
   const fetchOnboardings = useCallback(async () => {
     try {
@@ -170,6 +172,13 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
                           >
                             {copiedId === sessionId ? '¡Copiado!' : 'Copiar link'}
                           </button>
+                          <button
+                            onClick={() => setDeleteTarget(o)}
+                            className="text-xs font-semibold text-red-400 border border-red-100 px-3 py-2 rounded-lg hover:bg-red-50 transition cursor-pointer"
+                            title="Eliminar onboarding"
+                          >
+                            Eliminar
+                          </button>
                         </div>
                       </div>
                     );
@@ -185,6 +194,15 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
         <NewOnboardingModal
           onClose={() => setShowModal(false)}
           onCreated={() => { fetchOnboardings(); }}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteConfirmModal
+          sessionId={deleteTarget['Session ID']}
+          onboardingName={deleteTarget['Onboarding Name'] || deleteTarget['Property Name'] || deleteTarget['Session ID']}
+          onClose={() => setDeleteTarget(null)}
+          onDeleted={() => { fetchOnboardings(); setDeleteTarget(null); }}
         />
       )}
     </div>

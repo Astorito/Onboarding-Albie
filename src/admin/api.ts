@@ -55,4 +55,9 @@ export const adminApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accountId, onboardingName }),
     }),
+
+  deleteOnboarding: (sessionId: string) =>
+    apiFetch<{ success: boolean }>(`/api/admin/onboardings?sessionId=${encodeURIComponent(sessionId)}`, {
+      method: 'DELETE',
+    }),
 };
