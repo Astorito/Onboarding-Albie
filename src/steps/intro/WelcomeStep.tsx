@@ -32,14 +32,6 @@ export const WelcomeStep = ({ onNext }: { onNext: () => void }) => (
           >
             Start Onboarding
           </button>
-          <button
-            className="bg-transparent font-body-md px-10 py-4 rounded-lg transition-all active:scale-95 duration-200 cursor-pointer font-bold"
-            style={{ border: '2px solid #2F6B6D', color: '#2F6B6D' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#2F6B6D15')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
-          >
-            Watch Demo
-          </button>
         </div>
       </div>
       <div className="md:col-span-6 hidden md:grid grid-cols-2 grid-rows-2 gap-4 h-[450px]">
