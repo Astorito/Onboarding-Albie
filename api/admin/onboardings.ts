@@ -37,7 +37,7 @@ export default async function handler(req: any, res: any) {
 
   // ── POST: create new onboarding ────────────────────────────────────────────
   if (req.method === 'POST') {
-    const { accountId, onboardingName } = req.body ?? {};
+    const { accountId, onboardingName, pocEmail } = req.body ?? {};
     if (!accountId || !onboardingName) {
       return res.status(400).json({ error: 'accountId and onboardingName are required' });
     }
@@ -52,6 +52,7 @@ export default async function handler(req: any, res: any) {
       'Status':           'pending',
       'Created By':       String(payload.email),
       'Admin Created At': new Date().toISOString(),
+      'POC Email':        pocEmail ?? '',
     });
 
     await sheets.spreadsheets.values.append({

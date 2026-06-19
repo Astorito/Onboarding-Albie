@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { adminApi, type Onboarding } from './api';
+import { adminApi, type Onboarding, type Account } from './api';
 import { NewOnboardingModal } from './NewOnboardingModal';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 
@@ -32,17 +32,34 @@ function formatDate(iso: string): string {
   }
 }
 
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}
+      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+  );
+}
+
 export function Dashboard({ adminEmail, onLogout }: Props) {
   const [onboardings, setOnboardings] = useState<Onboarding[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [copiedId, setCopiedId] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Onboarding | null>(null);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
-  const fetchOnboardings = useCallback(async () => {
+  const fetchAll = useCallback(async () => {
     try {
-      const data = await adminApi.getOnboardings();
+      const [data, accs] = await Promise.all([
+        adminApi.getOnboardings(),
+        adminApi.getAccounts(),
+      ]);
       setOnboardings(data.filter(o => o['Session ID']));
+      setAccounts(accs);
     } catch {
       // silently fail — table stays empty
     } finally {
@@ -50,7 +67,19 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
     }
   }, []);
 
-  useEffect(() => { fetchOnboardings(); }, [fetchOnboardings]);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const accountNameById = Object.fromEntries(
+    accounts.map(a => [a['Account ID'], a['Account Name']])
+  );
+
+  const toggleGroup = (key: string) => {
+    setCollapsed(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
 
   const copyLink = (sessionId: string) => {
     navigator.clipboard.writeText(`${window.location.origin}/?token=${sessionId}`);
@@ -63,22 +92,22 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
     onLogout();
   };
 
-  // Group by Account ID, unassigned onboardings go under 'Sin cuenta'
+  // Group by Account ID, resolve name from accounts list
   const groups: Record<string, { label: string; items: Onboarding[] }> = {};
   for (const o of onboardings) {
     const key = o['Account ID'] || '__none__';
-    const label = key === '__none__' ? 'Sin cuenta' : (o['Account ID'] ?? 'Sin cuenta');
+    const label = key === '__none__'
+      ? 'Independiente'
+      : (accountNameById[key] ?? key);
     if (!groups[key]) groups[key] = { label, items: [] };
     groups[key].items.push(o);
   }
 
-  // Sort: accounts with most recent first
-  const sortedGroups = Object.entries(groups).sort(([a], [b]) => {
+  // Sort: accounts alphabetically, independents last
+  const sortedGroups = Object.entries(groups).sort(([a, ga], [b, gb]) => {
     if (a === '__none__') return 1;
     if (b === '__none__') return -1;
-    const aDate = groups[a].items[0]?.['Admin Created At'] ?? '';
-    const bDate = groups[b].items[0]?.['Admin Created At'] ?? '';
-    return bDate.localeCompare(aDate);
+    return ga.label.localeCompare(gb.label, 'es');
   });
 
   return (
@@ -128,64 +157,78 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-8">
-            {sortedGroups.map(([key, group]) => (
-              <section key={key}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-2 h-2 rounded-full bg-[#2F6B6D]" />
-                  <h2 className="font-bold text-[#0D3A39] text-sm uppercase tracking-wide">{group.label}</h2>
-                  <span className="text-xs text-gray-400">{group.items.length}</span>
-                </div>
+          <div className="flex flex-col gap-4">
+            {sortedGroups.map(([key, group]) => {
+              const isOpen = !collapsed.has(key);
+              return (
+                <section key={key} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                  {/* Group header — clickable to collapse */}
+                  <button
+                    onClick={() => toggleGroup(key)}
+                    className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-gray-50 transition cursor-pointer"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-[#2F6B6D] shrink-0" />
+                    <span className="font-bold text-[#0D3A39] text-sm flex-1">{group.label}</span>
+                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                      {group.items.length}
+                    </span>
+                    <ChevronIcon open={isOpen} />
+                  </button>
 
-                <div className="grid gap-3">
-                  {group.items.map(o => {
-                    const sessionId = o['Session ID'];
-                    return (
-                      <div key={sessionId} className="bg-white rounded-2xl border border-gray-100 p-5 flex flex-col sm:flex-row sm:items-center gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <p className="font-bold text-[#0D3A39] truncate">
-                              {o['Onboarding Name'] || o['Property Name'] || sessionId}
-                            </p>
-                            <StatusBadge status={o['Status']} />
+                  {/* Items */}
+                  {isOpen && (
+                    <div className="border-t border-gray-100 divide-y divide-gray-50">
+                      {group.items.map(o => {
+                        const sessionId = o['Session ID'];
+                        return (
+                          <div key={sessionId} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <p className="font-semibold text-[#0D3A39] truncate">
+                                  {o['Onboarding Name'] || o['Property Name'] || sessionId}
+                                </p>
+                                <StatusBadge status={o['Status']} />
+                              </div>
+                              <p className="text-xs text-gray-400">
+                                Creado {formatDate(o['Admin Created At'] || o['Timestamp'] || '')}
+                                {o['Created By'] && ` · ${o['Created By']}`}
+                                {o['POC Email'] && ` · POC: ${o['POC Email']}`}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              {o['PDF Link'] && (
+                                <a
+                                  href={o['PDF Link']}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs font-semibold text-[#2F6B6D] border border-[#2F6B6D]/30 px-3 py-2 rounded-lg hover:bg-[#2F6B6D]/5 transition"
+                                >
+                                  Ver PDF
+                                </a>
+                              )}
+                              <button
+                                onClick={() => copyLink(sessionId)}
+                                className="text-xs font-semibold bg-[#F2EA5F] text-[#0D3A39] px-3 py-2 rounded-lg hover:opacity-80 transition cursor-pointer"
+                              >
+                                {copiedId === sessionId ? '¡Copiado!' : 'Copiar link'}
+                              </button>
+                              <button
+                                onClick={() => setDeleteTarget(o)}
+                                className="text-xs font-semibold text-red-400 border border-red-100 px-3 py-2 rounded-lg hover:bg-red-50 transition cursor-pointer"
+                                title="Eliminar onboarding"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
                           </div>
-                          <p className="text-xs text-gray-400">
-                            Creado {formatDate(o['Admin Created At'] || o['Timestamp'] || '')}
-                            {o['Created By'] && ` · ${o['Created By']}`}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          {o['PDF Link'] && (
-                            <a
-                              href={o['PDF Link']}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs font-semibold text-[#2F6B6D] border border-[#2F6B6D]/30 px-3 py-2 rounded-lg hover:bg-[#2F6B6D]/5 transition"
-                            >
-                              Ver PDF
-                            </a>
-                          )}
-                          <button
-                            onClick={() => copyLink(sessionId)}
-                            className="text-xs font-semibold bg-[#F2EA5F] text-[#0D3A39] px-3 py-2 rounded-lg hover:opacity-80 transition cursor-pointer"
-                          >
-                            {copiedId === sessionId ? '¡Copiado!' : 'Copiar link'}
-                          </button>
-                          <button
-                            onClick={() => setDeleteTarget(o)}
-                            className="text-xs font-semibold text-red-400 border border-red-100 px-3 py-2 rounded-lg hover:bg-red-50 transition cursor-pointer"
-                            title="Eliminar onboarding"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
           </div>
         )}
       </main>
@@ -193,7 +236,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
       {showModal && (
         <NewOnboardingModal
           onClose={() => setShowModal(false)}
-          onCreated={() => { fetchOnboardings(); }}
+          onCreated={() => { fetchAll(); }}
         />
       )}
 
@@ -202,7 +245,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
           sessionId={deleteTarget['Session ID']}
           onboardingName={deleteTarget['Onboarding Name'] || deleteTarget['Property Name'] || deleteTarget['Session ID']}
           onClose={() => setDeleteTarget(null)}
-          onDeleted={() => { fetchOnboardings(); setDeleteTarget(null); }}
+          onDeleted={() => { fetchAll(); setDeleteTarget(null); }}
         />
       )}
     </div>

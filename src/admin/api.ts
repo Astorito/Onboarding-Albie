@@ -14,6 +14,7 @@ export interface Onboarding {
   'PDF Link': string;
   'Created By': string;
   'Admin Created At': string;
+  'POC Email'?: string;
   'Property Name'?: string;
   'Timestamp'?: string;
 }
@@ -49,11 +50,11 @@ export const adminApi = {
 
   getOnboardings: () => apiFetch<Onboarding[]>('/api/admin/onboardings'),
 
-  createOnboarding: (accountId: string, onboardingName: string) =>
+  createOnboarding: (accountId: string, onboardingName: string, pocEmail?: string) =>
     apiFetch<{ sessionId: string }>('/api/admin/onboardings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accountId, onboardingName }),
+      body: JSON.stringify({ accountId, onboardingName, pocEmail }),
     }),
 
   deleteOnboarding: (sessionId: string) =>

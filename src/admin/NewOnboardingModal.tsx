@@ -12,6 +12,7 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
   const [newAccountName, setNewAccountName] = useState('');
   const [isNewAccount, setIsNewAccount] = useState(false);
   const [onboardingName, setOnboardingName] = useState('');
+  const [pocEmail, setPocEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [generatedLink, setGeneratedLink] = useState('');
@@ -37,7 +38,11 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
       if (!accountId) throw new Error('Seleccioná o creá una cuenta');
       if (!onboardingName.trim()) throw new Error('Ingresá el nombre del onboarding');
 
-      const { sessionId } = await adminApi.createOnboarding(accountId, onboardingName.trim());
+      const { sessionId } = await adminApi.createOnboarding(
+        accountId,
+        onboardingName.trim(),
+        pocEmail.trim() || undefined,
+      );
       const link = `${window.location.origin}/?token=${sessionId}`;
       setGeneratedLink(link);
       onCreated();
@@ -120,6 +125,21 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
                 placeholder="Ej: Hotel Patagonia Norte"
                 value={onboardingName}
                 onChange={e => setOnboardingName(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#0D3A39] outline-none focus:border-[#2F6B6D] focus:ring-2 focus:ring-[#2F6B6D]/10 transition"
+              />
+            </div>
+
+            {/* POC email */}
+            <div>
+              <label className="block text-xs font-semibold text-[#0D3A39] mb-1.5 uppercase tracking-wide">
+                Email del POC
+                <span className="ml-1.5 font-normal text-gray-400 normal-case tracking-normal">— recibe el PDF al completar</span>
+              </label>
+              <input
+                type="email"
+                placeholder="ana@theanythinggroup.com"
+                value={pocEmail}
+                onChange={e => setPocEmail(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#0D3A39] outline-none focus:border-[#2F6B6D] focus:ring-2 focus:ring-[#2F6B6D]/10 transition"
               />
             </div>

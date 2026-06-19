@@ -87,8 +87,8 @@ async function uploadToDrive(pdfBuffer: Buffer, filename: string): Promise<strin
   return uploadRes.data.webViewLink ?? `https://drive.google.com/file/d/${fileId}/view`;
 }
 
-// ─── Save PDF link to Sheets row ───────────────────────────────────────────────
-async function savePdfLink(sessionId: string, pdfLink: string): Promise<void> {
+// ─── Save PDF link to Sheets row, return POC email ────────────────────────────
+async function savePdfLink(sessionId: string, pdfLink: string): Promise<string> {
   const sheetId = process.env.GOOGLE_SHEET_ID!;
   const auth = getAuth();
   const sheets = getSheetsClient(auth);
@@ -96,11 +96,24 @@ async function savePdfLink(sessionId: string, pdfLink: string): Promise<void> {
   const rowNum = await findRowBySessionId(sheets, sheetId, ONBOARDINGS_TAB, sessionId);
   if (rowNum < 1) {
     console.warn(`[send-onboarding] Session ${sessionId} not found in sheet — skipping PDF link save`);
-    return;
+    return '';
   }
 
-  await updateCellByHeader(sheets, sheetId, ONBOARDINGS_TAB, rowNum, 'PDF Link', pdfLink);
-  await updateCellByHeader(sheets, sheetId, ONBOARDINGS_TAB, rowNum, 'Status', 'completed');
+  // Read the row to get POC Email before updating
+  const [headerRes, rowRes] = await Promise.all([
+    sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${ONBOARDINGS_TAB}!1:1` }),
+    sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${ONBOARDINGS_TAB}!${rowNum}:${rowNum}` }),
+  ]);
+  const headers = (headerRes.data.values?.[0] ?? []) as string[];
+  const rowData = (rowRes.data.values?.[0] ?? []) as string[];
+  const pocEmail = rowData[headers.indexOf('POC Email')] ?? '';
+
+  await Promise.all([
+    updateCellByHeader(sheets, sheetId, ONBOARDINGS_TAB, rowNum, 'PDF Link', pdfLink),
+    updateCellByHeader(sheets, sheetId, ONBOARDINGS_TAB, rowNum, 'Status', 'completed'),
+  ]);
+
+  return pocEmail;
 }
 
 export default async function handler(req: any, res: any) {
@@ -161,11 +174,22 @@ export default async function handler(req: any, res: any) {
       return res.status(502).json({ success: false, error: sendResult.error.message ?? 'Email send failed' });
     }
 
-    // 4. Save Drive link in the Onboardings sheet (fire-and-forget — don't block response)
+    // 4. Save Drive link in the Onboardings sheet and notify POC (fire-and-forget)
     if (driveLink && payload.sessionId && process.env.GOOGLE_SHEET_ID) {
-      savePdfLink(payload.sessionId, driveLink).catch(err =>
-        console.warn('[send-onboarding] Sheet update failed:', err.message)
-      );
+      savePdfLink(payload.sessionId, driveLink)
+        .then(async (pocEmail) => {
+          if (!pocEmail || pocEmail === adminEmail) return;
+          // Send a clean copy of the PDF to the POC
+          await resend.emails.send({
+            from: `Albie Onboarding <${fromEmail}>`,
+            to: pocEmail,
+            subject: `New onboarding: ${hotelName}`,
+            html: buildEmailBody(payload, false),
+            attachments: [{ filename: pdfFilename, content: pdfBuffer }],
+          });
+          console.log(`[send-onboarding] POC copy sent to ${pocEmail}`);
+        })
+        .catch(err => console.warn('[send-onboarding] Sheet update or POC email failed:', err.message));
     }
 
     console.log(`[send-onboarding] sent (${mode}) to ${to}, id=${sendResult.data?.id}, drive=${driveLink ?? 'none'}`);

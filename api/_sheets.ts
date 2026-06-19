@@ -13,6 +13,7 @@ export const ADMIN_COLS = [
   'PDF Link',
   'Created By',
   'Admin Created At',
+  'POC Email',
 ];
 
 export const ACCOUNTS_HEADERS = ['Account ID', 'Account Name', 'Created At'];
