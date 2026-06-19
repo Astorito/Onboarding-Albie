@@ -3,18 +3,18 @@ import { Page, Text, View } from '@react-pdf/renderer';
 import { styles, colors } from './styles';
 import { friendly } from './fieldLabels';
 
-// Logo rendered as styled text so we don't need to embed images
-export const Logo: React.FC = () => (
+// ─── Shared sub-components ────────────────────────────────────────────────────
+
+const LogoDark: React.FC = () => (
   <View>
     <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-      <Text style={styles.logoText}>albie</Text>
-      <Text style={styles.logoDot}>.</Text>
+      <Text style={styles.logoTextDark}>albie</Text>
+      <Text style={styles.logoDotDark}>.</Text>
     </View>
-    <Text style={styles.logoSub}>BY TAG SOFTWARE</Text>
+    <Text style={styles.logoSubDark}>BY TAG SOFTWARE</Text>
   </View>
 );
 
-// Reusable section header at the top of each module page
 const SectionHeader: React.FC<{ title: string; eyebrow?: string }> = ({ title, eyebrow }) => (
   <View style={styles.sectionHeader}>
     <View style={styles.sectionBullet} />
@@ -30,45 +30,46 @@ const PageFooter: React.FC<{ sessionId: string }> = ({ sessionId }) => (
   </View>
 );
 
-// Render a list of key/value entries from a plain object
-const KeyValueGrid: React.FC<{ data: Record<string, unknown>; fullKeys?: string[] }> = ({
-  data,
-  fullKeys = ['description', 'siteTitle', 'address', 'logoUrl', 'faviconUrl', 'websiteUrl', 'imageUrl', 'terms', 'salesMessages'],
-}) => {
+// Watermark "albie" bottom-right — appears on every section page
+const Watermark: React.FC<{ onDark?: boolean }> = ({ onDark }) => (
+  <Text style={onDark ? styles.watermarkCover : styles.watermarkPage}>albie</Text>
+);
+
+// ─── Key/Value grid ───────────────────────────────────────────────────────────
+const FULL_WIDTH_KEYS = ['description', 'siteTitle', 'address', 'logoUrl', 'faviconUrl', 'websiteUrl', 'imageUrl', 'terms', 'salesMessages'];
+
+const KeyValueGrid: React.FC<{ data: Record<string, unknown> }> = ({ data }) => {
   const entries = Object.entries(data).filter(([, v]) => v !== null && v !== undefined && String(v).trim() !== '');
   if (entries.length === 0) {
     return <Text style={styles.empty}>No data entered for this section.</Text>;
   }
   return (
     <View style={styles.kvGrid}>
-      {entries.map(([k, v]) => {
-        const isFull = fullKeys.includes(k);
-        return (
-          <View key={k} style={isFull ? styles.kvCellFull : styles.kvCell}>
-            <Text style={styles.kvLabel}>{friendly(k).toUpperCase()}</Text>
-            <Text style={styles.kvValue}>{String(v)}</Text>
-          </View>
-        );
-      })}
+      {entries.map(([k, v]) => (
+        <View key={k} style={FULL_WIDTH_KEYS.includes(k) ? styles.kvCellFull : styles.kvCell}>
+          <Text style={styles.kvLabel}>{friendly(k).toUpperCase()}</Text>
+          <Text style={styles.kvValue}>{String(v)}</Text>
+        </View>
+      ))}
     </View>
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 // COVER PAGE
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 export const CoverPage: React.FC<{ payload: any }> = ({ payload }) => {
   const hotelName = payload.general?.propertyName || 'New Property';
   const propertyType = payload.propertyType === 'group' ? 'Group' : 'Independent';
   const submittedAt = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    year: 'numeric', month: 'long', day: 'numeric',
   });
+
   return (
-    <Page size="A4" style={styles.page}>
+    <Page size="A4" style={styles.coverPage}>
       <View style={styles.coverWrap}>
-        <Logo />
+        <LogoDark />
+
         <Text style={styles.coverEyebrow}>ONBOARDING SUBMISSION</Text>
         <Text style={styles.coverTitle}>{hotelName}</Text>
         <Text style={styles.coverSubtitle}>Booking engine configuration summary</Text>
@@ -86,7 +87,7 @@ export const CoverPage: React.FC<{ payload: any }> = ({ payload }) => {
           <View style={styles.coverMetaRow}>
             <Text style={styles.coverMetaLabel}>LOCATION</Text>
             <Text style={styles.coverMetaValue}>
-              {[payload.general?.city, payload.general?.country].filter(Boolean).join(', ')}
+              {[payload.general.city, payload.general.country].filter(Boolean).join(', ')}
             </Text>
           </View>
         )}
@@ -98,20 +99,22 @@ export const CoverPage: React.FC<{ payload: any }> = ({ payload }) => {
         )}
         <View style={styles.coverMetaRow}>
           <Text style={styles.coverMetaLabel}>SESSION ID</Text>
-          <Text style={[styles.coverMetaValue, { color: colors.muted, fontSize: 9 }]}>
+          <Text style={[styles.coverMetaValue, { color: colors.tint, fontSize: 9 }]}>
             {payload.sessionId}
           </Text>
         </View>
 
         <Text style={styles.coverFooter}>ALBIE BY TAG · BOOKING ENGINE</Text>
       </View>
+
+      <Watermark onDark />
     </Page>
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 // SIMPLE SECTIONS (key/value)
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 const SimpleSection: React.FC<{
   title: string;
   eyebrow: string;
@@ -123,6 +126,7 @@ const SimpleSection: React.FC<{
     <View style={styles.contentBody}>
       <KeyValueGrid data={data ?? {}} />
     </View>
+    <Watermark />
     <PageFooter sessionId={sessionId} />
   </Page>
 );
@@ -135,21 +139,23 @@ export const DnsSection: React.FC<{ data: any; sessionId: string }> = ({ data, s
   <SimpleSection title="DNS & Tracking" eyebrow="OPTIONAL" data={data} sessionId={sessionId} />
 );
 
-// Brand section with color swatches
+// ─── Brand section — color swatches + other fields ───────────────────────────
 export const BrandSection: React.FC<{ data: any; sessionId: string }> = ({ data, sessionId }) => {
   const b = data ?? {};
   const colorFields: Array<[string, string]> = [
-    ['primaryColor', 'Primary Color'],
+    ['primaryColor',   'Primary Color'],
     ['secondaryColor', 'Secondary Color'],
-    ['accentColor', 'Accent Color'],
+    ['accentColor',    'Accent Color'],
   ];
-  const otherFields = ['siteTitle', 'fontFamily', 'buttonStyle', 'logoUrl', 'faviconUrl'];
-  const others = Object.fromEntries(otherFields.map((k) => [k, b[k]]).filter(([, v]) => v));
+  const otherKeys = ['siteTitle', 'fontFamily', 'buttonStyle', 'logoUrl', 'faviconUrl'];
+  const others = Object.fromEntries(otherKeys.map(k => [k, b[k]]).filter(([, v]) => v));
+
   return (
     <Page size="A4" style={styles.page}>
       <SectionHeader title="Website & Brand" eyebrow="STEP 02" />
       <View style={styles.contentBody}>
-        <View style={styles.kvGrid}>
+        {/* Color swatches */}
+        <View style={[styles.kvGrid, { marginBottom: 8 }]}>
           {colorFields.map(([key, label]) =>
             b[key] ? (
               <View key={key} style={styles.kvCell}>
@@ -164,20 +170,21 @@ export const BrandSection: React.FC<{ data: any; sessionId: string }> = ({ data,
         </View>
         <KeyValueGrid data={others} />
       </View>
+      <Watermark />
       <PageFooter sessionId={sessionId} />
     </Page>
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CANCELLATION
-// ═══════════════════════════════════════════════════════════════════════════
-export const CancellationSection: React.FC<{ items: any[]; sessionId: string }> = ({
-  items = [],
-  sessionId,
-}) => (
+// ═══════════════════════════════════════════════════════════════════════════════
+// CANCELLATION POLICIES
+// ═══════════════════════════════════════════════════════════════════════════════
+export const CancellationSection: React.FC<{ items: any[]; sessionId: string }> = ({ items = [], sessionId }) => (
   <Page size="A4" style={styles.page}>
-    <SectionHeader title="Cancellation Policies" eyebrow={`${items.length} POLIC${items.length === 1 ? 'Y' : 'IES'}`} />
+    <SectionHeader
+      title="Cancellation Policies"
+      eyebrow={`${items.length} POLIC${items.length === 1 ? 'Y' : 'IES'}`}
+    />
     <View style={styles.contentBody}>
       {items.length === 0 ? (
         <Text style={styles.empty}>No cancellation policies defined.</Text>
@@ -202,17 +209,15 @@ export const CancellationSection: React.FC<{ items: any[]; sessionId: string }> 
         ))
       )}
     </View>
+    <Watermark />
     <PageFooter sessionId={sessionId} />
   </Page>
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 // ROOMS
-// ═══════════════════════════════════════════════════════════════════════════
-export const RoomsSection: React.FC<{ rooms: any[]; sessionId: string }> = ({
-  rooms = [],
-  sessionId,
-}) => (
+// ═══════════════════════════════════════════════════════════════════════════════
+export const RoomsSection: React.FC<{ rooms: any[]; sessionId: string }> = ({ rooms = [], sessionId }) => (
   <Page size="A4" style={styles.page}>
     <SectionHeader title="Room Information" eyebrow={`${rooms.length} ROOM${rooms.length === 1 ? '' : 'S'}`} />
     <View style={styles.contentBody}>
@@ -226,16 +231,15 @@ export const RoomsSection: React.FC<{ rooms: any[]; sessionId: string }> = ({
               {r.code ? `  ·  ${r.code}` : ''}
             </Text>
             <Text style={styles.cardSubtitle}>
-              {[r.type, r.bed && `${r.bed} bed`, r.bedrooms && `${r.bedrooms}br`]
-                .filter(Boolean)
-                .join(' · ')}
+              {[r.type, r.bed && `${r.bed} bed`, r.bedrooms && `${r.bedrooms} bedrooms`]
+                .filter(Boolean).join(' · ')}
             </Text>
             {(r.longTitle || r.description) && (
               <Text style={styles.cardBody}>{r.longTitle || r.description}</Text>
             )}
             <Text style={[styles.cardBody, { marginTop: 6 }]}>
               <Text style={{ fontFamily: 'Helvetica-Bold' }}>Occupancy: </Text>
-              max {r.maxOccupants || '?'} guests ({r.maxAdults || '?'} adults · {r.childrenCapacity || '?'} children) · included: {r.includedOccupancy || '?'}
+              Max {r.maxOccupants || '?'} guests ({r.maxAdults || '?'} adults · {r.childrenCapacity || '?'} children) · Included: {r.includedOccupancy || '?'}
             </Text>
             {Array.isArray(r.facilities) && r.facilities.length > 0 && (
               <View style={styles.chipRow}>
@@ -245,7 +249,7 @@ export const RoomsSection: React.FC<{ rooms: any[]; sessionId: string }> = ({
               </View>
             )}
             {Array.isArray(r.imageUrls) && r.imageUrls.length > 0 && (
-              <Text style={[styles.cardBody, { marginTop: 6, color: colors.muted, fontSize: 8 }]}>
+              <Text style={[styles.cardBody, { marginTop: 4, color: colors.muted, fontSize: 8 }]}>
                 Images: {r.imageUrls.join(', ')}
               </Text>
             )}
@@ -253,14 +257,16 @@ export const RoomsSection: React.FC<{ rooms: any[]; sessionId: string }> = ({
         ))
       )}
     </View>
+    <Watermark />
     <PageFooter sessionId={sessionId} />
   </Page>
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 // ADD-ONS
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 type AddonCfg = { enabled?: boolean; price?: string };
+
 export const AddonsSection: React.FC<{ addons: Record<string, AddonCfg>; sessionId: string }> = ({
   addons = {},
   sessionId,
@@ -283,34 +289,33 @@ export const AddonsSection: React.FC<{ addons: Record<string, AddonCfg>; session
           </View>
         )}
       </View>
+      <Watermark />
       <PageFooter sessionId={sessionId} />
     </Page>
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 // RATES
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 export const RatesSection: React.FC<{ rates: Record<string, string>; sessionId: string }> = ({
   rates = {},
   sessionId,
 }) => (
   <Page size="A4" style={styles.page}>
-    <SectionHeader title="Rates & Packages" />
+    <SectionHeader title="Rates & Packages" eyebrow="STEP 07" />
     <View style={styles.contentBody}>
       <KeyValueGrid data={rates} />
     </View>
+    <Watermark />
     <PageFooter sessionId={sessionId} />
   </Page>
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
 // TAXES
-// ═══════════════════════════════════════════════════════════════════════════
-export const TaxesSection: React.FC<{ taxes: any[]; sessionId: string }> = ({
-  taxes = [],
-  sessionId,
-}) => (
+// ═══════════════════════════════════════════════════════════════════════════════
+export const TaxesSection: React.FC<{ taxes: any[]; sessionId: string }> = ({ taxes = [], sessionId }) => (
   <Page size="A4" style={styles.page}>
     <SectionHeader title="Taxes & Fees" eyebrow={`${taxes.length} ITEM${taxes.length === 1 ? '' : 'S'}`} />
     <View style={styles.contentBody}>
@@ -328,6 +333,7 @@ export const TaxesSection: React.FC<{ taxes: any[]; sessionId: string }> = ({
         ))
       )}
     </View>
+    <Watermark />
     <PageFooter sessionId={sessionId} />
   </Page>
 );
