@@ -64,6 +64,8 @@ export const RoomInformationStep = ({ rooms, setRooms }: Props) => {
   const [showForm, setShowForm] = useState(rooms.length === 0);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>({ ...EMPTY_FORM });
+  const [customFacInput, setCustomFacInput] = useState('');
+  const [customFacilities, setCustomFacilities] = useState<string[]>([]);
 
   const update = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -75,6 +77,14 @@ export const RoomInformationStep = ({ rooms, setRooms }: Props) => {
         ? prev.facilities.filter((x) => x !== f)
         : [...prev.facilities, f],
     }));
+
+  const addCustomFacility = () => {
+    const name = customFacInput.trim();
+    if (!name || customFacilities.includes(name) || facilityList.includes(name)) return;
+    setCustomFacilities((prev) => [...prev, name]);
+    setForm((prev) => ({ ...prev, facilities: [...prev.facilities, name] }));
+    setCustomFacInput('');
+  };
 
   const startNew = () => {
     setForm({ ...EMPTY_FORM });
@@ -303,7 +313,7 @@ export const RoomInformationStep = ({ rooms, setRooms }: Props) => {
             icon="bathtub"
           >
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 col-span-2">
-              {facilityList.map((f) => (
+              {[...facilityList, ...customFacilities].map((f) => (
                 <button
                   key={f}
                   type="button"
@@ -317,6 +327,26 @@ export const RoomInformationStep = ({ rooms, setRooms }: Props) => {
                   {f}
                 </button>
               ))}
+            </div>
+
+            {/* Add custom facility */}
+            <div className="col-span-2 flex gap-2 mt-1">
+              <input
+                type="text"
+                value={customFacInput}
+                onChange={(e) => setCustomFacInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomFacility(); } }}
+                placeholder="Agregar facility personalizada…"
+                className="flex-1 text-xs px-3 py-2 border border-outline-variant rounded-lg focus:outline-none focus:border-primary bg-white"
+              />
+              <button
+                type="button"
+                onClick={addCustomFacility}
+                disabled={!customFacInput.trim()}
+                className="px-4 py-2 text-xs font-bold bg-primary text-white rounded-lg disabled:opacity-40 cursor-pointer hover:opacity-90 transition"
+              >
+                Agregar
+              </button>
             </div>
 
             <div className="mt-6">

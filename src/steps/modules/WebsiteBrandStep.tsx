@@ -44,10 +44,10 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: Partial<PrefillDa
                 <input
                   type="color"
                   name="primaryColorPicker"
-                  defaultValue="#5b6300"
+                  defaultValue="#ffffff"
                   className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
                 />
-                <TextInput name="primaryColor" placeholder="#5b6300" defaultValue="#5b6300" />
+                <TextInput name="primaryColor" placeholder="#ffffff" defaultValue="#ffffff" />
               </div>
             </FormField>
 
@@ -56,10 +56,10 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: Partial<PrefillDa
                 <input
                   type="color"
                   name="secondaryColorPicker"
-                  defaultValue="#F2EA5F"
+                  defaultValue="#ffffff"
                   className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
                 />
-                <TextInput name="secondaryColor" placeholder="#F2EA5F" defaultValue="#F2EA5F" />
+                <TextInput name="secondaryColor" placeholder="#ffffff" defaultValue="#ffffff" />
               </div>
             </FormField>
 
@@ -68,10 +68,10 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: Partial<PrefillDa
                 <input
                   type="color"
                   name="accentColorPicker"
-                  defaultValue="#00191a"
+                  defaultValue="#ffffff"
                   className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
                 />
-                <TextInput name="accentColor" placeholder="#00191a" defaultValue="#00191a" />
+                <TextInput name="accentColor" placeholder="#ffffff" defaultValue="#ffffff" />
               </div>
             </FormField>
 

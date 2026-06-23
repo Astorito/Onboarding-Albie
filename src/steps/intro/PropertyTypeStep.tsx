@@ -24,12 +24,11 @@ export const PropertyTypeStep = ({ onSelect }: { onSelect: (type: 'independent' 
         </p>
       </div>
 
-      {/* Right: cards */}
-      <div className="md:col-span-7 grid sm:grid-cols-2 gap-5">
-        {/* Independent */}
+      {/* Right: single card */}
+      <div className="md:col-span-7 flex justify-start">
         <button
           onClick={() => onSelect('independent')}
-          className="group relative flex flex-col p-8 bg-white border-2 border-outline-variant rounded-3xl hover:border-secondary transition-all duration-200 shadow-sm hover:shadow-xl active:scale-[0.98] text-left cursor-pointer overflow-hidden"
+          className="group relative flex flex-col p-8 bg-white border-2 border-outline-variant rounded-3xl hover:border-secondary transition-all duration-200 shadow-sm hover:shadow-xl active:scale-[0.98] text-left cursor-pointer overflow-hidden w-full max-w-sm"
         >
           <div className="absolute inset-0 bg-secondary/0 group-hover:bg-secondary/5 rounded-3xl transition-colors duration-200" />
           <div className="relative z-10 flex flex-col h-full">
@@ -39,26 +38,6 @@ export const PropertyTypeStep = ({ onSelect }: { onSelect: (type: 'independent' 
             <h3 className="text-xl font-bold text-primary mb-2">Independent</h3>
             <p className="text-on-surface-variant text-sm leading-relaxed flex-1">
               A single property with its own identity, operating on its own.
-            </p>
-            <div className="mt-6 flex items-center gap-1.5 text-primary font-bold text-sm group-hover:gap-3 transition-all duration-200">
-              Select <Icon name="arrow_forward" className="text-base" />
-            </div>
-          </div>
-        </button>
-
-        {/* Group */}
-        <button
-          onClick={() => onSelect('group')}
-          className="group relative flex flex-col p-8 bg-white border-2 border-outline-variant rounded-3xl hover:border-secondary transition-all duration-200 shadow-sm hover:shadow-xl active:scale-[0.98] text-left cursor-pointer overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-secondary/0 group-hover:bg-secondary/5 rounded-3xl transition-colors duration-200" />
-          <div className="relative z-10 flex flex-col h-full">
-            <div className="w-14 h-14 bg-secondary-container rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-200">
-              <Icon name="domain" className="text-3xl text-secondary" />
-            </div>
-            <h3 className="text-xl font-bold text-primary mb-2">Group</h3>
-            <p className="text-on-surface-variant text-sm leading-relaxed flex-1">
-              Multiple properties managed together under a single group account.
             </p>
             <div className="mt-6 flex items-center gap-1.5 text-primary font-bold text-sm group-hover:gap-3 transition-all duration-200">
               Select <Icon name="arrow_forward" className="text-base" />

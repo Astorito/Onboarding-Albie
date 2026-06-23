@@ -53,6 +53,7 @@ export const GeneralInformationStep = ({ prefill = {} }: { prefill?: Partial<Pre
               <option value="France">France</option>
               <option value="Germany">Germany</option>
               <option value="Greece">Greece</option>
+              <option value="Indonesia">Indonesia</option>
               <option value="Ireland">Ireland</option>
               <option value="Italy">Italy</option>
               <option value="Japan">Japan</option>
@@ -109,6 +110,7 @@ export const GeneralInformationStep = ({ prefill = {} }: { prefill?: Partial<Pre
               <option value="Europe/Istanbul">UTC+3 – Turkey Time</option>
               <option value="Asia/Dubai">UTC+4 – Gulf Standard Time</option>
               <option value="Asia/Kolkata">UTC+5:30 – India Standard Time</option>
+              <option value="Asia/Jakarta">UTC+7 – Western Indonesia Time</option>
               <option value="Asia/Singapore">UTC+8 – Singapore Time</option>
               <option value="Asia/Tokyo">UTC+9 – Japan Standard Time</option>
               <option value="Australia/Sydney">UTC+10 – Australian Eastern Time</option>
