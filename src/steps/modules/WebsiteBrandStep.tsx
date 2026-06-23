@@ -1,8 +1,8 @@
 import { FormField, TextInput, SelectInput } from '../../components/ui/primitives';
 import { ConfigSection } from '../../components/ui/layout';
-import { PrefillData } from '../../types';
+import { StepPrefill } from '../../types';
 
-export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: Partial<PrefillData> }) => {
+export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: StepPrefill }) => {
   const fonts = [
     'Hanken Grotesk',
     'Inter',
@@ -44,10 +44,11 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: Partial<PrefillDa
                 <input
                   type="color"
                   name="primaryColorPicker"
-                  defaultValue="#ffffff"
+                  defaultValue={prefill.primaryColor ?? '#ffffff'}
+                  key={`pc-${prefill.primaryColor}`}
                   className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
                 />
-                <TextInput name="primaryColor" placeholder="#ffffff" defaultValue="#ffffff" />
+                <TextInput name="primaryColor" placeholder="#ffffff" defaultValue={prefill.primaryColor ?? '#ffffff'} key={prefill.primaryColor} />
               </div>
             </FormField>
 
@@ -56,10 +57,11 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: Partial<PrefillDa
                 <input
                   type="color"
                   name="secondaryColorPicker"
-                  defaultValue="#ffffff"
+                  defaultValue={prefill.secondaryColor ?? '#ffffff'}
+                  key={`sc-${prefill.secondaryColor}`}
                   className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
                 />
-                <TextInput name="secondaryColor" placeholder="#ffffff" defaultValue="#ffffff" />
+                <TextInput name="secondaryColor" placeholder="#ffffff" defaultValue={prefill.secondaryColor ?? '#ffffff'} key={prefill.secondaryColor} />
               </div>
             </FormField>
 
@@ -68,15 +70,16 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: Partial<PrefillDa
                 <input
                   type="color"
                   name="accentColorPicker"
-                  defaultValue="#ffffff"
+                  defaultValue={prefill.accentColor ?? '#ffffff'}
+                  key={`ac-${prefill.accentColor}`}
                   className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
                 />
-                <TextInput name="accentColor" placeholder="#ffffff" defaultValue="#ffffff" />
+                <TextInput name="accentColor" placeholder="#ffffff" defaultValue={prefill.accentColor ?? '#ffffff'} key={prefill.accentColor} />
               </div>
             </FormField>
 
             <FormField label="Font Family" required>
-              <SelectInput name="fontFamily">
+              <SelectInput name="fontFamily" defaultValue={prefill.fontFamily ?? ''} key={prefill.fontFamily}>
                 {fonts.map((f) => (
                   <option key={f} value={f}>{f}</option>
                 ))}
@@ -84,7 +87,7 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: Partial<PrefillDa
             </FormField>
 
             <FormField label="Button Style">
-              <SelectInput name="buttonStyle">
+              <SelectInput name="buttonStyle" defaultValue={prefill.buttonStyle ?? ''} key={prefill.buttonStyle}>
                 {buttonStyles.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
@@ -96,6 +99,8 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: Partial<PrefillDa
                 name="logoUrl"
                 type="url"
                 placeholder="https://yourhotel.com/logo.svg"
+                defaultValue={prefill.logoUrl ?? ''}
+                key={prefill.logoUrl}
               />
             </FormField>
 
@@ -104,6 +109,8 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: Partial<PrefillDa
                 name="faviconUrl"
                 type="url"
                 placeholder="https://yourhotel.com/favicon.ico"
+                defaultValue={prefill.faviconUrl ?? ''}
+                key={prefill.faviconUrl}
               />
             </FormField>
           </div>

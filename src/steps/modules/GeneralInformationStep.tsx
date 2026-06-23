@@ -1,8 +1,8 @@
 import { FormField, TextInput, TextareaInput, SelectInput } from '../../components/ui/primitives';
 import { ConfigSection } from '../../components/ui/layout';
-import { PrefillData } from '../../types';
+import { StepPrefill } from '../../types';
 
-export const GeneralInformationStep = ({ prefill = {} }: { prefill?: Partial<PrefillData> }) => (
+export const GeneralInformationStep = ({ prefill = {} }: { prefill?: StepPrefill }) => (
   <div className="w-full max-w-6xl mx-auto flex flex-col py-4">
     <div className="mb-4 shrink-0">
       <h1 className="font-display-lg text-xl text-primary font-bold">General Information</h1>
@@ -172,7 +172,7 @@ export const GeneralInformationStep = ({ prefill = {} }: { prefill?: Partial<Pre
           </FormField>
 
           <FormField label="Date Format" required>
-            <SelectInput name="dateFormat">
+            <SelectInput name="dateFormat" defaultValue={prefill.dateFormat ?? ''} key={prefill.dateFormat}>
               <option value="">Select Format</option>
               <option value="DD/MM/YYYY">DD/MM/YYYY</option>
               <option value="MM/DD/YYYY">MM/DD/YYYY</option>
@@ -197,6 +197,8 @@ export const GeneralInformationStep = ({ prefill = {} }: { prefill?: Partial<Pre
               name="termsConditions"
               rows={4}
               placeholder="Enter your property's full terms and conditions..."
+              defaultValue={prefill.termsConditions ?? ''}
+              key={prefill.termsConditions}
             />
           </FormField>
         </div>

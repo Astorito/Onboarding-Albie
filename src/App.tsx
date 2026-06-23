@@ -217,36 +217,35 @@ export default function App() {
   const progressTotal = DEFAULT_ENABLED.length + 2;
 
   // ── Collect current uncontrolled form's data before navigating away ───────
-  const collectCurrentForm = () => {
-    if (!isModuleStep || !currentModuleId) return;
+  // Returns the fresh savedForms (state update is async, so callers that need
+  // the latest data immediately use the return value).
+  const collectCurrentForm = (base = savedForms) => {
+    if (!isModuleStep || !currentModuleId) return base;
     const formEl = document.getElementById(`form-${currentModuleId}`) as HTMLFormElement | null;
-    if (!formEl) return;
+    if (!formEl) return base;
     const fd = new FormData(formEl);
     const data: Record<string, string> = {};
     fd.forEach((val, key) => { data[key] = val as string; });
-    setSavedForms((prev) => ({ ...prev, [currentModuleId]: data }));
+    const next = { ...base, [currentModuleId]: data };
+    setSavedForms(next);
+    return next;
   };
 
   const goNext = () => {
     // Collect the current form's data synchronously so we can pass it to the save
     // (can't rely on setSavedForms having flushed yet)
-    let freshForms = savedForms;
-    if (isModuleStep && currentModuleId) {
-      const formEl = document.getElementById(`form-${currentModuleId}`) as HTMLFormElement | null;
-      if (formEl) {
-        const fd = new FormData(formEl);
-        const data: Record<string, string> = {};
-        fd.forEach((val, key) => { data[key] = val as string; });
-        freshForms = { ...savedForms, [currentModuleId]: data };
-        setSavedForms(freshForms);
-      }
-    }
+    const freshForms = collectCurrentForm();
     window.scrollTo(0, 0);
     setCurrentStep((s) => s + 1);
     // Fire-and-forget save with the freshest data
     if (propertyType) saveInBackground(buildPayload(freshForms));
   };
-  const goBack = () => { window.scrollTo(0, 0); setCurrentStep((s) => s - 1); };
+  const goBack = () => {
+    // Persist the current form before leaving so the data survives the round-trip
+    collectCurrentForm();
+    window.scrollTo(0, 0);
+    setCurrentStep((s) => s - 1);
+  };
 
   // ── Build full submit payload ─────────────────────────────────────────────
   const buildPayload = (
@@ -379,10 +378,12 @@ export default function App() {
   };
 
   // ── Module component map ──────────────────────────────────────────────────
+  // Merge server prefill with anything the user already typed (savedForms wins),
+  // so uncontrolled steps repopulate when navigating back to them.
   const moduleComponents: Record<string, ReactNode> = {
-    general:      <GeneralInformationStep prefill={prefillData} />,
-    brand:        <WebsiteBrandStep prefill={prefillData} />,
-    dns:          <DnsTrackingStep />,
+    general:      <GeneralInformationStep prefill={{ ...prefillData, ...savedForms.general }} />,
+    brand:        <WebsiteBrandStep prefill={{ ...prefillData, ...savedForms.brand }} />,
+    dns:          <DnsTrackingStep prefill={savedForms.dns ?? {}} />,
     cancellation: <CancellationPoliciesStep policies={cancellationPolicies} setPolicies={setCancellationPolicies} />,
     rooms:        <RoomInformationStep rooms={rooms} setRooms={setRooms} />,
     experiences:  <ExperiencesStep />,

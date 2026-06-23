@@ -17,3 +17,8 @@ export interface PrefillData {
 }
 
 export type GroupMember = { id: number; name: string; url: string };
+
+// Loose prefill bag passed to uncontrolled form steps. Merges server prefill
+// (PrefillData) with values the user already typed (savedForms), so fields
+// like dateFormat / colors / dns ids that aren't in PrefillData still restore.
+export type StepPrefill = Record<string, string | null | undefined>;

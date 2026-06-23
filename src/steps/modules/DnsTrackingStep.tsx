@@ -1,7 +1,8 @@
 import { Icon, FormField, TextInput } from '../../components/ui/primitives';
 import { ConfigSection } from '../../components/ui/layout';
+import { StepPrefill } from '../../types';
 
-export const DnsTrackingStep = () => (
+export const DnsTrackingStep = ({ prefill = {} }: { prefill?: StepPrefill }) => (
   <div className="w-full max-w-6xl mx-auto flex flex-col py-4">
     <div className="mb-4 shrink-0">
       <h1 className="font-display-lg text-xl text-primary font-bold">DNS & Tracking</h1>
@@ -18,7 +19,7 @@ export const DnsTrackingStep = () => (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
           <FormField label="Subdomain Name" required className="col-span-2">
             <div className="flex items-center">
-              <TextInput name="subdomain" placeholder="reservations" className="rounded-r-none border-r-0" />
+              <TextInput name="subdomain" placeholder="reservations" className="rounded-r-none border-r-0" defaultValue={prefill.subdomain ?? ''} key={prefill.subdomain} />
               <span className="px-4 py-2.5 bg-surface-container-low border border-outline-variant rounded-r-lg text-sm font-bold text-on-surface-variant whitespace-nowrap">
                 .albie.com
               </span>
@@ -26,15 +27,15 @@ export const DnsTrackingStep = () => (
           </FormField>
 
           <FormField label="Google Tag Manager ID">
-            <TextInput name="gtmId" placeholder="GTM-XXXXXXX" />
+            <TextInput name="gtmId" placeholder="GTM-XXXXXXX" defaultValue={prefill.gtmId ?? ''} key={prefill.gtmId} />
           </FormField>
 
           <FormField label="Google Analytics 4 Measurement ID">
-            <TextInput name="ga4Id" placeholder="G-XXXXXXXXXX" />
+            <TextInput name="ga4Id" placeholder="G-XXXXXXXXXX" defaultValue={prefill.ga4Id ?? ''} key={prefill.ga4Id} />
           </FormField>
 
           <FormField label="Google Map ID" className="col-span-2">
-            <TextInput name="mapId" placeholder="Enter your Google Maps API key or Map ID" />
+            <TextInput name="mapId" placeholder="Enter your Google Maps API key or Map ID" defaultValue={prefill.mapId ?? ''} key={prefill.mapId} />
           </FormField>
 
           <div className="col-span-2 mt-2 p-4 bg-secondary-container/30 rounded-xl flex items-start gap-3">
