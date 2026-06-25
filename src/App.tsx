@@ -437,14 +437,14 @@ export default function App() {
           {currentStep >= firstModule && currentStep < successStep && (
             <motion.div key="stepper" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-grow overflow-y-auto custom-scrollbar">
               <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pt-4 pb-3 px-margin-mobile md:px-margin-desktop">
-                <div className="flex items-center mb-3 w-full max-w-[600px] mx-auto">
+                <div className="relative flex items-center">
                   <img
                     src="/albie-logo-dark.svg"
                     alt="Albie by TAG"
-                    className="h-8 w-auto"
+                    className="h-8 w-auto absolute left-0"
                   />
+                  <ProgressBar currentStep={progressCurrent} totalSteps={progressTotal} />
                 </div>
-                <ProgressBar currentStep={progressCurrent} totalSteps={progressTotal} />
               </div>
 
               <div className="px-margin-mobile md:px-margin-desktop pb-28">
