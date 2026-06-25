@@ -1,5 +1,5 @@
 import { useState, Fragment, type Dispatch, type SetStateAction } from 'react';
-import { FormField, TextInput, SelectInput } from '../../components/ui/primitives';
+import { FormField, TextInput, TextareaInput, SelectInput } from '../../components/ui/primitives';
 import { ConfigSection, ItemCard, AddItemButton, FormActions } from '../../components/ui/layout';
 
 export type RoomItem = {
@@ -7,6 +7,7 @@ export type RoomItem = {
   code: string;
   shortTitle: string;
   longTitle: string;
+  description: string; // long-form room description (backwards compat: defaults to '')
   name: string;        // alias of shortTitle for backwards compat
   type: string;
   bed: string;
@@ -27,6 +28,7 @@ const EMPTY_FORM: FormState = {
   code: '',
   shortTitle: '',
   longTitle: '',
+  description: '',
   type: '',
   bed: '',
   bedrooms: 1,
@@ -97,6 +99,7 @@ export const RoomInformationStep = ({ rooms, setRooms }: Props) => {
       code: r.code ?? '',
       shortTitle: r.shortTitle ?? r.name ?? '',
       longTitle: r.longTitle ?? '',
+      description: r.description ?? '',
       type: r.type,
       bed: r.bed,
       bedrooms: r.bedrooms,
@@ -128,6 +131,7 @@ export const RoomInformationStep = ({ rooms, setRooms }: Props) => {
       code: form.code,
       shortTitle: form.shortTitle,
       longTitle: form.longTitle,
+      description: form.description,
       name: form.shortTitle || form.code || 'Room',
       type: form.type || 'Standard Room',
       bed: form.bed || 'Queen',
@@ -203,6 +207,15 @@ export const RoomInformationStep = ({ rooms, setRooms }: Props) => {
                   maxLength={50}
                   value={form.longTitle}
                   onChange={(e) => update('longTitle', e.target.value)}
+                />
+              </FormField>
+
+              <FormField label="Room Description" hint="Full description shown on the room detail page." className="col-span-2">
+                <TextareaInput
+                  rows={3}
+                  placeholder="Describe the room — views, ambiance, standout amenities..."
+                  value={form.description}
+                  onChange={(e) => update('description', e.target.value)}
                 />
               </FormField>
 
