@@ -398,7 +398,7 @@ export default function App() {
       {currentStep >= 1 && currentStep < firstModule && (
         <button
           onClick={goBack}
-          className="fixed top-6 left-6 z-50 p-3 flex items-center justify-center text-primary hover:bg-surface-container-low transition-all rounded-full opacity-40 hover:opacity-100 cursor-pointer shadow-sm hover:shadow-md bg-white/50 backdrop-blur-sm"
+          className="fixed top-20 left-6 z-50 p-3 flex items-center justify-center text-primary hover:bg-surface-container-low transition-all rounded-full opacity-40 hover:opacity-100 cursor-pointer shadow-sm hover:shadow-md bg-white/50 backdrop-blur-sm"
         >
           <Icon name="arrow_back" className="text-2xl" />
         </button>

@@ -25,7 +25,7 @@ export const PropertyTypeStep = ({ onSelect }: { onSelect: (type: 'independent' 
       </div>
 
       {/* Right: single card */}
-      <div className="md:col-span-7 flex justify-start">
+      <div className="md:col-span-7 flex justify-center">
         <button
           onClick={() => onSelect('independent')}
           className="group relative flex flex-col p-8 bg-white border-2 border-outline-variant rounded-3xl hover:border-secondary transition-all duration-200 shadow-sm hover:shadow-xl active:scale-[0.98] text-left cursor-pointer overflow-hidden w-full max-w-sm"
