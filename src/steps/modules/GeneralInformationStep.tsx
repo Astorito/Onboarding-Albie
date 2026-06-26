@@ -133,20 +133,25 @@ export const GeneralInformationStep = ({ prefill = {} }: { prefill?: StepPrefill
               <option value="CHF">CHF – Swiss Franc (Fr)</option>
               <option value="CLP">CLP – Chilean Peso ($)</option>
               <option value="COP">COP – Colombian Peso ($)</option>
+              <option value="CRC">CRC – Costa Rican Colón (₡)</option>
               <option value="DKK">DKK – Danish Krone (kr)</option>
               <option value="EUR">EUR – Euro (€)</option>
               <option value="GBP">GBP – British Pound (£)</option>
+              <option value="IDR">IDR – Indonesian Rupiah (Rp)</option>
               <option value="JPY">JPY – Japanese Yen (¥)</option>
               <option value="MXN">MXN – Mexican Peso ($)</option>
               <option value="NOK">NOK – Norwegian Krone (kr)</option>
               <option value="NZD">NZD – New Zealand Dollar ($)</option>
               <option value="PEN">PEN – Peruvian Sol (S/)</option>
               <option value="PLN">PLN – Polish Złoty (zł)</option>
+              <option value="SCR">SCR – Seychellois Rupee (₨)</option>
               <option value="SEK">SEK – Swedish Krona (kr)</option>
               <option value="SGD">SGD – Singapore Dollar ($)</option>
+              <option value="THB">THB – Thai Baht (฿)</option>
               <option value="TRY">TRY – Turkish Lira (₺)</option>
               <option value="USD">USD – US Dollar ($)</option>
               <option value="UYU">UYU – Uruguayan Peso ($U)</option>
+              <option value="VND">VND – Vietnamese Dong (₫)</option>
               <option value="ZAR">ZAR – South African Rand (R)</option>
             </SelectInput>
           </FormField>
