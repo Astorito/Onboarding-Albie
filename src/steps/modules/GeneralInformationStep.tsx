@@ -74,6 +74,7 @@ export const GeneralInformationStep = ({ prefill = {} }: { prefill?: StepPrefill
               <option value="United Kingdom">United Kingdom</option>
               <option value="United States">United States</option>
               <option value="Uruguay">Uruguay</option>
+              <option value="Vietnam">Vietnam</option>
             </SelectInput>
           </FormField>
 
