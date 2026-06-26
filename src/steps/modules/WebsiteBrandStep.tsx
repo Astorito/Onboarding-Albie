@@ -1,8 +1,13 @@
+import { useState } from 'react';
 import { FormField, TextInput, SelectInput } from '../../components/ui/primitives';
 import { ConfigSection } from '../../components/ui/layout';
 import { StepPrefill } from '../../types';
 
 export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: StepPrefill }) => {
+  const [primaryColor,   setPrimaryColor]   = useState(prefill.primaryColor   ?? '#ffffff');
+  const [secondaryColor, setSecondaryColor] = useState(prefill.secondaryColor ?? '#ffffff');
+  const [accentColor,    setAccentColor]    = useState(prefill.accentColor    ?? '#ffffff');
+
   const fonts = [
     'Hanken Grotesk',
     'Inter',
@@ -43,12 +48,16 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: StepPrefill }) =>
               <div className="flex items-center gap-3">
                 <input
                   type="color"
-                  name="primaryColorPicker"
-                  defaultValue={prefill.primaryColor ?? '#ffffff'}
-                  key={`pc-${prefill.primaryColor}`}
+                  value={primaryColor}
+                  onChange={(e) => setPrimaryColor(e.target.value)}
                   className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
                 />
-                <TextInput name="primaryColor" placeholder="#ffffff" defaultValue={prefill.primaryColor ?? '#ffffff'} key={prefill.primaryColor} />
+                <TextInput
+                  name="primaryColor"
+                  placeholder="#ffffff"
+                  value={primaryColor}
+                  onChange={(e) => setPrimaryColor(e.target.value)}
+                />
               </div>
             </FormField>
 
@@ -56,12 +65,16 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: StepPrefill }) =>
               <div className="flex items-center gap-3">
                 <input
                   type="color"
-                  name="secondaryColorPicker"
-                  defaultValue={prefill.secondaryColor ?? '#ffffff'}
-                  key={`sc-${prefill.secondaryColor}`}
+                  value={secondaryColor}
+                  onChange={(e) => setSecondaryColor(e.target.value)}
                   className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
                 />
-                <TextInput name="secondaryColor" placeholder="#ffffff" defaultValue={prefill.secondaryColor ?? '#ffffff'} key={prefill.secondaryColor} />
+                <TextInput
+                  name="secondaryColor"
+                  placeholder="#ffffff"
+                  value={secondaryColor}
+                  onChange={(e) => setSecondaryColor(e.target.value)}
+                />
               </div>
             </FormField>
 
@@ -69,12 +82,16 @@ export const WebsiteBrandStep = ({ prefill = {} }: { prefill?: StepPrefill }) =>
               <div className="flex items-center gap-3">
                 <input
                   type="color"
-                  name="accentColorPicker"
-                  defaultValue={prefill.accentColor ?? '#ffffff'}
-                  key={`ac-${prefill.accentColor}`}
+                  value={accentColor}
+                  onChange={(e) => setAccentColor(e.target.value)}
                   className="h-10 w-12 rounded-lg border border-outline-variant cursor-pointer p-0.5 shrink-0"
                 />
-                <TextInput name="accentColor" placeholder="#ffffff" defaultValue={prefill.accentColor ?? '#ffffff'} key={prefill.accentColor} />
+                <TextInput
+                  name="accentColor"
+                  placeholder="#ffffff"
+                  value={accentColor}
+                  onChange={(e) => setAccentColor(e.target.value)}
+                />
               </div>
             </FormField>
 
