@@ -98,6 +98,8 @@ export default function App() {
   const [propertyType, setPropertyType] = useState<'independent' | 'group' | null>(null);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
   const [prefillData, setPrefillData] = useState<Partial<PrefillData>>({});
+  // Name the admin assigned to this onboarding (shown on the welcome slide).
+  const [onboardingName, setOnboardingName] = useState<string | null>(null);
 
   // ── Load server-side session data (admin pre-fill) ────────────────────────
   // Fires once on mount. If the admin already filled some fields via this link,
@@ -107,6 +109,7 @@ export default function App() {
       .then(r => r.ok ? r.json() : null)
       .then((data) => {
         if (!data) return;
+        setOnboardingName(data.onboardingName ?? null);
         const g = data.general ?? {};
         const b = data.brand   ?? {};
         const d = data.dns     ?? {};
@@ -410,7 +413,7 @@ export default function App() {
           {/* Step 0 – Welcome */}
           {currentStep === 0 && (
             <motion.div key="welcome" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="h-full">
-              <WelcomeStep onNext={goNext} />
+              <WelcomeStep onNext={goNext} propertyName={onboardingName} />
             </motion.div>
           )}
 

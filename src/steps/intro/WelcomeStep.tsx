@@ -1,6 +1,6 @@
 import { Icon } from '../../components/ui/primitives';
 
-export const WelcomeStep = ({ onNext }: { onNext: () => void }) => (
+export const WelcomeStep = ({ onNext, propertyName }: { onNext: () => void; propertyName?: string | null }) => (
   <main className="h-full flex items-center justify-center overflow-hidden px-margin-mobile relative bg-white">
     {/* Logo — top left */}
     <div className="absolute top-5 left-6">
@@ -19,6 +19,11 @@ export const WelcomeStep = ({ onNext }: { onNext: () => void }) => (
           <h1 className="font-display-lg text-4xl lg:text-6xl text-primary leading-tight">
             Welcome to ALBIE
           </h1>
+          {propertyName && (
+            <p className="font-display-lg text-2xl lg:text-3xl text-secondary font-bold leading-tight">
+              {propertyName}
+            </p>
+          )}
           <p className="font-body-md text-on-surface-variant max-w-lg">
             Let's set up your booking engine to start receiving reservations. Our architectural
             onboarding ensures precision in every detail of your operations.
