@@ -48,6 +48,7 @@ export const GeneralInformationStep = ({ prefill = {} }: { prefill?: StepPrefill
               <option value="Canada">Canada</option>
               <option value="Chile">Chile</option>
               <option value="Colombia">Colombia</option>
+              <option value="Costa Rica">Costa Rica</option>
               <option value="Denmark">Denmark</option>
               <option value="Finland">Finland</option>
               <option value="France">France</option>
@@ -64,11 +65,13 @@ export const GeneralInformationStep = ({ prefill = {} }: { prefill?: StepPrefill
               <option value="Peru">Peru</option>
               <option value="Poland">Poland</option>
               <option value="Portugal">Portugal</option>
+              <option value="Seychelles">Seychelles</option>
               <option value="Singapore">Singapore</option>
               <option value="South Africa">South Africa</option>
               <option value="Spain">Spain</option>
               <option value="Sweden">Sweden</option>
               <option value="Switzerland">Switzerland</option>
+              <option value="Thailand">Thailand</option>
               <option value="Turkey">Turkey</option>
               <option value="United Arab Emirates">United Arab Emirates</option>
               <option value="United Kingdom">United Kingdom</option>
