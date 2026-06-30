@@ -14,7 +14,7 @@ import { SHEET_HEADERS } from './submit';
 export const config = { maxDuration: 60 };
 
 const GEMINI_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 // Fields Gemini can extract — maps to SHEET_HEADERS column names
 const FIELD_TO_HEADER: Record<string, string> = {
