@@ -78,24 +78,34 @@ export const GeneralInformationStep = ({ prefill = {} }: { prefill?: StepPrefill
   const initCity    = prefill.city ?? '';
 
   // Determine initial modes based on whether prefill values are in the known lists
+  const KNOWN_COUNTRIES = ['Antigua and Barbuda','Argentina','Australia','Austria','Bahamas','Barbados','Belgium','Belize','Brazil','Cambodia','Canada','Chile','China','Colombia','Costa Rica','Croatia','Cuba','Czech Republic','Denmark','Dominican Republic','Egypt','El Salvador','Finland','France','Germany','Greece','Guatemala','Honduras','Hungary','Iceland','India','Indonesia','Ireland','Italy','Jamaica','Japan','Kenya','Malaysia','Maldives','Malta','Mauritius','Mexico','Morocco','Myanmar','Nepal','Netherlands','New Zealand','Norway','Panama','Peru','Philippines','Poland','Portugal','Seychelles','Singapore','South Africa','South Korea','Spain','Sri Lanka','Sweden','Switzerland','Tanzania','Thailand','Turkey','Turks and Caicos','United Arab Emirates','United Kingdom','United States','Uruguay','Vietnam'];
+  const initCountryManual = initCountry !== '' && !KNOWN_COUNTRIES.includes(initCountry);
+
   const initStateOpts = COUNTRY_STATES[initCountry] ?? [];
   const initCityOpts  = COUNTRY_CITIES[initCountry] ?? [];
   const initStateManual = initState !== '' && initStateOpts.length > 0 && !initStateOpts.includes(initState);
   const initCityManual  = initCity  !== '' && initCityOpts.length  > 0 && !initCityOpts.includes(initCity);
 
-  const [country,     setCountry]     = useState(initCountry);
-  const [stateVal,    setStateVal]    = useState(initStateManual ? '' : initState);
-  const [cityVal,     setCityVal]     = useState(initCityManual  ? '' : initCity);
-  const [stateManual, setStateManual] = useState(initStateManual);
-  const [cityManual,  setCityManual]  = useState(initCityManual);
-  const [manualState, setManualState] = useState(initStateManual ? initState : '');
-  const [manualCity,  setManualCity]  = useState(initCityManual  ? initCity  : '');
+  const [country,       setCountry]       = useState(initCountryManual ? '' : initCountry);
+  const [countryManual, setCountryManual] = useState(initCountryManual);
+  const [manualCountry, setManualCountry] = useState(initCountryManual ? initCountry : '');
+  const [stateVal,      setStateVal]      = useState(initStateManual ? '' : initState);
+  const [cityVal,       setCityVal]       = useState(initCityManual  ? '' : initCity);
+  const [stateManual,   setStateManual]   = useState(initStateManual);
+  const [cityManual,    setCityManual]    = useState(initCityManual);
+  const [manualState,   setManualState]   = useState(initStateManual ? initState : '');
+  const [manualCity,    setManualCity]    = useState(initCityManual  ? initCity  : '');
 
   const stateOptions = COUNTRY_STATES[country] ?? [];
   const cityOptions  = COUNTRY_CITIES[country] ?? [];
 
   const handleCountryChange = (val: string) => {
-    setCountry(val);
+    if (val === '__manual__') {
+      setCountryManual(true);
+      setCountry('');
+    } else {
+      setCountry(val);
+    }
     // Reset state and city when country changes
     setStateVal(''); setCityVal('');
     setStateManual(false); setCityManual(false);
@@ -140,6 +150,24 @@ export const GeneralInformationStep = ({ prefill = {} }: { prefill?: StepPrefill
             </FormField>
 
             <FormField label="Country" required>
+              {countryManual ? (
+                <div className="flex flex-col gap-1">
+                  <TextInput
+                    name="country"
+                    placeholder="Enter country..."
+                    value={manualCountry}
+                    onChange={e => setManualCountry(e.target.value)}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setCountryManual(false); setCountry(''); setManualCountry(''); }}
+                    className="text-xs text-primary underline text-left hover:opacity-70 transition-opacity"
+                  >
+                    ← Back to list
+                  </button>
+                </div>
+              ) : (
               <SelectInput
                 name="country"
                 value={country}
@@ -216,7 +244,10 @@ export const GeneralInformationStep = ({ prefill = {} }: { prefill?: StepPrefill
                 <option value="United States">United States</option>
                 <option value="Uruguay">Uruguay</option>
                 <option value="Vietnam">Vietnam</option>
+                <option disabled value="">──────────</option>
+                <option value="__manual__">＋ Add Manually</option>
               </SelectInput>
+              )}
             </FormField>
 
             <FormField label="ZIP / Postal Code" required>
