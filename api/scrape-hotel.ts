@@ -9,6 +9,7 @@
 
 import { getAuth, getSheetsClient, ONBOARDINGS_TAB, findRowBySessionId, colIndexToLetter } from './_sheets';
 import { SHEET_HEADERS } from './submit';
+import { validateHotelData } from './_validate-hotel';
 
 // Vercel Pro: allow up to 60s for fetch + Gemini (this endpoint is admin-only)
 export const config = { maxDuration: 60 };
@@ -150,6 +151,19 @@ Use null for any field you cannot confidently extract — do NOT guess.
     const rawJson = geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}';
     const fields: Record<string, string | null> = JSON.parse(rawJson);
 
+    // ── 2b. Validate extracted fields (fail-open) ────────────────────────────
+    let validationStatus: 'complete' | 'needs_review' = 'complete';
+    let validationReason: string | null = null;
+    let missingFields: string[] = [];
+    try {
+      const result = validateHotelData(fields);
+      validationStatus = result.status;
+      validationReason = result.reason ?? null;
+      missingFields = result.missingFields;
+    } catch (err) {
+      console.error('[scrape-hotel] validateHotelData failed, continuing as complete:', err);
+    }
+
     // ── 3. Write non-null fields to the Sheet ────────────────────────────────
     const auth = getAuth();
     const sheets = getSheetsClient(auth);
@@ -204,7 +218,59 @@ Use null for any field you cannot confidently extract — do NOT guess.
       }
     }
 
-    return res.status(200).json({ success: true, fieldsFound: Object.keys(fields).filter(k => fields[k]) });
+    // ── 4. Write status / review_reason to Sheet (new admin-only columns) ────
+    // Ensures columns exist in header row, then writes the validation result.
+    const STATUS_COL   = 'status';
+    const REVIEW_COL   = 'review_reason';
+
+    let statusColIdx = headers.indexOf(STATUS_COL);
+    let reviewColIdx = headers.indexOf(REVIEW_COL);
+
+    if (statusColIdx === -1 || reviewColIdx === -1) {
+      // Append missing column headers at the end of the header row
+      const nextIdx = headers.length;
+      if (statusColIdx === -1) { statusColIdx = nextIdx; headers.push(STATUS_COL); }
+      if (reviewColIdx === -1) { reviewColIdx = headers.length; headers.push(REVIEW_COL); }
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: sheetId,
+        range: `${ONBOARDINGS_TAB}!${colIndexToLetter(statusColIdx + 1)}1:${colIndexToLetter(reviewColIdx + 1)}1`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [[STATUS_COL, REVIEW_COL]] },
+      });
+    }
+
+    // For new rows: re-fetch the row number after the append
+    const finalRowNum = rowNum > 0
+      ? rowNum
+      : await findRowBySessionId(sheets, sheetId, ONBOARDINGS_TAB, sessionId);
+
+    if (finalRowNum > 0) {
+      await sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: sheetId,
+        requestBody: {
+          valueInputOption: 'USER_ENTERED',
+          data: [
+            {
+              range: `${ONBOARDINGS_TAB}!${colIndexToLetter(statusColIdx + 1)}${finalRowNum}`,
+              values: [[validationStatus]],
+            },
+            {
+              range: `${ONBOARDINGS_TAB}!${colIndexToLetter(reviewColIdx + 1)}${finalRowNum}`,
+              values: [[validationReason ?? '']],
+            },
+          ],
+        },
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      fieldsFound: Object.keys(fields).filter(k => fields[k]),
+      status: validationStatus,
+      missingFields,
+      ...(validationReason ? { review_reason: validationReason } : {}),
+    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('[scrape-hotel]', message);
