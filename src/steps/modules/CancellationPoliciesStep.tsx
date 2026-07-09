@@ -1,4 +1,4 @@
-import { useState, Fragment, type Dispatch, type SetStateAction } from 'react';
+import { useState, useImperativeHandle, forwardRef, Fragment, type Dispatch, type SetStateAction } from 'react';
 import { FormField, TextInput, TextareaInput, SelectInput } from '../../components/ui/primitives';
 import { ConfigSection, ItemCard, AddItemButton, FormActions } from '../../components/ui/layout';
 
@@ -36,7 +36,12 @@ interface Props {
   setPolicies: Dispatch<SetStateAction<CancellationPolicy[]>>;
 }
 
-export const CancellationPoliciesStep = ({ policies, setPolicies }: Props) => {
+export interface CancellationPoliciesStepHandle {
+  // See RoomInformationStepHandle.commitPending for rationale.
+  commitPending: () => CancellationPolicy[] | null;
+}
+
+export const CancellationPoliciesStep = forwardRef<CancellationPoliciesStepHandle, Props>(({ policies, setPolicies }, ref) => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -70,14 +75,25 @@ export const CancellationPoliciesStep = ({ policies, setPolicies }: Props) => {
     setForm({ ...EMPTY_FORM });
   };
 
-  const savePolicy = () => {
-    if (editingId !== null) {
-      setPolicies((prev) => prev.map((p) => (p.id === editingId ? { ...p, ...form } : p)));
-    } else {
-      setPolicies((prev) => [...prev, { id: Date.now(), ...form }]);
-    }
+  const commit = (): CancellationPolicy[] => {
+    const next = editingId !== null
+      ? policies.map((p) => (p.id === editingId ? { ...p, ...form } : p))
+      : [...policies, { id: Date.now(), ...form }];
+    setPolicies(next);
     cancel();
+    return next;
   };
+
+  const savePolicy = () => { commit(); };
+
+  useImperativeHandle(ref, () => ({
+    commitPending: () => {
+      if (!showForm) return null;
+      const hasData = form.name.trim() || form.description.trim() || form.window.trim();
+      if (!hasData) return null;
+      return commit();
+    },
+  }), [showForm, form, editingId, policies]);
 
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col py-4">
@@ -182,4 +198,4 @@ export const CancellationPoliciesStep = ({ policies, setPolicies }: Props) => {
       )}
     </div>
   );
-};
+});

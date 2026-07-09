@@ -16,12 +16,12 @@ import { GroupMembersStep } from './steps/intro/GroupMembersStep';
 import { GeneralInformationStep } from './steps/modules/GeneralInformationStep';
 import { WebsiteBrandStep } from './steps/modules/WebsiteBrandStep';
 import { DnsTrackingStep } from './steps/modules/DnsTrackingStep';
-import { CancellationPoliciesStep, CancellationPolicy } from './steps/modules/CancellationPoliciesStep';
-import { RoomInformationStep, RoomItem } from './steps/modules/RoomInformationStep';
+import { CancellationPoliciesStep, CancellationPolicy, CancellationPoliciesStepHandle } from './steps/modules/CancellationPoliciesStep';
+import { RoomInformationStep, RoomItem, RoomInformationStepHandle } from './steps/modules/RoomInformationStep';
 import { ExperiencesStep } from './steps/modules/ExperiencesStep';
 import { AddOnsStep, AddonConfig } from './steps/modules/AddOnsStep';
 import { RatesPackagesStep, RatesData } from './steps/modules/RatesPackagesStep';
-import { TaxesFeesStep, TaxItem } from './steps/modules/TaxesFeesStep';
+import { TaxesFeesStep, TaxItem, TaxesFeesStepHandle } from './steps/modules/TaxesFeesStep';
 
 import { ReviewStep } from './steps/ReviewStep';
 import { SuccessStep } from './steps/SuccessStep';
@@ -193,6 +193,14 @@ export default function App() {
   const [rates, setRates] = useState<RatesData>({});
   const [taxes, setTaxes] = useState<TaxItem[]>(DEFAULT_TAXES);
 
+  // Refs into the card-based steps (open form + internal Save button, distinct
+  // from the global Continue button). Used to auto-commit an in-progress,
+  // unsaved entry when the user navigates forward without clicking that
+  // internal Save button — otherwise the entry is silently discarded.
+  const roomsStepRef = useRef<RoomInformationStepHandle>(null);
+  const cancellationStepRef = useRef<CancellationPoliciesStepHandle>(null);
+  const taxesStepRef = useRef<TaxesFeesStepHandle>(null);
+
   // ── Saved simple-form data (collected via FormData on navigation) ─────────
   const [savedForms, setSavedForms] = useState<Record<string, Record<string, string>>>({});
 
@@ -238,10 +246,23 @@ export default function App() {
     // Collect the current form's data synchronously so we can pass it to the save
     // (can't rely on setSavedForms having flushed yet)
     const freshForms = collectCurrentForm();
+    // Auto-commit an open, unsaved entry in card-based steps (Rooms,
+    // Cancellation, Taxes) — otherwise clicking this global Continue button
+    // (instead of the step's own internal Save button) silently discards it.
+    // Only one of these refs is ever mounted at a time; the rest resolve to null.
+    const freshRooms      = roomsStepRef.current?.commitPending()       ?? rooms;
+    const freshPolicies   = cancellationStepRef.current?.commitPending() ?? cancellationPolicies;
+    const freshTaxes      = taxesStepRef.current?.commitPending()       ?? taxes;
     window.scrollTo(0, 0);
     setCurrentStep((s) => s + 1);
     // Fire-and-forget save with the freshest data
-    if (propertyType) saveInBackground(buildPayload(freshForms));
+    if (propertyType) {
+      saveInBackground(buildPayload(freshForms, undefined, {
+        rooms: freshRooms,
+        cancellationPolicies: freshPolicies,
+        taxes: freshTaxes,
+      }));
+    }
   };
   const goBack = () => {
     // Persist the current form before leaving so the data survives the round-trip
@@ -254,6 +275,11 @@ export default function App() {
   const buildPayload = (
     extraForms?: Record<string, Record<string, string>>,
     overrides?: { propertyType?: 'independent' | 'group' },
+    stateOverrides?: {
+      rooms?: RoomItem[];
+      cancellationPolicies?: CancellationPolicy[];
+      taxes?: TaxItem[];
+    },
   ) => {
     const forms = extraForms ?? savedForms;
     const g = forms.general ?? {};
@@ -295,11 +321,11 @@ export default function App() {
         ga4Id:     d.ga4Id     || '',
         mapId:     d.mapId     || '',
       },
-      cancellationPolicies,
-      rooms,
+      cancellationPolicies: stateOverrides?.cancellationPolicies ?? cancellationPolicies,
+      rooms: stateOverrides?.rooms ?? rooms,
       addons,
       rates,
-      taxes,
+      taxes: stateOverrides?.taxes ?? taxes,
       groupMembers,
     };
   };
@@ -387,12 +413,12 @@ export default function App() {
     general:      <GeneralInformationStep prefill={{ ...prefillData, ...savedForms.general }} />,
     brand:        <WebsiteBrandStep prefill={{ ...prefillData, ...savedForms.brand }} />,
     dns:          <DnsTrackingStep prefill={savedForms.dns ?? {}} />,
-    cancellation: <CancellationPoliciesStep policies={cancellationPolicies} setPolicies={setCancellationPolicies} />,
-    rooms:        <RoomInformationStep rooms={rooms} setRooms={setRooms} />,
+    cancellation: <CancellationPoliciesStep ref={cancellationStepRef} policies={cancellationPolicies} setPolicies={setCancellationPolicies} />,
+    rooms:        <RoomInformationStep ref={roomsStepRef} rooms={rooms} setRooms={setRooms} />,
     experiences:  <ExperiencesStep />,
     addons:       <AddOnsStep addons={addons} setAddons={setAddons} />,
     rates:        <RatesPackagesStep rates={rates} setRates={setRates} rooms={rooms} />,
-    taxes:        <TaxesFeesStep taxes={taxes} setTaxes={setTaxes} />,
+    taxes:        <TaxesFeesStep ref={taxesStepRef} taxes={taxes} setTaxes={setTaxes} />,
   };
 
   return (

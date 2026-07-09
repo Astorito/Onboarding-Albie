@@ -1,4 +1,4 @@
-import { useState, Fragment, type Dispatch, type SetStateAction } from 'react';
+import { useState, useImperativeHandle, forwardRef, Fragment, type Dispatch, type SetStateAction } from 'react';
 import { FormField, TextInput, TextareaInput, SelectInput } from '../../components/ui/primitives';
 import { ConfigSection, ItemCard, AddItemButton, FormActions } from '../../components/ui/layout';
 
@@ -62,7 +62,16 @@ interface Props {
   setRooms: Dispatch<SetStateAction<RoomItem[]>>;
 }
 
-export const RoomInformationStep = ({ rooms, setRooms }: Props) => {
+export interface RoomInformationStepHandle {
+  // Auto-commits an open, unsaved room form when the user navigates forward
+  // via the global Continue button instead of the internal "Save Room" button —
+  // otherwise the in-progress room is silently discarded. Returns the updated
+  // rooms array synchronously so the caller can use it immediately (setRooms
+  // itself only takes effect on the next render).
+  commitPending: () => RoomItem[] | null;
+}
+
+export const RoomInformationStep = forwardRef<RoomInformationStepHandle, Props>(({ rooms, setRooms }, ref) => {
   const [showForm, setShowForm] = useState(rooms.length === 0);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>({ ...EMPTY_FORM });
@@ -122,7 +131,11 @@ export const RoomInformationStep = ({ rooms, setRooms }: Props) => {
     setForm({ ...EMPTY_FORM });
   };
 
-  const saveRoom = () => {
+  // Builds the room object from the current form, commits it into `rooms`
+  // (update or insert), closes the form, and returns the new array so callers
+  // that can't wait for the next render (e.g. an immediate autosave) can use
+  // the fresh data right away.
+  const commit = (): RoomItem[] => {
     const imageUrls = form.imageUrlsRaw
       .split(',')
       .map((s) => s.trim())
@@ -144,13 +157,24 @@ export const RoomInformationStep = ({ rooms, setRooms }: Props) => {
       childrenCapacity: form.childrenCapacity,
       includedOccupancy: form.includedOccupancy,
     };
-    if (editingId !== null) {
-      setRooms((prev) => prev.map((r) => (r.id === editingId ? { ...r, ...base } : r)));
-    } else {
-      setRooms((prev) => [...prev, { id: Date.now(), ...base }]);
-    }
+    const next = editingId !== null
+      ? rooms.map((r) => (r.id === editingId ? { ...r, ...base } : r))
+      : [...rooms, { id: Date.now(), ...base }];
+    setRooms(next);
     cancel();
+    return next;
   };
+
+  const saveRoom = () => { commit(); };
+
+  useImperativeHandle(ref, () => ({
+    commitPending: () => {
+      if (!showForm) return null;
+      const hasData = form.code.trim() || form.shortTitle.trim() || form.longTitle.trim() || form.description.trim();
+      if (!hasData) return null;
+      return commit();
+    },
+  }), [showForm, form, editingId, rooms]);
 
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col py-4">
@@ -370,4 +394,4 @@ export const RoomInformationStep = ({ rooms, setRooms }: Props) => {
       )}
     </div>
   );
-};
+});

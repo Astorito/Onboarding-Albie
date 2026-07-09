@@ -1,4 +1,4 @@
-import { useState, Fragment, type Dispatch, type SetStateAction } from 'react';
+import { useState, useImperativeHandle, forwardRef, Fragment, type Dispatch, type SetStateAction } from 'react';
 import { FormField, TextInput, TextareaInput, SelectInput } from '../../components/ui/primitives';
 import { ConfigSection, ItemCard, AddItemButton, FormActions } from '../../components/ui/layout';
 
@@ -37,7 +37,12 @@ interface Props {
   setTaxes: Dispatch<SetStateAction<TaxItem[]>>;
 }
 
-export const TaxesFeesStep = ({ taxes, setTaxes }: Props) => {
+export interface TaxesFeesStepHandle {
+  // See RoomInformationStepHandle.commitPending for rationale.
+  commitPending: () => TaxItem[] | null;
+}
+
+export const TaxesFeesStep = forwardRef<TaxesFeesStepHandle, Props>(({ taxes, setTaxes }, ref) => {
   const [showForm, setShowForm] = useState(taxes.length === 0);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
@@ -70,14 +75,25 @@ export const TaxesFeesStep = ({ taxes, setTaxes }: Props) => {
     setForm({ ...EMPTY_FORM });
   };
 
-  const saveTax = () => {
-    if (editingId !== null) {
-      setTaxes((prev) => prev.map((t) => (t.id === editingId ? { ...t, ...form } : t)));
-    } else {
-      setTaxes((prev) => [...prev, { id: Date.now(), ...form }]);
-    }
+  const commit = (): TaxItem[] => {
+    const next = editingId !== null
+      ? taxes.map((t) => (t.id === editingId ? { ...t, ...form } : t))
+      : [...taxes, { id: Date.now(), ...form }];
+    setTaxes(next);
     cancel();
+    return next;
   };
+
+  const saveTax = () => { commit(); };
+
+  useImperativeHandle(ref, () => ({
+    commitPending: () => {
+      if (!showForm) return null;
+      const hasData = form.name.trim() || form.value.trim() || form.description.trim();
+      if (!hasData) return null;
+      return commit();
+    },
+  }), [showForm, form, editingId, taxes]);
 
   return (
     <div className="w-full max-w-6xl mx-auto flex flex-col py-4">
@@ -169,4 +185,4 @@ export const TaxesFeesStep = ({ taxes, setTaxes }: Props) => {
       )}
     </div>
   );
-};
+});
