@@ -83,8 +83,13 @@ export const GeneralInformationStep = ({ prefill = {} }: { prefill?: StepPrefill
 
   const initStateOpts = COUNTRY_STATES[initCountry] ?? [];
   const initCityOpts  = COUNTRY_CITIES[initCountry] ?? [];
-  const initStateManual = initState !== '' && initStateOpts.length > 0 && !initStateOpts.includes(initState);
-  const initCityManual  = initCity  !== '' && initCityOpts.length  > 0 && !initCityOpts.includes(initCity);
+  // A value that isn't in the country's option list (including countries with no
+  // list at all) must be treated as manual, so it lands in manualState/manualCity —
+  // which is what GeoField renders in both the manual and no-options branches.
+  // Without this, values for countries lacking a state/city list would be stored in
+  // stateVal/cityVal and show blank when the step remounts (go back / reopen).
+  const initStateManual = initState !== '' && !initStateOpts.includes(initState);
+  const initCityManual  = initCity  !== '' && !initCityOpts.includes(initCity);
 
   const [country,       setCountry]       = useState(initCountryManual ? '' : initCountry);
   const [countryManual, setCountryManual] = useState(initCountryManual);
