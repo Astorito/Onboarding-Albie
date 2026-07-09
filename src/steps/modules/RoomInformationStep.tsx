@@ -168,7 +168,7 @@ export const RoomInformationStep = ({ rooms, setRooms }: Props) => {
               <ItemCard
                 icon="bed"
                 title={r.shortTitle || r.name}
-                subtitle={`${r.type} · ${r.bed} bed · ${r.bedrooms}br · max ${r.maxOccupants || '?'} guests`}
+                subtitle={`${r.code ? r.code + ' · ' : ''}${r.type} · ${r.bed} bed · ${r.bedrooms}br · max ${r.maxOccupants || '?'} guests`}
                 onEdit={() => startEdit(r)}
                 onDelete={() => setRooms((prev) => prev.filter((x) => x.id !== r.id))}
               />
