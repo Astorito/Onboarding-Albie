@@ -142,14 +142,20 @@ export default async function handler(req: any, res: any) {
 
   try {
     // 1. Render PDF to buffer
-    // `@react-pdf/renderer` is ESM-only; this file compiles to CommonJS, so a
-    // static `import` would be rewritten to a `require()` that Node rejects
-    // (ERR_REQUIRE_ESM). A dynamic import() is a runtime operation that
-    // always goes through Node's real ESM loader, regardless of the calling
-    // module's own format — so it works from here even though this whole
-    // file is CommonJS.
+    // `@react-pdf/renderer` is ESM-only; this file compiles to CommonJS.
+    // A plain `await import(...)` looks like it should be fine (a real
+    // dynamic import goes through Node's ESM loader regardless of the
+    // caller's format) — but TypeScript, when targeting "module":"commonjs"
+    // (required here so the other 8 handlers in /api load correctly under
+    // Node's CJS loader), silently downlevels `await import(...)` into
+    // `Promise.resolve().then(() => require(...))` — right back to the same
+    // require() that throws ERR_REQUIRE_ESM. Building the call via
+    // `new Function(...)` hides it from TypeScript's static downleveling:
+    // the import() only exists inside a string, evaluated by V8 at runtime,
+    // which always resolves it through the real ESM loader.
+    const importESM = new Function('specifier', 'return import(specifier)') as (specifier: string) => Promise<any>;
     const { renderToBuffer, Document, Page, Text, View, StyleSheet } =
-      await import('@react-pdf/renderer');
+      await importESM('@react-pdf/renderer');
     const OnboardingPDF = createOnboardingPDF({ Document, Page, Text, View, StyleSheet });
     const pdfBuffer = await renderToBuffer(React.createElement(OnboardingPDF, { payload }) as any);
     const pdfFilename = `albie-onboarding-${slugify(hotelName)}.pdf`;
