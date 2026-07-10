@@ -9,11 +9,10 @@
 //   FROM_EMAIL       — 'onboarding@resend.dev' (default) or your verified sender
 
 import { Resend } from 'resend';
-import { renderToBuffer } from '@react-pdf/renderer';
 import * as React from 'react';
 import { Readable } from 'stream';
 import { google } from 'googleapis';
-import { OnboardingPDF } from './_pdf/OnboardingPDF';
+import { createOnboardingPDF } from './_pdf/OnboardingPDF';
 import {
   getAuth, getSheetsClient, ONBOARDINGS_TAB,
   findRowBySessionId, updateCellByHeader,
@@ -143,6 +142,15 @@ export default async function handler(req: any, res: any) {
 
   try {
     // 1. Render PDF to buffer
+    // `@react-pdf/renderer` is ESM-only; this file compiles to CommonJS, so a
+    // static `import` would be rewritten to a `require()` that Node rejects
+    // (ERR_REQUIRE_ESM). A dynamic import() is a runtime operation that
+    // always goes through Node's real ESM loader, regardless of the calling
+    // module's own format — so it works from here even though this whole
+    // file is CommonJS.
+    const { renderToBuffer, Document, Page, Text, View, StyleSheet } =
+      await import('@react-pdf/renderer');
+    const OnboardingPDF = createOnboardingPDF({ Document, Page, Text, View, StyleSheet });
     const pdfBuffer = await renderToBuffer(React.createElement(OnboardingPDF, { payload }) as any);
     const pdfFilename = `albie-onboarding-${slugify(hotelName)}.pdf`;
 

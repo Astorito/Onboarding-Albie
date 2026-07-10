@@ -1,4 +1,6 @@
-import { StyleSheet } from '@react-pdf/renderer';
+// No top-level import of '@react-pdf/renderer' here — it's ESM-only and this
+// file compiles to CommonJS. `StyleSheet` is passed in from send-onboarding.ts,
+// which loads the package via dynamic import(). See createStyles() below.
 
 export const colors = {
   brand:          '#0D3A39', // Forest — main dark green
@@ -15,7 +17,10 @@ export const colors = {
   watermarkLight: '#ddeeed', // very light teal — on white section pages
 };
 
-export const styles = StyleSheet.create({
+// `StyleSheet` is the real @react-pdf/renderer export, obtained via dynamic
+// import() in send-onboarding.ts (see comment at the top of this file).
+export function createStyles(StyleSheet: any) {
+  return StyleSheet.create({
   // ─── Base page (section pages — white bg) ─────────────────────────────────
   page: {
     backgroundColor: colors.background,
@@ -287,10 +292,11 @@ export const styles = StyleSheet.create({
   },
 
   // ─── Misc ─────────────────────────────────────────────────────────────────
-  empty: {
-    fontSize: 10,
-    color: colors.muted,
-    fontStyle: 'italic',
-    marginTop: 10,
-  },
-});
+    empty: {
+      fontSize: 10,
+      color: colors.muted,
+      fontStyle: 'italic',
+      marginTop: 10,
+    },
+  });
+}
