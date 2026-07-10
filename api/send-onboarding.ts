@@ -18,6 +18,12 @@ import {
   findRowBySessionId, updateCellByHeader,
 } from './_sheets';
 
+// nft-hint: Vercel's Node File Tracer (nft) can't see inside new Function() strings.
+// This dead-code require() is never executed (if(false)) but makes nft include
+// @react-pdf/renderer and all its transitive dependencies in the Lambda bundle.
+// The actual load happens at runtime via the new Function() dynamic import below.
+if (false) require('@react-pdf/renderer');
+
 function slugify(s: string): string {
   return s
     .toLowerCase()
