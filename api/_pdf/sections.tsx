@@ -233,37 +233,42 @@ export function createSections(
         {rooms.length === 0 ? (
           <Text style={styles.empty}>No rooms added yet.</Text>
         ) : (
-          rooms.map((r, i) => (
-            <View key={r.id ?? i} style={styles.card} wrap={false}>
-              <Text style={styles.cardTitle}>
-                {r.shortTitle || r.name || 'Untitled Room'}
-                {r.code ? `  ·  ${r.code}` : ''}
-              </Text>
-              <Text style={styles.cardSubtitle}>
-                {[r.type, r.bed && `${r.bed} bed`, r.bedrooms && `${r.bedrooms} bedrooms`]
-                  .filter(Boolean).join(' · ')}
-              </Text>
-              {(r.longTitle || r.description) && (
-                <Text style={styles.cardBody}>{r.longTitle || r.description}</Text>
-              )}
-              <Text style={[styles.cardBody, { marginTop: 6 }]}>
-                <Text style={{ fontFamily: 'Helvetica-Bold' }}>Occupancy: </Text>
-                Max {r.maxOccupants || '?'} guests ({r.maxAdults || '?'} adults · {r.childrenCapacity || '?'} children) · Included: {r.includedOccupancy || '?'}
-              </Text>
-              {Array.isArray(r.facilities) && r.facilities.length > 0 && (
-                <View style={styles.chipRow}>
-                  {r.facilities.map((f: string) => (
-                    <Text key={f} style={styles.chip}>{f}</Text>
-                  ))}
-                </View>
-              )}
-              {Array.isArray(r.imageUrls) && r.imageUrls.length > 0 && (
-                <Text style={[styles.cardBody, { marginTop: 4, color: colors.muted, fontSize: 8 }]}>
-                  Images: {r.imageUrls.join(', ')}
+          rooms.map((r, i) => {
+            const bedsLabel = Array.isArray(r.beds) && r.beds.length > 0
+              ? r.beds.map((b: any) => (b.count > 1 ? `${b.count}x ${b.type}` : b.type)).join(', ')
+              : r.bed;
+            return (
+              <View key={r.id ?? i} style={styles.card} wrap={false}>
+                <Text style={styles.cardTitle}>
+                  {r.shortTitle || r.name || 'Untitled Room'}
+                  {r.code ? `  ·  ${r.code}` : ''}
                 </Text>
-              )}
-            </View>
-          ))
+                <Text style={styles.cardSubtitle}>
+                  {[r.type, bedsLabel && `${bedsLabel} bed`, r.bedrooms && `${r.bedrooms} bedrooms`]
+                    .filter(Boolean).join(' · ')}
+                </Text>
+                {(r.longTitle || r.description) && (
+                  <Text style={styles.cardBody}>{r.longTitle || r.description}</Text>
+                )}
+                <Text style={[styles.cardBody, { marginTop: 6 }]}>
+                  <Text style={{ fontFamily: 'Helvetica-Bold' }}>Occupancy: </Text>
+                  Max {r.maxOccupants || '?'} guests ({r.maxAdults || '?'} adults · {r.childrenCapacity || '?'} children) · Included: {r.includedOccupancy || '?'}
+                </Text>
+                {Array.isArray(r.facilities) && r.facilities.length > 0 && (
+                  <View style={styles.chipRow}>
+                    {r.facilities.map((f: string) => (
+                      <Text key={f} style={styles.chip}>{f}</Text>
+                    ))}
+                  </View>
+                )}
+                {Array.isArray(r.imageUrls) && r.imageUrls.length > 0 && (
+                  <Text style={[styles.cardBody, { marginTop: 4, color: colors.muted, fontSize: 8 }]}>
+                    Images: {r.imageUrls.join(', ')}
+                  </Text>
+                )}
+              </View>
+            );
+          })
         )}
       </View>
       <Watermark />

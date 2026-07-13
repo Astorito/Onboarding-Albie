@@ -7,6 +7,7 @@ import type { RoomItem } from './modules/RoomInformationStep';
 import type { AddonConfig } from './modules/AddOnsStep';
 import type { RatesData } from './modules/RatesPackagesStep';
 import type { TaxItem } from './modules/TaxesFeesStep';
+import { formatBeds } from '../utils/beds';
 
 export interface ReviewData {
   general: Record<string, string>;
@@ -101,7 +102,7 @@ const ModuleBody = ({ moduleId, data }: { moduleId: string; data: ReviewData }) 
               {r.shortTitle || r.name} <span className="text-[10px] text-on-surface-variant font-normal">· {r.code}</span>
             </p>
             <p className="text-on-surface-variant">
-              {r.type} · {r.bed} · {r.bedrooms}br · max {r.maxOccupants} guests ({r.maxAdults} adults + {r.childrenCapacity} children)
+              {r.type} · {formatBeds(r.beds, r.bed)} · {r.bedrooms}br · max {r.maxOccupants} guests ({r.maxAdults} adults + {r.childrenCapacity} children)
             </p>
             {r.facilities.length > 0 && (
               <p className="text-on-surface-variant mt-1 text-[10px]">{r.facilities.join(' · ')}</p>

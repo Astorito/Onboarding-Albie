@@ -1,6 +1,7 @@
 import { useState, useImperativeHandle, forwardRef, Fragment, type Dispatch, type SetStateAction } from 'react';
 import { FormField, TextInput, TextareaInput, SelectInput } from '../../components/ui/primitives';
 import { ConfigSection, ItemCard, AddItemButton, FormActions } from '../../components/ui/layout';
+import { formatBeds, type BedConfig } from '../../utils/beds';
 
 export type RoomItem = {
   id: number;
@@ -10,7 +11,8 @@ export type RoomItem = {
   description: string; // long-form room description (backwards compat: defaults to '')
   name: string;        // alias of shortTitle for backwards compat
   type: string;
-  bed: string;
+  beds: BedConfig[];
+  bed?: string; // legacy single bed type — only present on rooms saved before multi-bed support
   bedrooms: number;
   imageUrls: string[];
   facilities: string[];
@@ -22,7 +24,7 @@ export type RoomItem = {
   includedOccupancy: string;
 };
 
-type FormState = Omit<RoomItem, 'id' | 'name'> & { imageUrlsRaw: string };
+type FormState = Omit<RoomItem, 'id' | 'name' | 'bed'> & { imageUrlsRaw: string };
 
 const EMPTY_FORM: FormState = {
   code: '',
@@ -30,7 +32,7 @@ const EMPTY_FORM: FormState = {
   longTitle: '',
   description: '',
   type: '',
-  bed: '',
+  beds: [{ type: '', count: 1 }],
   bedrooms: 1,
   imageUrls: [],
   imageUrlsRaw: '',
@@ -81,6 +83,18 @@ export const RoomInformationStep = forwardRef<RoomInformationStepHandle, Props>(
   const update = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
+  const addBedRow = () =>
+    setForm((f) => ({ ...f, beds: [...f.beds, { type: '', count: 1 }] }));
+
+  const removeBedRow = (index: number) =>
+    setForm((f) => ({ ...f, beds: f.beds.filter((_, i) => i !== index) }));
+
+  const updateBedRow = (index: number, patch: Partial<BedConfig>) =>
+    setForm((f) => ({
+      ...f,
+      beds: f.beds.map((b, i) => (i === index ? { ...b, ...patch } : b)),
+    }));
+
   const toggleFacility = (f: string) =>
     setForm((prev) => ({
       ...prev,
@@ -110,7 +124,11 @@ export const RoomInformationStep = forwardRef<RoomInformationStepHandle, Props>(
       longTitle: r.longTitle ?? '',
       description: r.description ?? '',
       type: r.type,
-      bed: r.bed,
+      beds: r.beds && r.beds.length > 0
+        ? r.beds
+        : r.bed
+          ? [{ type: r.bed, count: 1 }]
+          : [{ type: '', count: 1 }],
       bedrooms: r.bedrooms,
       imageUrls: r.imageUrls ?? [],
       imageUrlsRaw: (r.imageUrls ?? []).join(', '),
@@ -140,6 +158,9 @@ export const RoomInformationStep = forwardRef<RoomInformationStepHandle, Props>(
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
+    const cleanBeds = form.beds
+      .filter((b) => b.type.trim())
+      .map((b) => ({ type: b.type, count: Math.max(1, Number(b.count) || 1) }));
     const base = {
       code: form.code,
       shortTitle: form.shortTitle,
@@ -147,7 +168,7 @@ export const RoomInformationStep = forwardRef<RoomInformationStepHandle, Props>(
       description: form.description,
       name: form.shortTitle || form.code || 'Room',
       type: form.type || 'Standard Room',
-      bed: form.bed || 'Queen',
+      beds: cleanBeds.length > 0 ? cleanBeds : [{ type: 'Queen', count: 1 }],
       bedrooms: Number(form.bedrooms) || 1,
       imageUrls,
       facilities: form.facilities,
@@ -192,7 +213,7 @@ export const RoomInformationStep = forwardRef<RoomInformationStepHandle, Props>(
               <ItemCard
                 icon="bed"
                 title={r.shortTitle || r.name}
-                subtitle={`${r.code ? r.code + ' · ' : ''}${r.type} · ${r.bed} bed · ${r.bedrooms}br · max ${r.maxOccupants || '?'} guests`}
+                subtitle={`${r.code ? r.code + ' · ' : ''}${r.type} · ${formatBeds(r.beds, r.bed)} · ${r.bedrooms}br · max ${r.maxOccupants || '?'} guests`}
                 onEdit={() => startEdit(r)}
                 onDelete={() => setRooms((prev) => prev.filter((x) => x.id !== r.id))}
               />
@@ -252,13 +273,45 @@ export const RoomInformationStep = forwardRef<RoomInformationStepHandle, Props>(
                 </SelectInput>
               </FormField>
 
-              <FormField label="Bed Type" required>
-                <SelectInput value={form.bed} onChange={(e) => update('bed', e.target.value)}>
-                  <option value="">Select bed type</option>
-                  {bedTypes.map((b) => (
-                    <option key={b}>{b}</option>
+              <FormField label="Bed Configuration" required hint="Add one row per distinct bed type in this room." className="col-span-2">
+                <div className="space-y-2">
+                  {form.beds.map((b, i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <SelectInput
+                        value={b.type}
+                        onChange={(e) => updateBedRow(i, { type: e.target.value })}
+                        className="flex-1"
+                      >
+                        <option value="">Select bed type</option>
+                        {bedTypes.map((t) => (
+                          <option key={t}>{t}</option>
+                        ))}
+                      </SelectInput>
+                      <TextInput
+                        type="number"
+                        min={1}
+                        value={b.count}
+                        onChange={(e) => updateBedRow(i, { count: Number(e.target.value) })}
+                        className="w-20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeBedRow(i)}
+                        disabled={form.beds.length === 1}
+                        className="px-2 py-2 text-xs text-on-surface-variant disabled:opacity-30 cursor-pointer hover:text-primary"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   ))}
-                </SelectInput>
+                  <button
+                    type="button"
+                    onClick={addBedRow}
+                    className="text-xs font-bold text-primary hover:opacity-80 cursor-pointer"
+                  >
+                    + Add bed type
+                  </button>
+                </div>
               </FormField>
 
               <FormField label="Number of Bedrooms" required>
