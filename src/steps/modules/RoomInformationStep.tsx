@@ -277,28 +277,30 @@ export const RoomInformationStep = forwardRef<RoomInformationStepHandle, Props>(
                 <div className="space-y-2">
                   {form.beds.map((b, i) => (
                     <div key={i} className="flex gap-2 items-center">
-                      <SelectInput
-                        value={b.type}
-                        onChange={(e) => updateBedRow(i, { type: e.target.value })}
-                        className="flex-1"
-                      >
-                        <option value="">Select bed type</option>
-                        {bedTypes.map((t) => (
-                          <option key={t}>{t}</option>
-                        ))}
-                      </SelectInput>
-                      <TextInput
-                        type="number"
-                        min={1}
-                        value={b.count}
-                        onChange={(e) => updateBedRow(i, { count: Number(e.target.value) })}
-                        className="w-20"
-                      />
+                      <div className="flex-1 min-w-0">
+                        <SelectInput
+                          value={b.type}
+                          onChange={(e) => updateBedRow(i, { type: e.target.value })}
+                        >
+                          <option value="">Select bed type</option>
+                          {bedTypes.map((t) => (
+                            <option key={t}>{t}</option>
+                          ))}
+                        </SelectInput>
+                      </div>
+                      <div className="w-20 shrink-0">
+                        <TextInput
+                          type="number"
+                          min={1}
+                          value={b.count}
+                          onChange={(e) => updateBedRow(i, { count: Number(e.target.value) })}
+                        />
+                      </div>
                       <button
                         type="button"
                         onClick={() => removeBedRow(i)}
                         disabled={form.beds.length === 1}
-                        className="px-2 py-2 text-xs text-on-surface-variant disabled:opacity-30 cursor-pointer hover:text-primary"
+                        className="px-2 py-2 text-xs text-on-surface-variant disabled:opacity-30 cursor-pointer hover:text-primary shrink-0"
                       >
                         ✕
                       </button>
