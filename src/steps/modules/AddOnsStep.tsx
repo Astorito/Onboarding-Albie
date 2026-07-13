@@ -1,7 +1,18 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { Icon, Toggle } from '../../components/ui/primitives';
+import { CURRENCIES } from '../../data/currencies';
 
-export type AddonConfig = { enabled: boolean; price: string };
+export type AddonConfig = { enabled: boolean; price: string; currency?: string; unit?: string };
+
+const CHARGE_UNITS = [
+  'Per stay',
+  'Per night',
+  'Per person',
+  'Per person, per night',
+  'Per room',
+  'Per booking',
+  'One-time fee',
+];
 
 interface Props {
   addons: Record<string, AddonConfig>;
@@ -30,6 +41,12 @@ export const AddOnsStep = ({ addons, setAddons }: Props) => {
 
   const setPrice = (name: string, price: string) =>
     setAddons((prev) => ({ ...prev, [name]: { ...prev[name], price } }));
+
+  const setCurrency = (name: string, currency: string) =>
+    setAddons((prev) => ({ ...prev, [name]: { ...prev[name], currency } }));
+
+  const setUnit = (name: string, unit: string) =>
+    setAddons((prev) => ({ ...prev, [name]: { ...prev[name], unit } }));
 
   const addCustomService = () => {
     const name = customName.trim();
@@ -70,16 +87,36 @@ export const AddOnsStep = ({ addons, setAddons }: Props) => {
                   {name}
                 </p>
                 {config.enabled && (
-                  <div className="flex items-center gap-1 mt-1.5">
-                    <span className="text-xs text-on-surface-variant font-bold">€</span>
-                    <input
-                      type="number"
-                      value={config.price}
-                      onChange={(e) => setPrice(name, e.target.value)}
-                      placeholder="0"
-                      className="w-20 px-2 py-1 text-xs border border-outline-variant rounded-lg focus:outline-none focus:border-primary"
-                    />
-                    <span className="text-[10px] text-on-surface-variant">per stay</span>
+                  <div className="flex flex-col gap-1.5 mt-1.5">
+                    <div className="flex items-center gap-1">
+                      <select
+                        value={config.currency ?? ''}
+                        onChange={(e) => setCurrency(name, e.target.value)}
+                        className="text-xs px-1.5 py-1 border border-outline-variant rounded-lg focus:outline-none focus:border-primary bg-white max-w-[88px]"
+                      >
+                        <option value="">Currency</option>
+                        {CURRENCIES.map((c) => (
+                          <option key={c.code} value={c.code}>{c.code}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        value={config.price}
+                        onChange={(e) => setPrice(name, e.target.value)}
+                        placeholder="0"
+                        className="w-20 px-2 py-1 text-xs border border-outline-variant rounded-lg focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                    <select
+                      value={config.unit ?? ''}
+                      onChange={(e) => setUnit(name, e.target.value)}
+                      className="text-[10px] px-1.5 py-1 border border-outline-variant rounded-lg focus:outline-none focus:border-primary bg-white"
+                    >
+                      <option value="">Select charge unit</option>
+                      {CHARGE_UNITS.map((u) => (
+                        <option key={u} value={u}>{u}</option>
+                      ))}
+                    </select>
                   </div>
                 )}
               </div>
