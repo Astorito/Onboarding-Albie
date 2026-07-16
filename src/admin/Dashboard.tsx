@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { adminApi, type Onboarding, type Account } from './api';
 import { NewOnboardingModal } from './NewOnboardingModal';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { slugFromRow } from '../utils/slug';
 
 interface Props {
   adminEmail: string;
@@ -84,8 +85,15 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
     });
   };
 
-  const copyLink = (sessionId: string) => {
-    navigator.clipboard.writeText(`${window.location.origin}/?token=${sessionId}`);
+  const copyLink = (o: Onboarding) => {
+    const sessionId = o['Session ID'];
+    // Prefer the readable, resolvable /o/<slug> link; fall back to the legacy
+    // ?token= link if we can't derive a slug (e.g. missing name/session id).
+    const slug = slugFromRow(o['Onboarding Name'] ?? '', sessionId);
+    const link = slug
+      ? `${window.location.origin}/o/${slug}`
+      : `${window.location.origin}/?token=${sessionId}`;
+    navigator.clipboard.writeText(link);
     setCopiedId(sessionId);
     setTimeout(() => setCopiedId(''), 2000);
   };
@@ -211,7 +219,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
                                 </a>
                               )}
                               <button
-                                onClick={() => copyLink(sessionId)}
+                                onClick={() => copyLink(o)}
                                 className="text-xs font-semibold bg-[#F2EA5F] text-[#0D3A39] px-3 py-2 rounded-lg hover:opacity-80 transition cursor-pointer"
                               >
                                 {copiedId === sessionId ? '¡Copiado!' : 'Copiar link'}

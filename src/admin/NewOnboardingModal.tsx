@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { adminApi, type Account } from './api';
+import { slugFromRow } from '../utils/slug';
 
 interface Props {
   onClose: () => void;
@@ -38,12 +39,18 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
       if (!accountId) throw new Error('Seleccioná o creá una cuenta');
       if (!onboardingName.trim()) throw new Error('Ingresá el nombre del onboarding');
 
+      const trimmedName = onboardingName.trim();
       const { sessionId } = await adminApi.createOnboarding(
         accountId,
-        onboardingName.trim(),
+        trimmedName,
         pocEmail.trim() || undefined,
       );
-      const link = `${window.location.origin}/?token=${sessionId}`;
+      // Readable, resolvable link. The slug is derived (never stored); it shows
+      // the property and resolves back to this Session ID server-side.
+      const slug = slugFromRow(trimmedName, sessionId);
+      const link = slug
+        ? `${window.location.origin}/o/${slug}`
+        : `${window.location.origin}/?token=${sessionId}`;
       setGeneratedLink(link);
       onCreated();
     } catch (err) {

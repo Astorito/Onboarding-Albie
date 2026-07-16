@@ -69,22 +69,29 @@ const DEFAULT_TAXES: TaxItem[] = [
 ];
 
 export default function App() {
-  // ── Session ID — magic link token takes priority, then localStorage, then new ─
-  const [sessionId] = useState(() => {
-    const STORAGE_KEY = 'albie_session_id';
-    // ?token=xyz in URL → magic link sent by sales team
+  // ── Session ID resolution ──────────────────────────────────────────────────
+  // Three ways a visitor arrives, in priority order:
+  //   1. /o/<slug>       readable link (preferred). The slug is an ALIAS; the real
+  //                      Session ID is unknown until we resolve it server-side, so
+  //                      sessionId starts null and is set by the load effect below.
+  //   2. ?token=<id>     legacy magic link — the token IS the Session ID.
+  //   3. neither         returning visitor reuses their stored id, or a new one.
+  // The old behaviour stripped the URL to "/" (losing the token if copied from the
+  // address bar → the source of the "wrong onboarding opens" bug). We now keep a
+  // readable /o/<slug> in the address bar instead (set once we know the slug).
+  const STORAGE_KEY = 'albie_session_id';
+  const slugMatch = window.location.pathname.match(/^\/o\/(.+)$/);
+  const initialSlug = slugMatch ? decodeURIComponent(slugMatch[1]) : null;
+
+  const [sessionId, setSessionId] = useState<string | null>(() => {
+    if (initialSlug) return null; // resolved async via /api/session?slug=
     const urlToken = new URLSearchParams(window.location.search).get('token');
     if (urlToken) {
       localStorage.setItem(STORAGE_KEY, urlToken);
-      // Clean the token from the URL bar (no reload, just cosmetic)
-      const clean = window.location.pathname + window.location.hash;
-      window.history.replaceState(null, '', clean);
       return urlToken;
     }
-    // Returning visitor — reuse their stored session
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) return stored;
-    // First-time visitor without a magic link
     const newId = `albie_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     localStorage.setItem(STORAGE_KEY, newId);
     return newId;
@@ -102,13 +109,34 @@ export default function App() {
   const [onboardingName, setOnboardingName] = useState<string | null>(null);
 
   // ── Load server-side session data (admin pre-fill) ────────────────────────
-  // Fires once on mount. If the admin already filled some fields via this link,
-  // they're loaded from the Sheet so the hotel sees them pre-populated.
+  // Fires once on mount. Resolves the row by slug (readable link) or by token
+  // (legacy link / stored id), loads any admin-filled data, learns the real
+  // Session ID (needed to save), and puts a readable /o/<slug> in the address bar.
   useEffect(() => {
-    fetch(`/api/session?token=${sessionId}`)
+    // In slug mode sessionId is still null here — query by slug. Otherwise query
+    // by the known token. A brand-new anonymous visitor (no slug, has a fresh id)
+    // will just 404 and keep local defaults.
+    const query = initialSlug
+      ? `slug=${encodeURIComponent(initialSlug)}`
+      : sessionId
+        ? `token=${encodeURIComponent(sessionId)}`
+        : null;
+    if (!query) return;
+
+    fetch(`/api/session?${query}`)
       .then(r => r.ok ? r.json() : null)
       .then((data) => {
         if (!data) return;
+        // Learn the real Session ID (essential when we arrived via ?slug=) and
+        // persist it so saves target the right row.
+        if (data.sessionId) {
+          setSessionId(data.sessionId);
+          localStorage.setItem(STORAGE_KEY, data.sessionId);
+        }
+        // Show a readable, shareable URL — and keep the token out of the bar.
+        if (data.slug) {
+          window.history.replaceState(null, '', `/o/${data.slug}`);
+        }
         setOnboardingName(data.onboardingName ?? null);
         const g = data.general ?? {};
         const b = data.brand   ?? {};
@@ -183,8 +211,11 @@ export default function App() {
         if (data.taxes?.length)                setTaxes(data.taxes);
       })
       .catch(() => {});
+  // Runs once on mount. Intentionally NOT keyed on sessionId: in slug mode we set
+  // sessionId inside this effect, and we don't want a second run to re-apply the
+  // prefill over any edits the user may have started.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId]);
+  }, []);
 
   // ── Lifted module state (persists across step navigation) ─────────────────
   const [cancellationPolicies, setCancellationPolicies] = useState<CancellationPolicy[]>(DEFAULT_POLICIES);
@@ -332,6 +363,9 @@ export default function App() {
 
   // ── Background auto-save (fire-and-forget, shows subtle indicator) ───────
   const saveInBackground = useCallback((payload: ReturnType<typeof buildPayload>) => {
+    // Don't save until the real Session ID is known (slug still resolving) —
+    // otherwise we'd POST with a null key and risk creating a junk row.
+    if (!payload.sessionId) return;
     setSaveStatus('saving');
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
@@ -353,9 +387,14 @@ export default function App() {
 
   // ── Submit to Google Sheets + trigger PDF email ──────────────────────────
   const handleSubmit = async () => {
+    const finalPayload = buildPayload();
+    // Guard: never submit before the Session ID is resolved (slug mode).
+    if (!finalPayload.sessionId) {
+      setSubmitError('Cargando la sesión, esperá un segundo e intentá de nuevo.');
+      return;
+    }
     setIsSubmitting(true);
     setSubmitError(null);
-    const finalPayload = buildPayload();
     try {
       const res = await fetch('/api/submit', {
         method: 'POST',

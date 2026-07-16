@@ -2,8 +2,9 @@
 // Returns existing form data for a session (no auth — the token IS the access control).
 // Used by the frontend to pre-load admin-filled data when the hotel opens their link.
 
-import { getAuth, getSheetsClient, ONBOARDINGS_TAB, findRowBySessionId } from './_sheets';
+import { getAuth, getSheetsClient, ONBOARDINGS_TAB, findRowBySessionId, readSheetAsObjects } from './_sheets';
 import { SHEET_HEADERS } from './submit';
+import { slugFromRow } from './_slug';
 
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -12,8 +13,9 @@ export default async function handler(req: any, res: any) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const token = req.query?.token as string;
-  if (!token) return res.status(400).json({ error: 'token required' });
+  const token = req.query?.token as string | undefined;
+  const slug = req.query?.slug as string | undefined;
+  if (!token && !slug) return res.status(400).json({ error: 'token or slug required' });
 
   const sheetId = process.env.GOOGLE_SHEET_ID;
   if (!sheetId) return res.status(500).json({ error: 'Missing GOOGLE_SHEET_ID' });
@@ -22,7 +24,22 @@ export default async function handler(req: any, res: any) {
     const auth = getAuth();
     const sheets = getSheetsClient(auth);
 
-    const rowNum = await findRowBySessionId(sheets, sheetId, ONBOARDINGS_TAB, token);
+    // Resolve which sheet row we're loading. Two ways in:
+    //   ?token=<Session ID>  — direct row key (also how legacy links work)
+    //   ?slug=<readable slug> — derived alias; scan rows and match slugFromRow()
+    // Either way we end up with the real Session ID, which the client needs both
+    // to load AND to save (POST /api/submit keys the row by Session ID).
+    let resolvedSessionId = token ?? '';
+    if (!resolvedSessionId && slug) {
+      const { rows } = await readSheetAsObjects(sheets, sheetId, ONBOARDINGS_TAB);
+      const match = rows.find(
+        (r) => slugFromRow(r['Onboarding Name'] ?? '', r['Session ID'] ?? '') === slug,
+      );
+      if (!match) return res.status(404).json({ error: 'Session not found' });
+      resolvedSessionId = match['Session ID'];
+    }
+
+    const rowNum = await findRowBySessionId(sheets, sheetId, ONBOARDINGS_TAB, resolvedSessionId);
     if (rowNum < 1) return res.status(404).json({ error: 'Session not found' });
 
     // Read the data row and the real header row in parallel. The header row lets
@@ -57,9 +74,15 @@ export default async function handler(req: any, res: any) {
       try { return JSON.parse(val); } catch { return fallback; }
     };
 
+    const onboardingName = colByHeader('Onboarding Name') || null;
+
     return res.status(200).json({
+      // Real row key — the client uses this to save (POST /api/submit) and to
+      // build the readable URL. Essential when the client arrived via ?slug=.
+      sessionId: resolvedSessionId,
+      slug: slugFromRow(onboardingName ?? '', resolvedSessionId) || null,
       // Name the admin gave this onboarding at creation time (read-only).
-      onboardingName: colByHeader('Onboarding Name') || null,
+      onboardingName,
       propertyType: col('Property Type') || null,
       general: {
         propertyName:      col('Property Name'),
