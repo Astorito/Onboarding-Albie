@@ -188,7 +188,7 @@ export function createSections(
   // ═══════════════════════════════════════════════════════════════════════════
   // CANCELLATION POLICIES
   // ═══════════════════════════════════════════════════════════════════════════
-  const CancellationSection: React.FC<{ items: any[]; sessionId: string }> = ({ items = [], sessionId }) => (
+  const CancellationSection: React.FC<{ items: any[]; siteMinder?: any; sessionId: string }> = ({ items = [], siteMinder, sessionId }) => (
     <Page size="A4" style={styles.page}>
       <SectionHeader
         title="Cancellation Policies"
@@ -214,6 +214,27 @@ export function createSections(
                   Notes: {p.notes}
                 </Text>
               )}
+            </View>
+          ))
+        )}
+
+        <Text style={[styles.sectionTitle, { color: colors.brand, fontSize: 10, marginTop: 16, marginBottom: 6 }]}>
+          SITEMINDER
+        </Text>
+        {!siteMinder?.connect ? (
+          <Text style={styles.empty}>Not connecting to SiteMinder.</Text>
+        ) : !siteMinder.sites?.length ? (
+          <Text style={styles.empty}>Connecting to SiteMinder — no booking sites added yet.</Text>
+        ) : (
+          siteMinder.sites.map((s: any, i: number) => (
+            <View key={s.id ?? i} style={styles.card}>
+              <Text style={styles.cardTitle}>{s.bookingSite || 'Unnamed booking site'}</Text>
+              <Text style={styles.cardSubtitle}>
+                Code: {s.hotelCode || '—'} · Rates: {s.rates || '—'} · Multiplier: {s.rateMultiplier || '—'}
+              </Text>
+              <Text style={styles.cardBody}>
+                My Channel: {s.myChannel ? 'Yes' : 'No'} · Mapped: {s.mapped ? 'Yes' : 'No'} · Enabled: {s.enabled ? 'Yes' : 'No'}
+              </Text>
             </View>
           ))
         )}

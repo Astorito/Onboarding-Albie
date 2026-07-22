@@ -7,7 +7,8 @@
 //   GOOGLE_SERVICE_ACCOUNT_JSON — full JSON key file content as a single string
 
 import { google } from 'googleapis';
-import { getAuth, getSheetsClient, ONBOARDINGS_TAB, findRowBySessionId } from './_sheets';
+import { getAuth, getSheetsClient, ONBOARDINGS_TAB, findRowBySessionId, ensureHeaderColumn, updateCellByHeader } from './_sheets';
+import type { SiteMinderData } from './_siteminder';
 
 // ─── Column headers (must match the sheet's first row exactly) ───────────────
 export const SHEET_HEADERS = [
@@ -98,6 +99,9 @@ export interface SubmitPayload {
   rates?: object;
   taxes?: object[];
   groupMembers?: { id: number; name: string; url: string }[];
+  // Stored separately from the 34-column data block — see the 'SiteMinder'
+  // column write below. Not part of SHEET_HEADERS/rowFromPayload.
+  siteMinder?: SiteMinderData;
 }
 
 function rowFromPayload(payload: SubmitPayload): string[] {
@@ -172,6 +176,9 @@ export default async function handler(req: any, res: any) {
     // ── Look for an existing row with this sessionId (column A) ────────────
     const sheetRowNumber = await findRowBySessionId(sheets, sheetId, ONBOARDINGS_TAB, payload.sessionId);
 
+    let resultRowNumber: number;
+    let action: 'updated' | 'created';
+
     if (sheetRowNumber > 0) {
       // ── Update existing row (data cols only — admin cols stay untouched) ─
       await sheets.spreadsheets.values.update({
@@ -180,7 +187,8 @@ export default async function handler(req: any, res: any) {
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: [rowData] },
       });
-      return res.status(200).json({ success: true, action: 'updated', row: sheetRowNumber });
+      resultRowNumber = sheetRowNumber;
+      action = 'updated';
     } else {
       // ── Append new row ──────────────────────────────────────────────────
       await sheets.spreadsheets.values.append({
@@ -189,8 +197,24 @@ export default async function handler(req: any, res: any) {
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: [rowData] },
       });
-      return res.status(200).json({ success: true, action: 'created' });
+      resultRowNumber = await findRowBySessionId(sheets, sheetId, ONBOARDINGS_TAB, payload.sessionId);
+      action = 'created';
     }
+
+    // ── SiteMinder — written to a column APPENDED after the admin columns,
+    // never inside the A:AH data block above (that would shift every column
+    // after it and corrupt admin data like Account ID). Additive + isolated:
+    // ensureHeaderColumn only ever adds a header cell if missing, and
+    // updateCellByHeader targets exactly that one cell in this row.
+    if (resultRowNumber > 0) {
+      await ensureHeaderColumn(sheets, sheetId, ONBOARDINGS_TAB, 'SiteMinder');
+      await updateCellByHeader(
+        sheets, sheetId, ONBOARDINGS_TAB, resultRowNumber, 'SiteMinder',
+        JSON.stringify(payload.siteMinder ?? { connect: false, sites: [] }),
+      );
+    }
+
+    return res.status(200).json({ success: true, action, row: action === 'updated' ? resultRowNumber : undefined });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('[submit]', message);

@@ -22,6 +22,7 @@ import { ExperiencesStep } from './steps/modules/ExperiencesStep';
 import { AddOnsStep, AddonConfig } from './steps/modules/AddOnsStep';
 import { RatesPackagesStep, RatesData } from './steps/modules/RatesPackagesStep';
 import { TaxesFeesStep, TaxItem, TaxesFeesStepHandle } from './steps/modules/TaxesFeesStep';
+import { SiteMinderSection, SiteMinderData, DEFAULT_SITEMINDER } from './steps/modules/SiteMinderSection';
 
 import { ReviewStep } from './steps/ReviewStep';
 import { SuccessStep } from './steps/SuccessStep';
@@ -209,6 +210,7 @@ export default function App() {
         if (data.addons && Object.keys(data.addons).length) setAddons(data.addons);
         if (data.rates  && Object.keys(data.rates).length)  setRates(data.rates);
         if (data.taxes?.length)                setTaxes(data.taxes);
+        if (data.siteMinder)                   setSiteMinder(data.siteMinder);
       })
       .catch(() => {});
   // Runs once on mount. Intentionally NOT keyed on sessionId: in slug mode we set
@@ -219,6 +221,7 @@ export default function App() {
 
   // ── Lifted module state (persists across step navigation) ─────────────────
   const [cancellationPolicies, setCancellationPolicies] = useState<CancellationPolicy[]>(DEFAULT_POLICIES);
+  const [siteMinder, setSiteMinder] = useState<SiteMinderData>(DEFAULT_SITEMINDER);
   const [rooms, setRooms] = useState<RoomItem[]>([]);
   const [addons, setAddons] = useState<Record<string, AddonConfig>>(DEFAULT_ADDONS);
   const [rates, setRates] = useState<RatesData>({});
@@ -358,6 +361,7 @@ export default function App() {
       rates,
       taxes: stateOverrides?.taxes ?? taxes,
       groupMembers,
+      siteMinder,
     };
   };
 
@@ -452,7 +456,12 @@ export default function App() {
     general:      <GeneralInformationStep prefill={{ ...prefillData, ...savedForms.general }} />,
     brand:        <WebsiteBrandStep prefill={{ ...prefillData, ...savedForms.brand }} />,
     dns:          <DnsTrackingStep prefill={savedForms.dns ?? {}} />,
-    cancellation: <CancellationPoliciesStep ref={cancellationStepRef} policies={cancellationPolicies} setPolicies={setCancellationPolicies} />,
+    cancellation: (
+      <>
+        <CancellationPoliciesStep ref={cancellationStepRef} policies={cancellationPolicies} setPolicies={setCancellationPolicies} />
+        <SiteMinderSection data={siteMinder} setData={setSiteMinder} />
+      </>
+    ),
     rooms:        <RoomInformationStep ref={roomsStepRef} rooms={rooms} setRooms={setRooms} />,
     experiences:  <ExperiencesStep />,
     addons:       <AddOnsStep addons={addons} setAddons={setAddons} />,
@@ -539,6 +548,7 @@ export default function App() {
                           addons,
                           rates,
                           taxes,
+                          siteMinder,
                         }}
                       />
                     </motion.div>

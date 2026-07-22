@@ -14,6 +14,7 @@ export const ADMIN_COLS = [
   'Created By',
   'Admin Created At',
   'POC Email',
+  'SiteMinder',   // JSON blob {connect, sites:[]} — written/read by header name only
 ];
 
 export const ACCOUNTS_HEADERS = ['Account ID', 'Account Name', 'Created At'];
@@ -105,6 +106,31 @@ export async function updateCellByHeader(
     range: `${tabName}!${colLetter}${rowNum}`,
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: [[value]] },
+  });
+}
+
+// ─── Add a header column if it doesn't exist yet ──────────────────────────────
+// Additive only: appends colName to the first empty cell after the last header
+// in row 1. Never touches existing header cells or any data row. Safe to call
+// on every write — it's a no-op once the column exists.
+export async function ensureHeaderColumn(
+  sheets: ReturnType<typeof getSheetsClient>,
+  sheetId: string,
+  tabName: string,
+  colName: string
+): Promise<void> {
+  const headerRes = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: `${tabName}!1:1`,
+  });
+  const headers = (headerRes.data.values?.[0] ?? []) as string[];
+  if (headers.includes(colName)) return;
+  const colLetter = colIndexToLetter(headers.length + 1);
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: sheetId,
+    range: `${tabName}!${colLetter}1`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: [[colName]] },
   });
 }
 

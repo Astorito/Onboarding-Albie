@@ -121,6 +121,9 @@ export default async function handler(req: any, res: any) {
       rates:        tryJson(col('Rates'), {}),
       taxes:        tryJson(col('Taxes'), []),
       groupMembers: tryJson(col('Group Members'), []),
+      // Lives in a column appended after the admin columns (see api/submit.ts),
+      // resolved by header name — absent on rows saved before this feature.
+      siteMinder:   tryJson(colByHeader('SiteMinder'), { connect: false, sites: [] }),
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
