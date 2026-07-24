@@ -125,7 +125,33 @@ export async function ensureHeaderColumn(
   });
   const headers = (headerRes.data.values?.[0] ?? []) as string[];
   if (headers.includes(colName)) return;
-  const colLetter = colIndexToLetter(headers.length + 1);
+
+  const targetColCount = headers.length + 1; // 1-based index of the new column
+
+  // The sheet's grid may not have a spare column at targetColCount. values.update
+  // does NOT grow the grid — writing beyond gridProperties.columnCount throws
+  // "exceeds grid limits". So first append empty columns to the RIGHT if needed
+  // (appendDimension is additive: it never shifts columns or touches data cells).
+  const meta = await getSpreadsheetMeta(sheets, sheetId);
+  const tab = findTab(meta, tabName);
+  const gridCols = tab?.properties?.gridProperties?.columnCount ?? 0;
+  const numericTabId = tab?.properties?.sheetId;
+  if (targetColCount > gridCols && numericTabId !== undefined && numericTabId !== null) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: sheetId,
+      requestBody: {
+        requests: [{
+          appendDimension: {
+            sheetId: numericTabId,
+            dimension: 'COLUMNS',
+            length: targetColCount - gridCols,
+          },
+        }],
+      },
+    });
+  }
+
+  const colLetter = colIndexToLetter(targetColCount);
   await sheets.spreadsheets.values.update({
     spreadsheetId: sheetId,
     range: `${tabName}!${colLetter}1`,

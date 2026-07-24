@@ -206,12 +206,22 @@ export default async function handler(req: any, res: any) {
     // after it and corrupt admin data like Account ID). Additive + isolated:
     // ensureHeaderColumn only ever adds a header cell if missing, and
     // updateCellByHeader targets exactly that one cell in this row.
+    //
+    // FAIL-OPEN: this is a secondary write. The core onboarding data was already
+    // saved above. If anything here throws (e.g. the sheet grid needs widening),
+    // we log and continue with success — a secondary write must NEVER block the
+    // onboarding save or the final submit/PDF flow.
     if (resultRowNumber > 0) {
-      await ensureHeaderColumn(sheets, sheetId, ONBOARDINGS_TAB, 'SiteMinder');
-      await updateCellByHeader(
-        sheets, sheetId, ONBOARDINGS_TAB, resultRowNumber, 'SiteMinder',
-        JSON.stringify(payload.siteMinder ?? { connect: false, sites: [] }),
-      );
+      try {
+        await ensureHeaderColumn(sheets, sheetId, ONBOARDINGS_TAB, 'SiteMinder');
+        await updateCellByHeader(
+          sheets, sheetId, ONBOARDINGS_TAB, resultRowNumber, 'SiteMinder',
+          JSON.stringify(payload.siteMinder ?? { connect: false, sites: [] }),
+        );
+      } catch (smErr: unknown) {
+        const m = smErr instanceof Error ? smErr.message : 'Unknown error';
+        console.warn('[submit] SiteMinder column write skipped (non-fatal):', m);
+      }
     }
 
     return res.status(200).json({ success: true, action, row: action === 'updated' ? resultRowNumber : undefined });
