@@ -76,6 +76,7 @@ export interface SubmitPayload {
     phone?: string;
     notificationEmail?: string;
     websiteUrl?: string;
+    termsConditions?: string;
   };
   brand: {
     siteTitle?: string;
@@ -221,6 +222,20 @@ export default async function handler(req: any, res: any) {
       } catch (smErr: unknown) {
         const m = smErr instanceof Error ? smErr.message : 'Unknown error';
         console.warn('[submit] SiteMinder column write skipped (non-fatal):', m);
+      }
+
+      // Property Terms & Conditions — same safe trailing-column pattern as
+      // SiteMinder (it's a "general" field but can't live in the A:AH block
+      // without shifting admin columns). Fail-open: never blocks the save.
+      try {
+        await ensureHeaderColumn(sheets, sheetId, ONBOARDINGS_TAB, 'Property Terms & Conditions');
+        await updateCellByHeader(
+          sheets, sheetId, ONBOARDINGS_TAB, resultRowNumber, 'Property Terms & Conditions',
+          payload.general?.termsConditions ?? '',
+        );
+      } catch (tcErr: unknown) {
+        const m = tcErr instanceof Error ? tcErr.message : 'Unknown error';
+        console.warn('[submit] Terms & Conditions column write skipped (non-fatal):', m);
       }
     }
 

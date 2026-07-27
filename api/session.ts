@@ -98,6 +98,9 @@ export default async function handler(req: any, res: any) {
         phone:             col('Phone'),
         notificationEmail: col('Notification Email'),
         websiteUrl:        col('Website URL'),
+        // Stored in a trailing column (appended after admin cols), resolved by
+        // header name — absent on rows saved before this field was persisted.
+        termsConditions:   colByHeader('Property Terms & Conditions'),
       },
       brand: {
         siteTitle:      col('Site Title'),

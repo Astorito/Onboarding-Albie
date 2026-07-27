@@ -178,6 +178,7 @@ export default function App() {
             phone:             g.phone             || '',
             notificationEmail: g.notificationEmail || '',
             websiteUrl:        g.websiteUrl        || '',
+            termsConditions:   g.termsConditions   || '',
           };
         }
         if (Object.values(b).some(Boolean)) {
@@ -338,6 +339,7 @@ export default function App() {
         phone:             g.phone             || prefillData.phone             || '',
         notificationEmail: g.notificationEmail || prefillData.notificationEmail || '',
         websiteUrl:        g.websiteUrl        || prefillData.websiteUrl        || '',
+        termsConditions:   g.termsConditions   || '',
       },
       brand: {
         siteTitle:      b.siteTitle      || prefillData.siteTitle || '',
