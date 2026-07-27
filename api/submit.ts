@@ -77,6 +77,7 @@ export interface SubmitPayload {
     notificationEmail?: string;
     websiteUrl?: string;
     termsConditions?: string;
+    dateFormat?: string;
   };
   brand: {
     siteTitle?: string;
@@ -224,9 +225,10 @@ export default async function handler(req: any, res: any) {
         console.warn('[submit] SiteMinder column write skipped (non-fatal):', m);
       }
 
-      // Property Terms & Conditions — same safe trailing-column pattern as
-      // SiteMinder (it's a "general" field but can't live in the A:AH block
-      // without shifting admin columns). Fail-open: never blocks the save.
+      // Property Terms & Conditions and Date Format — same safe trailing-column
+      // pattern as SiteMinder (they're "general" fields but can't live in the
+      // A:AH block without shifting admin columns). Fail-open: never blocks the
+      // save.
       try {
         await ensureHeaderColumn(sheets, sheetId, ONBOARDINGS_TAB, 'Property Terms & Conditions');
         await updateCellByHeader(
@@ -236,6 +238,17 @@ export default async function handler(req: any, res: any) {
       } catch (tcErr: unknown) {
         const m = tcErr instanceof Error ? tcErr.message : 'Unknown error';
         console.warn('[submit] Terms & Conditions column write skipped (non-fatal):', m);
+      }
+
+      try {
+        await ensureHeaderColumn(sheets, sheetId, ONBOARDINGS_TAB, 'Date Format');
+        await updateCellByHeader(
+          sheets, sheetId, ONBOARDINGS_TAB, resultRowNumber, 'Date Format',
+          payload.general?.dateFormat ?? '',
+        );
+      } catch (dfErr: unknown) {
+        const m = dfErr instanceof Error ? dfErr.message : 'Unknown error';
+        console.warn('[submit] Date Format column write skipped (non-fatal):', m);
       }
     }
 

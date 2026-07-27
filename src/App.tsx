@@ -179,6 +179,7 @@ export default function App() {
             notificationEmail: g.notificationEmail || '',
             websiteUrl:        g.websiteUrl        || '',
             termsConditions:   g.termsConditions   || '',
+            dateFormat:        g.dateFormat        || '',
           };
         }
         if (Object.values(b).some(Boolean)) {
@@ -340,6 +341,7 @@ export default function App() {
         notificationEmail: g.notificationEmail || prefillData.notificationEmail || '',
         websiteUrl:        g.websiteUrl        || prefillData.websiteUrl        || '',
         termsConditions:   g.termsConditions   || '',
+        dateFormat:        g.dateFormat        || '',
       },
       brand: {
         siteTitle:      b.siteTitle      || prefillData.siteTitle || '',
