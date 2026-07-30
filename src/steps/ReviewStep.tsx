@@ -132,7 +132,7 @@ const ModuleBody = ({ moduleId, data }: { moduleId: string; data: ReviewData }) 
               {r.shortTitle || r.name} <span className="text-[10px] text-on-surface-variant font-normal">· {r.code}</span>
             </p>
             <p className="text-on-surface-variant">
-              {r.type} · {formatBeds(r.beds, r.bed)} · {r.bedrooms}br · max {r.maxOccupants} guests ({r.maxAdults} adults + {r.childrenCapacity} children)
+              {r.type} · {formatBeds(r.beds, r.bed)} · {r.totalRooms ?? '?'} rooms · {r.bedrooms} bedrooms/room · max {r.maxOccupants} guests ({r.maxAdults} adults + {r.childrenCapacity} children)
             </p>
             {r.facilities.length > 0 && (
               <p className="text-on-surface-variant mt-1 text-[10px]">{r.facilities.join(' · ')}</p>

@@ -265,7 +265,7 @@ export function createSections(
                   {r.code ? `  ·  ${r.code}` : ''}
                 </Text>
                 <Text style={styles.cardSubtitle}>
-                  {[r.type, bedsLabel && `${bedsLabel} bed`, r.bedrooms && `${r.bedrooms} bedrooms`]
+                  {[r.type, bedsLabel && `${bedsLabel} bed`, r.totalRooms && `${r.totalRooms} rooms`, r.bedrooms && `${r.bedrooms} bedrooms/room`]
                     .filter(Boolean).join(' · ')}
                 </Text>
                 {(r.longTitle || r.description) && (

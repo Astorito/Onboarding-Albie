@@ -13,7 +13,8 @@ export type RoomItem = {
   type: string;
   beds: BedConfig[];
   bed?: string; // legacy single bed type — only present on rooms saved before multi-bed support
-  bedrooms: number;
+  bedrooms: number;   // "Bedrooms per Room" — number of bedrooms inside each individual room
+  totalRooms?: number; // "Total Amount of Rooms of This Room Type" — total inventory of this type
   imageUrls: string[];
   facilities: string[];
   // Per-room occupancy (moved from the old global Occupancy step)
@@ -34,6 +35,7 @@ const EMPTY_FORM: FormState = {
   type: '',
   beds: [{ type: '', count: 1 }],
   bedrooms: 1,
+  totalRooms: 1,
   imageUrls: [],
   imageUrlsRaw: '',
   facilities: ['WiFi', 'Smart TV', 'Air Conditioning'],
@@ -130,6 +132,7 @@ export const RoomInformationStep = forwardRef<RoomInformationStepHandle, Props>(
           ? [{ type: r.bed, count: 1 }]
           : [{ type: '', count: 1 }],
       bedrooms: r.bedrooms,
+      totalRooms: r.totalRooms ?? 1,
       imageUrls: r.imageUrls ?? [],
       imageUrlsRaw: (r.imageUrls ?? []).join(', '),
       facilities: r.facilities ?? [],
@@ -170,6 +173,7 @@ export const RoomInformationStep = forwardRef<RoomInformationStepHandle, Props>(
       type: form.type || 'Standard Room',
       beds: cleanBeds.length > 0 ? cleanBeds : [{ type: 'Queen', count: 1 }],
       bedrooms: Number(form.bedrooms) || 1,
+      totalRooms: Number(form.totalRooms) || 1,
       imageUrls,
       facilities: form.facilities,
       minAdults: form.minAdults,
@@ -213,7 +217,7 @@ export const RoomInformationStep = forwardRef<RoomInformationStepHandle, Props>(
               <ItemCard
                 icon="bed"
                 title={r.shortTitle || r.name}
-                subtitle={`${r.code ? r.code + ' · ' : ''}${r.type} · ${formatBeds(r.beds, r.bed)} · ${r.bedrooms}br · max ${r.maxOccupants || '?'} guests`}
+                subtitle={`${r.code ? r.code + ' · ' : ''}${r.type} · ${formatBeds(r.beds, r.bed)} · ${r.totalRooms ?? '?'} rooms · ${r.bedrooms} bedrooms/room · max ${r.maxOccupants || '?'} guests`}
                 onEdit={() => startEdit(r)}
                 onDelete={() => setRooms((prev) => prev.filter((x) => x.id !== r.id))}
               />
@@ -318,7 +322,17 @@ export const RoomInformationStep = forwardRef<RoomInformationStepHandle, Props>(
                 </div>
               </FormField>
 
-              <FormField label="Number of Bedrooms" required>
+              <FormField label="Total Amount of Rooms of This Room Type" required hint="Total inventory available for this room type.">
+                <TextInput
+                  type="number"
+                  min={1}
+                  placeholder="1"
+                  value={form.totalRooms}
+                  onChange={(e) => update('totalRooms', Number(e.target.value) as FormState['totalRooms'])}
+                />
+              </FormField>
+
+              <FormField label="Bedrooms per Room" required hint="Number of bedrooms inside each individual room.">
                 <TextInput
                   type="number"
                   min={1}
