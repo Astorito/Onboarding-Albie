@@ -5,6 +5,7 @@
 import { getAuth, getSheetsClient, ONBOARDINGS_TAB, findRowBySessionId, readSheetAsObjects } from './_sheets';
 import { SHEET_HEADERS } from './submit';
 import { slugFromRow } from './_slug';
+import { findOnboardingBySessionId, findOnboardingBySlug, sessionResponseFromHit } from './_db';
 
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,10 +18,20 @@ export default async function handler(req: any, res: any) {
   const slug = req.query?.slug as string | undefined;
   if (!token && !slug) return res.status(400).json({ error: 'token or slug required' });
 
-  const sheetId = process.env.GOOGLE_SHEET_ID;
-  if (!sheetId) return res.status(500).json({ error: 'Missing GOOGLE_SHEET_ID' });
-
   try {
+    // ── Airtable first: new onboardings live there. If found, answer from
+    // Airtable and never touch Sheets for this request. ──────────────────────
+    const airtableHit = slug
+      ? await findOnboardingBySlug(slug)
+      : await findOnboardingBySessionId(token ?? '');
+    if (airtableHit) {
+      return res.status(200).json(sessionResponseFromHit(airtableHit));
+    }
+
+    // ── Fallback: existing onboardings still live in the Sheet (unchanged) ──
+    const sheetId = process.env.GOOGLE_SHEET_ID;
+    if (!sheetId) return res.status(500).json({ error: 'Missing GOOGLE_SHEET_ID' });
+
     const auth = getAuth();
     const sheets = getSheetsClient(auth);
 

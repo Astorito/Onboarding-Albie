@@ -3,6 +3,7 @@
 
 import { requireAuth } from './_auth';
 import { getAuth, getSheetsClient, ACCOUNTS_TAB, readSheetAsObjects, ACCOUNTS_HEADERS } from '../_sheets';
+import { listAirtableAccounts, createAirtableAccount, isAirtableConfigured } from '../_db';
 
 function generateAccountId(name: string): string {
   const slug = name
@@ -26,24 +27,34 @@ export default async function handler(req: any, res: any) {
   if (!payload) return;
 
   const sheetId = process.env.GOOGLE_SHEET_ID;
-  if (!sheetId) return res.status(500).json({ error: 'Missing GOOGLE_SHEET_ID' });
 
-  const auth = getAuth();
-  const sheets = getSheetsClient(auth);
-
-  // ── GET: return all accounts ───────────────────────────────────────────────
+  // ── GET: return all accounts — Airtable (new) + Sheets (legacy) merged ────
   if (req.method === 'GET') {
-    const { rows } = await readSheetAsObjects(sheets, sheetId, ACCOUNTS_TAB);
-    return res.status(200).json(rows);
+    const airtableRows = await listAirtableAccounts();
+    let sheetRows: Record<string, string>[] = [];
+    if (sheetId) {
+      const sheets = getSheetsClient(getAuth());
+      const { rows } = await readSheetAsObjects(sheets, sheetId, ACCOUNTS_TAB);
+      sheetRows = rows;
+    }
+    return res.status(200).json([...airtableRows, ...sheetRows]);
   }
 
-  // ── POST: create new account ───────────────────────────────────────────────
+  // ── POST: create new account — goes to Airtable (start-fresh default) ─────
   if (req.method === 'POST') {
     const { accountName } = req.body ?? {};
     if (!accountName?.trim()) {
       return res.status(400).json({ error: 'accountName is required' });
     }
 
+    if (isAirtableConfigured()) {
+      const created = await createAirtableAccount(accountName.trim());
+      return res.status(201).json(created);
+    }
+
+    // Airtable not configured — original fallback: create in Sheets.
+    if (!sheetId) return res.status(500).json({ error: 'Missing GOOGLE_SHEET_ID' });
+    const sheets = getSheetsClient(getAuth());
     const accountId = generateAccountId(accountName.trim());
     const row = [accountId, accountName.trim(), new Date().toISOString()];
 

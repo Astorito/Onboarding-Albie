@@ -7,7 +7,13 @@ import {
   readSheetAsObjects, buildRow, ADMIN_COLS,
   findRowBySessionId, getSpreadsheetMeta, findTab,
 } from '../_sheets';
+import {
+  listAirtableOnboardings, createAirtableOnboarding,
+  deleteAirtableOnboardingBySessionId, isAirtableConfigured,
+} from '../_db';
 
+// Fallback session id generator — only used if Airtable isn't configured
+// (e.g. a preview/dev environment without the Airtable env vars set).
 function generateSessionId(): string {
   const rand = Math.random().toString(36).slice(2, 8);
   return `albie_${Date.now()}_${rand}`;
@@ -24,24 +30,38 @@ export default async function handler(req: any, res: any) {
   if (!payload) return;
 
   const sheetId = process.env.GOOGLE_SHEET_ID;
-  if (!sheetId) return res.status(500).json({ error: 'Missing GOOGLE_SHEET_ID' });
 
-  const auth = getAuth();
-  const sheets = getSheetsClient(auth);
-
-  // ── GET: return all onboardings ────────────────────────────────────────────
+  // ── GET: return all onboardings — Airtable (new) + Sheets (legacy) merged ──
   if (req.method === 'GET') {
-    const { rows } = await readSheetAsObjects(sheets, sheetId, ONBOARDINGS_TAB);
-    return res.status(200).json(rows);
+    const airtableRows = await listAirtableOnboardings();
+    let sheetRows: Record<string, string>[] = [];
+    if (sheetId) {
+      const sheets = getSheetsClient(getAuth());
+      const { rows } = await readSheetAsObjects(sheets, sheetId, ONBOARDINGS_TAB);
+      sheetRows = rows;
+    }
+    return res.status(200).json([...airtableRows, ...sheetRows]);
   }
 
-  // ── POST: create new onboarding ────────────────────────────────────────────
+  // ── POST: create new onboarding — goes to Airtable (start-fresh default) ──
   if (req.method === 'POST') {
-    const { accountId, onboardingName, pocEmail } = req.body ?? {};
+    const { accountId, onboardingName, pocEmail, type } = req.body ?? {};
     if (!accountId || !onboardingName) {
       return res.status(400).json({ error: 'accountId and onboardingName are required' });
     }
 
+    if (isAirtableConfigured()) {
+      const { sessionId } = await createAirtableOnboarding({
+        accountId, onboardingName, pocEmail,
+        createdBy: String(payload.email),
+        type: type === 'marketing' ? 'marketing' : 'hotel',
+      });
+      return res.status(201).json({ sessionId });
+    }
+
+    // Airtable not configured — original fallback: create in Sheets.
+    if (!sheetId) return res.status(500).json({ error: 'Missing GOOGLE_SHEET_ID' });
+    const sheets = getSheetsClient(getAuth());
     const { headers } = await readSheetAsObjects(sheets, sheetId, ONBOARDINGS_TAB);
     const sessionId = generateSessionId();
 
@@ -65,10 +85,16 @@ export default async function handler(req: any, res: any) {
     return res.status(201).json({ sessionId });
   }
 
-  // ── DELETE: remove onboarding row by sessionId ────────────────────────────
+  // ── DELETE: remove onboarding — Airtable first, then Sheets (legacy) ──────
   if (req.method === 'DELETE') {
     const sessionId = req.query?.sessionId as string;
     if (!sessionId) return res.status(400).json({ error: 'sessionId query param required' });
+
+    const deletedFromAirtable = await deleteAirtableOnboardingBySessionId(sessionId);
+    if (deletedFromAirtable) return res.status(200).json({ success: true });
+
+    if (!sheetId) return res.status(404).json({ error: 'Onboarding not found' });
+    const sheets = getSheetsClient(getAuth());
 
     const rowNum = await findRowBySessionId(sheets, sheetId, ONBOARDINGS_TAB, sessionId);
     if (rowNum < 1) return res.status(404).json({ error: 'Onboarding not found' });

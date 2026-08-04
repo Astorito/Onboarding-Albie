@@ -9,6 +9,7 @@
 import { google } from 'googleapis';
 import { getAuth, getSheetsClient, ONBOARDINGS_TAB, findRowBySessionId, ensureHeaderColumn, updateCellByHeader } from './_sheets';
 import type { SiteMinderData } from './_siteminder';
+import { findOnboardingBySessionId, writeHotelFields, createHotelOnboardingFromPayload, isAirtableConfigured } from './_db';
 
 // ─── Column headers (must match the sheet's first row exactly) ───────────────
 export const SHEET_HEADERS = [
@@ -157,11 +158,6 @@ export default async function handler(req: any, res: any) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const sheetId = process.env.GOOGLE_SHEET_ID;
-  if (!sheetId) {
-    return res.status(500).json({ error: 'Missing GOOGLE_SHEET_ID environment variable.' });
-  }
-
   const payload: SubmitPayload = req.body;
   if (!payload?.propertyType) {
     return res.status(400).json({ error: 'Invalid payload: propertyType is required.' });
@@ -171,6 +167,26 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
+    // ── Airtable first: if this onboarding already lives there, update it
+    // there and never touch Sheets for this request. ───────────────────────
+    const airtableHit = await findOnboardingBySessionId(payload.sessionId);
+    if (airtableHit) {
+      await writeHotelFields(airtableHit.record.id, payload);
+      return res.status(200).json({ success: true, action: 'updated' });
+    }
+
+    const sheetId = process.env.GOOGLE_SHEET_ID;
+    if (!sheetId) {
+      // No Sheets configured — a brand-new onboarding with no home yet goes
+      // to Airtable (the "start fresh" default for anything not already in
+      // the Sheet).
+      if (isAirtableConfigured()) {
+        await createHotelOnboardingFromPayload(payload);
+        return res.status(200).json({ success: true, action: 'created' });
+      }
+      return res.status(500).json({ error: 'Missing GOOGLE_SHEET_ID environment variable.' });
+    }
+
     const auth = getAuth();
     const sheets = getSheetsClient(auth);
     const rowData = rowFromPayload(payload);
@@ -191,8 +207,12 @@ export default async function handler(req: any, res: any) {
       });
       resultRowNumber = sheetRowNumber;
       action = 'updated';
+    } else if (isAirtableConfigured()) {
+      // ── Not found anywhere — new onboardings go to Airtable ─────────────
+      await createHotelOnboardingFromPayload(payload);
+      return res.status(200).json({ success: true, action: 'created' });
     } else {
-      // ── Append new row ──────────────────────────────────────────────────
+      // ── Airtable not configured — original fallback: append to Sheets ───
       await sheets.spreadsheets.values.append({
         spreadsheetId: sheetId,
         range: `${ONBOARDINGS_TAB}!A1`,

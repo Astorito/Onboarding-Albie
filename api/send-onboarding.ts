@@ -17,6 +17,7 @@ import {
   getAuth, getSheetsClient, ONBOARDINGS_TAB,
   findRowBySessionId, updateCellByHeader,
 } from './_sheets';
+import { updateAirtableOnboardingFields, isAirtableConfigured } from './_db';
 
 // nft-hint: Vercel's Node File Tracer (nft) can't see inside new Function() strings.
 // This dead-code require() is never executed (if(false)) but makes nft include
@@ -92,8 +93,16 @@ async function uploadToDrive(pdfBuffer: Buffer, filename: string): Promise<strin
   return uploadRes.data.webViewLink ?? `https://drive.google.com/file/d/${fileId}/view`;
 }
 
-// ─── Save PDF link to Sheets row, return POC email ────────────────────────────
+// ─── Save PDF link (Airtable first, then Sheets), return POC email ────────────
 async function savePdfLink(sessionId: string, pdfLink: string): Promise<string> {
+  // Airtable first — if the onboarding lives there, write back and stop.
+  const airtableResult = await updateAirtableOnboardingFields(sessionId, {
+    'PDF Link': pdfLink,
+    'Status': 'completed',
+  });
+  if (airtableResult.ok) return airtableResult.pocEmail ?? '';
+
+  // Fallback: existing onboardings still in the Sheet (unchanged).
   const sheetId = process.env.GOOGLE_SHEET_ID!;
   const auth = getAuth();
   const sheets = getSheetsClient(auth);
@@ -194,8 +203,8 @@ export default async function handler(req: any, res: any) {
       return res.status(502).json({ success: false, error: sendResult.error.message ?? 'Email send failed' });
     }
 
-    // 4. Save Drive link in the Onboardings sheet and notify POC (fire-and-forget)
-    if (driveLink && payload.sessionId && process.env.GOOGLE_SHEET_ID) {
+    // 4. Save Drive link (Airtable or Sheets) and notify POC (fire-and-forget)
+    if (driveLink && payload.sessionId && (isAirtableConfigured() || process.env.GOOGLE_SHEET_ID)) {
       savePdfLink(payload.sessionId, driveLink)
         .then(async (pocEmail) => {
           if (!pocEmail || pocEmail === adminEmail) return;
