@@ -19,6 +19,10 @@ export interface Onboarding {
   'Timestamp'?: string;
 }
 
+export type CreateOnboardingResult =
+  | { isEngagement: false; sessionId: string }
+  | { isEngagement: true; engagementId: string; engagementSlug: string };
+
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(path, { credentials: 'include', ...options });
   const data = await res.json();
@@ -50,11 +54,16 @@ export const adminApi = {
 
   getOnboardings: () => apiFetch<Onboarding[]>('/api/admin/onboardings'),
 
-  createOnboarding: (accountId: string, onboardingName: string, pocEmail?: string) =>
-    apiFetch<{ sessionId: string }>('/api/admin/onboardings', {
+  createOnboarding: (
+    accountId: string,
+    onboardingName: string,
+    pocEmail: string | undefined,
+    products: { albie: boolean; webDesign: boolean; marketing: boolean },
+  ): Promise<CreateOnboardingResult> =>
+    apiFetch<CreateOnboardingResult>('/api/admin/onboardings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accountId, onboardingName, pocEmail }),
+      body: JSON.stringify({ accountId, onboardingName, pocEmail, products }),
     }),
 
   deleteOnboarding: (sessionId: string) =>

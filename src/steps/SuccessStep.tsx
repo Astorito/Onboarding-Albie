@@ -3,7 +3,15 @@ import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { Icon } from '../components/ui/primitives';
 
-export const SuccessStep = () => {
+interface Props {
+  // Present only when this onboarding was opened from an Engagement hub
+  // (2+ products bought together) — shows a way back to it so the client
+  // can continue with the other onboardings. Absent for the normal,
+  // single-product case, which renders exactly as before.
+  engagementSlug?: string | null;
+}
+
+export const SuccessStep = ({ engagementSlug }: Props) => {
   useEffect(() => {
     const end = Date.now() + 3 * 1000;
     const colors = ['#0D3A39', '#F2EA5F', '#2F6B6D'];
@@ -50,12 +58,21 @@ export const SuccessStep = () => {
               support@theanythinggroup.com
             </a>
           </div>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-12 bg-primary text-on-primary px-12 py-5 rounded-2xl font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xl hover:shadow-primary/20"
-          >
-            Go to Dashboard
-          </button>
+          {engagementSlug ? (
+            <a
+              href={`/e/${engagementSlug}`}
+              className="mt-12 inline-block bg-primary text-on-primary px-12 py-5 rounded-2xl font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xl hover:shadow-primary/20"
+            >
+              Back to your onboardings
+            </a>
+          ) : (
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-12 bg-primary text-on-primary px-12 py-5 rounded-2xl font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xl hover:shadow-primary/20"
+            >
+              Go to Dashboard
+            </button>
+          )}
         </div>
       </motion.div>
     </div>

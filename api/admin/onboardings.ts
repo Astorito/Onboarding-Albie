@@ -10,6 +10,7 @@ import {
 import {
   listAirtableOnboardings, createAirtableOnboarding,
   deleteAirtableOnboardingBySessionId, isAirtableConfigured,
+  createEngagement, type EngagementProducts,
 } from '../_db';
 
 // Fallback session id generator — only used if Airtable isn't configured
@@ -43,20 +44,53 @@ export default async function handler(req: any, res: any) {
     return res.status(200).json([...airtableRows, ...sheetRows]);
   }
 
-  // ── POST: create new onboarding — goes to Airtable (start-fresh default) ──
+  // ── POST: create new onboarding ──────────────────────────────────────────
+  // `products` selects which of Albie / Web Design / Marketing this client
+  // bought. Defaults to Albie-only when omitted, preserving old callers.
+  // - Exactly 1 product selected -> identical to today's behavior: a single
+  //   Onboardings_* row, link goes straight to that product's flow.
+  // - 2+ selected -> an Engagement "hub" record bundling them behind one link.
   if (req.method === 'POST') {
-    const { accountId, onboardingName, pocEmail, type } = req.body ?? {};
+    const { accountId, onboardingName, pocEmail } = req.body ?? {};
+    const products: EngagementProducts = req.body?.products ?? {
+      albie: true, webDesign: false, marketing: false,
+    };
     if (!accountId || !onboardingName) {
       return res.status(400).json({ error: 'accountId and onboardingName are required' });
+    }
+
+    const enabledCount = [products.albie, products.webDesign, products.marketing].filter(Boolean).length;
+    if (enabledCount === 0) {
+      return res.status(400).json({ error: 'Select at least one product' });
+    }
+
+    // ── 2+ products: create an Engagement (requires Airtable) ──────────────
+    if (enabledCount > 1) {
+      if (!isAirtableConfigured()) {
+        return res.status(500).json({ error: 'Airtable must be configured to create multi-product engagements' });
+      }
+      const { engagementId, slug } = await createEngagement({
+        accountId, onboardingName, pocEmail,
+        createdBy: String(payload.email),
+        products,
+      });
+      return res.status(201).json({ isEngagement: true, engagementId, engagementSlug: slug });
+    }
+
+    // ── Exactly 1 product: unchanged single-onboarding path ────────────────
+    const singleType: 'hotel' | 'marketing' | null =
+      products.albie ? 'hotel' : products.marketing ? 'marketing' : null;
+    if (!singleType) {
+      return res.status(501).json({ error: 'Web Design onboarding is not available yet' });
     }
 
     if (isAirtableConfigured()) {
       const { sessionId } = await createAirtableOnboarding({
         accountId, onboardingName, pocEmail,
         createdBy: String(payload.email),
-        type: type === 'marketing' ? 'marketing' : 'hotel',
+        type: singleType,
       });
-      return res.status(201).json({ sessionId });
+      return res.status(201).json({ isEngagement: false, sessionId });
     }
 
     // Airtable not configured — original fallback: create in Sheets.
@@ -82,7 +116,7 @@ export default async function handler(req: any, res: any) {
       requestBody: { values: [row] },
     });
 
-    return res.status(201).json({ sessionId });
+    return res.status(201).json({ isEngagement: false, sessionId });
   }
 
   // ── DELETE: remove onboarding — Airtable first, then Sheets (legacy) ──────

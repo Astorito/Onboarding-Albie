@@ -14,6 +14,7 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
   const [isNewAccount, setIsNewAccount] = useState(false);
   const [onboardingName, setOnboardingName] = useState('');
   const [pocEmail, setPocEmail] = useState('');
+  const [albieEnabled, setAlbieEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [generatedLink, setGeneratedLink] = useState('');
@@ -38,19 +39,27 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
 
       if (!accountId) throw new Error('Seleccioná o creá una cuenta');
       if (!onboardingName.trim()) throw new Error('Ingresá el nombre del onboarding');
+      if (!albieEnabled) throw new Error('Seleccioná al menos un producto');
 
       const trimmedName = onboardingName.trim();
-      const { sessionId } = await adminApi.createOnboarding(
+      const result = await adminApi.createOnboarding(
         accountId,
         trimmedName,
         pocEmail.trim() || undefined,
+        { albie: albieEnabled, webDesign: false, marketing: false },
       );
-      // Readable, resolvable link. The slug is derived (never stored); it shows
-      // the property and resolves back to this Session ID server-side.
-      const slug = slugFromRow(trimmedName, sessionId);
-      const link = slug
-        ? `${window.location.origin}/o/${slug}`
-        : `${window.location.origin}/?token=${sessionId}`;
+
+      let link: string;
+      if (result.isEngagement === true) {
+        link = `${window.location.origin}/e/${result.engagementSlug}`;
+      } else {
+        // Readable, resolvable link. The slug is derived (never stored); it
+        // shows the property and resolves back to this Session ID server-side.
+        const slug = slugFromRow(trimmedName, result.sessionId);
+        link = slug
+          ? `${window.location.origin}/o/${slug}`
+          : `${window.location.origin}/?token=${result.sessionId}`;
+      }
       setGeneratedLink(link);
       onCreated();
     } catch (err) {
@@ -134,6 +143,38 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
                 onChange={e => setOnboardingName(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#0D3A39] outline-none focus:border-[#2F6B6D] focus:ring-2 focus:ring-[#2F6B6D]/10 transition"
               />
+            </div>
+
+            {/* Products */}
+            <div>
+              <label className="block text-xs font-semibold text-[#0D3A39] mb-1.5 uppercase tracking-wide">
+                Productos
+              </label>
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2.5 text-sm text-[#0D3A39] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={albieEnabled}
+                    onChange={(e) => setAlbieEnabled(e.target.checked)}
+                    className="accent-[#2F6B6D] w-4 h-4"
+                  />
+                  Albie — Booking Engine
+                </label>
+                <label className="flex items-center gap-2.5 text-sm text-gray-400 cursor-not-allowed">
+                  <input type="checkbox" checked={false} disabled className="w-4 h-4" />
+                  Web Design
+                  <span className="text-[10px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">
+                    Próximamente
+                  </span>
+                </label>
+                <label className="flex items-center gap-2.5 text-sm text-gray-400 cursor-not-allowed">
+                  <input type="checkbox" checked={false} disabled className="w-4 h-4" />
+                  Marketing
+                  <span className="text-[10px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">
+                    Próximamente
+                  </span>
+                </label>
+              </div>
             </div>
 
             {/* POC email */}

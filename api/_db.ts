@@ -15,6 +15,7 @@ import { slugFromRow } from './_slug';
 export const HOTEL_TABLE = 'Onboardings_Hotel';
 export const MARKETING_TABLE = 'Onboardings_Marketing';
 export const ACCOUNTS_TABLE = 'Accounts';
+export const ENGAGEMENTS_TABLE = 'Engagements';
 const ONBOARDING_TABLES = [HOTEL_TABLE, MARKETING_TABLE] as const;
 
 export function isAirtableConfigured(): boolean {
@@ -272,4 +273,97 @@ export async function createAirtableAccount(
     'Created At': new Date().toISOString(),
   });
   return { accountId, accountName };
+}
+
+// ─── Engagements — a link that bundles 2+ products behind one "hub" screen ───
+// Only created when 2+ products are selected at creation time. A single
+// product (the common case today) never touches this table — it keeps using
+// the plain Onboardings_* flow above, completely unchanged.
+
+export interface EngagementProducts {
+  albie: boolean;
+  webDesign: boolean;
+  marketing: boolean;
+}
+
+function generateEngagementId(): string {
+  const rand = Math.random().toString(36).slice(2, 8);
+  return `eng_${Date.now()}_${rand}`;
+}
+
+export async function createEngagement(opts: {
+  accountId: string;
+  onboardingName: string;
+  pocEmail?: string;
+  createdBy: string;
+  products: EngagementProducts;
+}): Promise<{ engagementId: string; slug: string }> {
+  const engagementId = generateEngagementId();
+
+  // If Albie is one of the selected products, it needs a real row in
+  // Onboardings_Hotel (same as the single-product path) so its onboarding
+  // flow works exactly as it does today — the engagement just remembers its
+  // Session ID to link to it from the hub.
+  let hotelSessionId = '';
+  if (opts.products.albie) {
+    const hotel = await createAirtableOnboarding({
+      accountId: opts.accountId,
+      onboardingName: opts.onboardingName,
+      pocEmail: opts.pocEmail,
+      createdBy: opts.createdBy,
+      type: 'hotel',
+    });
+    hotelSessionId = hotel.sessionId;
+  }
+
+  await createRecord(ENGAGEMENTS_TABLE, {
+    'Engagement ID': engagementId,
+    'Onboarding Name': opts.onboardingName,
+    'Account ID': opts.accountId,
+    'POC Email': opts.pocEmail ?? '',
+    'Created By': opts.createdBy,
+    'Admin Created At': new Date().toISOString(),
+    'Albie Enabled': opts.products.albie,
+    'Web Design Enabled': opts.products.webDesign,
+    'Marketing Enabled': opts.products.marketing,
+    'Hotel Session ID': hotelSessionId,
+  });
+
+  const slug = slugFromRow(opts.onboardingName, engagementId) || engagementId;
+  return { engagementId, slug };
+}
+
+export async function findEngagementBySessionId(engagementId: string): Promise<AirtableRecord | null> {
+  if (!isAirtableConfigured() || !engagementId) return null;
+  return findRecordByField(ENGAGEMENTS_TABLE, 'Engagement ID', engagementId);
+}
+
+export async function findEngagementBySlug(slug: string): Promise<AirtableRecord | null> {
+  if (!isAirtableConfigured() || !slug) return null;
+  const all = await listAllRecords(ENGAGEMENTS_TABLE);
+  return all.find(
+    (r) => slugFromRow(r.fields['Onboarding Name'] || '', r.fields['Engagement ID'] || '') === slug,
+  ) ?? null;
+}
+
+// Shape returned by api/engagement.ts. The Albie card's slug is derived the
+// same way the hotel record's own slug is — same onboarding name, its own
+// Session ID — so no extra Airtable lookup is needed.
+export function engagementResponseFromRecord(record: AirtableRecord) {
+  const f = record.fields;
+  const engagementId = f['Engagement ID'];
+  const onboardingName = f['Onboarding Name'] || '';
+  const hotelSessionId = f['Hotel Session ID'] || '';
+  return {
+    engagementSlug: slugFromRow(onboardingName, engagementId) || engagementId,
+    engagementName: onboardingName || null,
+    products: {
+      albie: {
+        enabled: !!f['Albie Enabled'],
+        slug: f['Albie Enabled'] && hotelSessionId ? (slugFromRow(onboardingName, hotelSessionId) || null) : null,
+      },
+      webDesign: { enabled: !!f['Web Design Enabled'] },
+      marketing: { enabled: !!f['Marketing Enabled'] },
+    },
+  };
 }

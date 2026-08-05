@@ -84,6 +84,14 @@ export default function App() {
   const slugMatch = window.location.pathname.match(/^\/o\/(.+)$/);
   const initialSlug = slugMatch ? decodeURIComponent(slugMatch[1]) : null;
 
+  // Present only when this onboarding was opened from an Engagement hub
+  // (/e/<slug> -> "Albie" card -> /o/<slug>?engagement=<engagementSlug>).
+  // Captured once at mount so it survives the address-bar cleanup below
+  // (which strips the query string once the slug/token is resolved).
+  const [engagementSlug] = useState<string | null>(
+    () => new URLSearchParams(window.location.search).get('engagement'),
+  );
+
   const [sessionId, setSessionId] = useState<string | null>(() => {
     if (initialSlug) return null; // resolved async via /api/session?slug=
     const urlToken = new URLSearchParams(window.location.search).get('token');
@@ -567,7 +575,7 @@ export default function App() {
             <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full"
               onAnimationStart={() => localStorage.removeItem('albie_session_id')}
             >
-              <SuccessStep />
+              <SuccessStep engagementSlug={engagementSlug} />
             </motion.div>
           )}
 
