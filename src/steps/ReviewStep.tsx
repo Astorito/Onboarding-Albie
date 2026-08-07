@@ -9,6 +9,7 @@ import type { RatesData } from './modules/RatesPackagesStep';
 import type { TaxItem } from './modules/TaxesFeesStep';
 import type { SiteMinderData } from './modules/SiteMinderSection';
 import { formatBeds } from '../utils/beds';
+import { formatCancellationWindow } from '../utils/cancellation';
 
 export interface ReviewData {
   general: Record<string, string>;
@@ -37,6 +38,10 @@ const FIELD_LABELS: Record<string, string> = {
   phone: 'Phone',
   notificationEmail: 'Notification Email',
   websiteUrl: 'Website URL',
+  hasPms: 'Has PMS',
+  pmsName: 'PMS Name',
+  hasChannelManager: 'Has Channel Manager',
+  channelManagerName: 'Channel Manager Name',
   // Brand
   siteTitle: 'Site Title',
   primaryColor: 'Primary Color',
@@ -62,63 +67,65 @@ const ModuleBody = ({ moduleId, data }: { moduleId: string; data: ReviewData }) 
   if (moduleId === 'general' || moduleId === 'brand' || moduleId === 'dns') {
     const obj = moduleId === 'general' ? data.general : moduleId === 'brand' ? data.brand : data.dns;
     const entries = Object.entries(obj).filter(([, v]) => v && String(v).trim() !== '');
-    if (entries.length === 0) return <Empty />;
+    const sm = moduleId === 'general' ? data.siteMinder : null;
     return (
-      <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2.5 text-xs">
-        {entries.map(([k, v]) => (
-          <div key={k} className="flex flex-col gap-0.5">
-            <dt className="font-bold text-primary text-[10px] uppercase tracking-wider">{friendly(k)}</dt>
-            <dd className="text-on-surface-variant break-words">{v}</dd>
+      <div className="space-y-4">
+        {entries.length === 0 ? (
+          <Empty />
+        ) : (
+          <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2.5 text-xs">
+            {entries.map(([k, v]) => (
+              <div key={k} className="flex flex-col gap-0.5">
+                <dt className="font-bold text-primary text-[10px] uppercase tracking-wider">{friendly(k)}</dt>
+                <dd className="text-on-surface-variant break-words">{v}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+
+        {moduleId === 'general' && (
+          <div>
+            <p className="font-bold text-primary text-[10px] uppercase tracking-wider mb-1.5">SiteMinder</p>
+            {!sm?.connect ? (
+              <p className="text-xs text-on-surface-variant italic">Not connecting to SiteMinder.</p>
+            ) : sm.sites.length === 0 ? (
+              <p className="text-xs text-on-surface-variant italic">Connecting to SiteMinder — no booking sites added yet.</p>
+            ) : (
+              <ul className="space-y-2 text-xs">
+                {sm.sites.map((s) => (
+                  <li key={s.id} className="p-3 bg-surface-container-low/50 rounded-lg">
+                    <p className="font-bold text-primary text-sm mb-0.5">
+                      {s.bookingSite || 'Unnamed booking site'} {s.hotelCode && <span className="text-[10px] text-on-surface-variant font-normal">· {s.hotelCode}</span>}
+                    </p>
+                    <p className="text-on-surface-variant">
+                      Rates: {s.rates || '—'} · Multiplier: {s.rateMultiplier || '—'} · My Channel: {s.myChannel ? 'Yes' : 'No'} · Mapped: {s.mapped ? 'Yes' : 'No'} · Enabled: {s.enabled ? 'Yes' : 'No'}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-        ))}
-      </dl>
+        )}
+      </div>
     );
   }
 
   if (moduleId === 'cancellation') {
-    const sm = data.siteMinder;
+    if (data.cancellationPolicies.length === 0) return <Empty />;
     return (
-      <div className="space-y-4">
-        {data.cancellationPolicies.length === 0 ? (
-          <Empty />
-        ) : (
-          <ul className="space-y-3 text-xs">
-            {data.cancellationPolicies.map((p) => (
-              <li key={p.id} className="p-3 bg-surface-container-low/50 rounded-lg">
-                <p className="font-bold text-primary text-sm mb-0.5">
-                  {p.name} {p.isDefault && <span className="text-[9px] bg-secondary text-on-secondary px-1.5 py-0.5 rounded ml-1">Default</span>}
-                </p>
-                <p className="text-on-surface-variant">
-                  Window: <strong>{p.window}h</strong> · Penalty: <strong>{p.penaltyType}{p.penaltyValue ? ` (${p.penaltyValue})` : ''}</strong>
-                </p>
-                {p.description && <p className="text-on-surface-variant mt-1.5 italic">{p.description}</p>}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <div>
-          <p className="font-bold text-primary text-[10px] uppercase tracking-wider mb-1.5">SiteMinder</p>
-          {!sm?.connect ? (
-            <p className="text-xs text-on-surface-variant italic">Not connecting to SiteMinder.</p>
-          ) : sm.sites.length === 0 ? (
-            <p className="text-xs text-on-surface-variant italic">Connecting to SiteMinder — no booking sites added yet.</p>
-          ) : (
-            <ul className="space-y-2 text-xs">
-              {sm.sites.map((s) => (
-                <li key={s.id} className="p-3 bg-surface-container-low/50 rounded-lg">
-                  <p className="font-bold text-primary text-sm mb-0.5">
-                    {s.bookingSite || 'Unnamed booking site'} {s.hotelCode && <span className="text-[10px] text-on-surface-variant font-normal">· {s.hotelCode}</span>}
-                  </p>
-                  <p className="text-on-surface-variant">
-                    Rates: {s.rates || '—'} · Multiplier: {s.rateMultiplier || '—'} · My Channel: {s.myChannel ? 'Yes' : 'No'} · Mapped: {s.mapped ? 'Yes' : 'No'} · Enabled: {s.enabled ? 'Yes' : 'No'}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
+      <ul className="space-y-3 text-xs">
+        {data.cancellationPolicies.map((p) => (
+          <li key={p.id} className="p-3 bg-surface-container-low/50 rounded-lg">
+            <p className="font-bold text-primary text-sm mb-0.5">
+              {p.name} {p.isDefault && <span className="text-[9px] bg-secondary text-on-secondary px-1.5 py-0.5 rounded ml-1">Default</span>}
+            </p>
+            <p className="text-on-surface-variant">
+              Window: <strong>{formatCancellationWindow(p)}</strong> · Penalty: <strong>{p.penaltyType}{p.penaltyValue ? ` (${p.penaltyValue})` : ''}</strong>
+            </p>
+            {p.description && <p className="text-on-surface-variant mt-1.5 italic">{p.description}</p>}
+          </li>
+        ))}
+      </ul>
     );
   }
 

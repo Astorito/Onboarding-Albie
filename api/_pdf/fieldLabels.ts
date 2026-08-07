@@ -17,6 +17,10 @@ export const FIELD_LABELS: Record<string, string> = {
   phone: 'Phone',
   notificationEmail: 'Notification Email',
   websiteUrl: 'Website URL',
+  hasPms: 'Has PMS',
+  pmsName: 'PMS Name',
+  hasChannelManager: 'Has Channel Manager',
+  channelManagerName: 'Channel Manager Name',
   // Brand
   siteTitle: 'Site Title',
   primaryColor: 'Primary Color',

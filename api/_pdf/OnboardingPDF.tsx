@@ -36,10 +36,10 @@ export function createOnboardingPDF(pdf: { Document: any; Page: any; Text: any; 
         subject="Booking Engine Onboarding"
       >
         <CoverPage payload={payload} />
-        <GeneralSection data={payload.general} sessionId={sessionId} />
+        <GeneralSection data={payload.general} siteMinder={payload.siteMinder} sessionId={sessionId} />
         <BrandSection data={payload.brand} sessionId={sessionId} />
         {hasDns && <DnsSection data={payload.dns} sessionId={sessionId} />}
-        <CancellationSection items={payload.cancellationPolicies ?? []} siteMinder={payload.siteMinder} sessionId={sessionId} />
+        <CancellationSection items={payload.cancellationPolicies ?? []} sessionId={sessionId} />
         <RoomsSection rooms={payload.rooms ?? []} sessionId={sessionId} />
         <AddonsSection addons={payload.addons ?? {}} sessionId={sessionId} />
         <RatesSection rates={payload.rates ?? {}} sessionId={sessionId} />

@@ -17,6 +17,7 @@ export const ADMIN_COLS = [
   'SiteMinder',   // JSON blob {connect, sites:[]} — written/read by header name only
   'Property Terms & Conditions', // long text — written/read by header name only
   'Date Format',  // scalar — written/read by header name only
+  'Property Systems', // JSON blob {hasPms, pmsName, hasChannelManager, channelManagerName}
 ];
 
 export const ACCOUNTS_HEADERS = ['Account ID', 'Account Name', 'Created At'];

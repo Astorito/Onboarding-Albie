@@ -70,6 +70,10 @@ function hotelFieldsFromPayload(payload: any): Record<string, any> {
     'SiteMinder': JSON.stringify(payload.siteMinder ?? { connect: false, sites: [] }),
     'Property Terms & Conditions': general.termsConditions ?? '',
     'Date Format': general.dateFormat ?? '',
+    'Has PMS': general.hasPms ?? '',
+    'PMS Name': general.pmsName ?? '',
+    'Has Channel Manager': general.hasChannelManager ?? '',
+    'Channel Manager Name': general.channelManagerName ?? '',
   };
 }
 
@@ -98,6 +102,10 @@ function sessionResponseFromHotelRecord(record: AirtableRecord) {
       websiteUrl: f['Website URL'] ?? '',
       termsConditions: f['Property Terms & Conditions'] ?? '',
       dateFormat: f['Date Format'] ?? '',
+      hasPms: f['Has PMS'] ?? '',
+      pmsName: f['PMS Name'] ?? '',
+      hasChannelManager: f['Has Channel Manager'] ?? '',
+      channelManagerName: f['Channel Manager Name'] ?? '',
     },
     brand: {
       siteTitle: f['Site Title'] ?? '',

@@ -50,6 +50,7 @@ const DEFAULT_POLICIES: CancellationPolicy[] = [
     name: 'Flexible Policy',
     description: 'Guests can cancel free of charge up to 24 hours before arrival.',
     window: '24',
+    windowUnit: 'hours',
     penaltyType: 'No penalty',
     penaltyValue: '',
     notes: '',
@@ -188,6 +189,10 @@ export default function App() {
             websiteUrl:        g.websiteUrl        || '',
             termsConditions:   g.termsConditions   || '',
             dateFormat:        g.dateFormat        || '',
+            hasPms:              g.hasPms              || '',
+            pmsName:             g.pmsName             || '',
+            hasChannelManager:   g.hasChannelManager   || '',
+            channelManagerName:  g.channelManagerName  || '',
           };
         }
         if (Object.values(b).some(Boolean)) {
@@ -350,6 +355,10 @@ export default function App() {
         websiteUrl:        g.websiteUrl        || prefillData.websiteUrl        || '',
         termsConditions:   g.termsConditions   || '',
         dateFormat:        g.dateFormat        || '',
+        hasPms:              g.hasPms              || '',
+        pmsName:             g.pmsName             || '',
+        hasChannelManager:   g.hasChannelManager   || '',
+        channelManagerName:  g.channelManagerName  || '',
       },
       brand: {
         siteTitle:      b.siteTitle      || prefillData.siteTitle || '',
@@ -465,15 +474,15 @@ export default function App() {
   // Merge server prefill with anything the user already typed (savedForms wins),
   // so uncontrolled steps repopulate when navigating back to them.
   const moduleComponents: Record<string, ReactNode> = {
-    general:      <GeneralInformationStep prefill={{ ...prefillData, ...savedForms.general }} />,
-    brand:        <WebsiteBrandStep prefill={{ ...prefillData, ...savedForms.brand }} />,
-    dns:          <DnsTrackingStep prefill={savedForms.dns ?? {}} />,
-    cancellation: (
+    general: (
       <>
-        <CancellationPoliciesStep ref={cancellationStepRef} policies={cancellationPolicies} setPolicies={setCancellationPolicies} />
+        <GeneralInformationStep prefill={{ ...prefillData, ...savedForms.general }} />
         <SiteMinderSection data={siteMinder} setData={setSiteMinder} />
       </>
     ),
+    brand:        <WebsiteBrandStep prefill={{ ...prefillData, ...savedForms.brand }} />,
+    dns:          <DnsTrackingStep prefill={savedForms.dns ?? {}} />,
+    cancellation: <CancellationPoliciesStep ref={cancellationStepRef} policies={cancellationPolicies} setPolicies={setCancellationPolicies} />,
     rooms:        <RoomInformationStep ref={roomsStepRef} rooms={rooms} setRooms={setRooms} />,
     experiences:  <ExperiencesStep />,
     addons:       <AddOnsStep addons={addons} setAddons={setAddons} />,

@@ -79,6 +79,10 @@ export interface SubmitPayload {
     websiteUrl?: string;
     termsConditions?: string;
     dateFormat?: string;
+    hasPms?: string;
+    pmsName?: string;
+    hasChannelManager?: string;
+    channelManagerName?: string;
   };
   brand: {
     siteTitle?: string;
@@ -269,6 +273,29 @@ export default async function handler(req: any, res: any) {
       } catch (dfErr: unknown) {
         const m = dfErr instanceof Error ? dfErr.message : 'Unknown error';
         console.warn('[submit] Date Format column write skipped (non-fatal):', m);
+      }
+
+      // PMS / Channel Manager — same trailing-column pattern, but bundled as
+      // ONE JSON column ('Property Systems') instead of 4 separate ones. This
+      // block already makes 4 sequential column writes per save (SiteMinder,
+      // Terms, Date Format, and now this); adding 4 more single-value columns
+      // here would double that and slow down every autosave. Above the
+      // persistence layer (session.ts) this still surfaces as 4 plain
+      // general.* fields, matching the Airtable path exactly.
+      try {
+        await ensureHeaderColumn(sheets, sheetId, ONBOARDINGS_TAB, 'Property Systems');
+        await updateCellByHeader(
+          sheets, sheetId, ONBOARDINGS_TAB, resultRowNumber, 'Property Systems',
+          JSON.stringify({
+            hasPms: payload.general?.hasPms ?? '',
+            pmsName: payload.general?.pmsName ?? '',
+            hasChannelManager: payload.general?.hasChannelManager ?? '',
+            channelManagerName: payload.general?.channelManagerName ?? '',
+          }),
+        );
+      } catch (psErr: unknown) {
+        const m = psErr instanceof Error ? psErr.message : 'Unknown error';
+        console.warn('[submit] Property Systems column write skipped (non-fatal):', m);
       }
     }
 

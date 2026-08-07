@@ -86,6 +86,12 @@ export default async function handler(req: any, res: any) {
     };
 
     const onboardingName = colByHeader('Onboarding Name') || null;
+    // Bundled as one JSON column (see submit.ts) to avoid adding 4 more
+    // sequential Sheets writes to an already-fail-open block. Unpacked here
+    // into plain fields so the shape matches the Airtable path exactly.
+    const propertySystems = tryJson(colByHeader('Property Systems'), {
+      hasPms: '', pmsName: '', hasChannelManager: '', channelManagerName: '',
+    });
 
     return res.status(200).json({
       // Real row key — the client uses this to save (POST /api/submit) and to
@@ -113,6 +119,10 @@ export default async function handler(req: any, res: any) {
         // header name — absent on rows saved before these fields were persisted.
         termsConditions:   colByHeader('Property Terms & Conditions'),
         dateFormat:        colByHeader('Date Format'),
+        hasPms:              propertySystems.hasPms ?? '',
+        pmsName:             propertySystems.pmsName ?? '',
+        hasChannelManager:   propertySystems.hasChannelManager ?? '',
+        channelManagerName:  propertySystems.channelManagerName ?? '',
       },
       brand: {
         siteTitle:      col('Site Title'),

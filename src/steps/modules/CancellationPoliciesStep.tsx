@@ -1,12 +1,15 @@
 import { useState, useImperativeHandle, forwardRef, Fragment, type Dispatch, type SetStateAction } from 'react';
 import { FormField, TextInput, TextareaInput, SelectInput } from '../../components/ui/primitives';
 import { ConfigSection, ItemCard, AddItemButton, FormActions } from '../../components/ui/layout';
+import { formatCancellationWindow } from '../../utils/cancellation';
 
 export type CancellationPolicy = {
   id: number;
   name: string;
   description: string;
-  window: string;          // hours
+  window: string;              // numeric value — unit given by windowUnit
+  windowUnit?: 'days' | 'hours'; // absent on policies saved before this feature — treated as 'hours'
+  cutoffTime?: string;          // optional 'HH:MM', only meaningful when windowUnit === 'days'
   penaltyType: string;     // "No penalty" | "Value of First Night" | "Percentage of Total" | "Fixed Amount"
   penaltyValue: string;    // numeric string (empty when penaltyType doesn't need a value)
   notes: string;
@@ -17,6 +20,8 @@ const EMPTY_FORM: Omit<CancellationPolicy, 'id'> = {
   name: '',
   description: '',
   window: '',
+  windowUnit: 'days',
+  cutoffTime: '',
   penaltyType: 'No penalty',
   penaltyValue: '',
   notes: '',
@@ -60,6 +65,12 @@ export const CancellationPoliciesStep = forwardRef<CancellationPoliciesStepHandl
       name: p.name,
       description: p.description ?? '',
       window: p.window,
+      // Critical for data integrity: a policy saved before this feature has
+      // no windowUnit, and its number always meant hours. Defaulting the
+      // *edit* form to 'hours' (not the 'days' default for new policies)
+      // stops an old "24" from silently becoming "24 days".
+      windowUnit: p.windowUnit ?? 'hours',
+      cutoffTime: p.cutoffTime ?? '',
       penaltyType: p.penaltyType ?? 'No penalty',
       penaltyValue: p.penaltyValue ?? '',
       notes: p.notes ?? '',
@@ -111,7 +122,7 @@ export const CancellationPoliciesStep = forwardRef<CancellationPoliciesStepHandl
               <ItemCard
                 icon="gavel"
                 title={p.name + (p.isDefault ? ' · Default' : '')}
-                subtitle={`Window: ${p.window || '—'}h · Penalty: ${penaltyLabel(p)}`}
+                subtitle={`Window: ${formatCancellationWindow(p)} · Penalty: ${penaltyLabel(p)}`}
                 onEdit={() => startEdit(p)}
                 onDelete={() => setPolicies((prev) => prev.filter((x) => x.id !== p.id))}
               />
@@ -143,18 +154,47 @@ export const CancellationPoliciesStep = forwardRef<CancellationPoliciesStepHandl
               />
             </FormField>
 
-            <FormField label="Cancellation Window" required hint="Hours before arrival when free cancellation ends.">
+            <FormField label="Cancellation Window" required hint="How long before arrival free cancellation ends.">
               <div className="flex items-center gap-2">
                 <TextInput
                   type="number"
-                  placeholder="24"
+                  placeholder={form.windowUnit === 'days' ? '2' : '24'}
                   className="flex-1"
                   value={form.window}
                   onChange={(e) => update('window', e.target.value)}
                 />
-                <span className="text-sm text-on-surface-variant font-bold shrink-0">hours</span>
+                <SelectInput
+                  value={form.windowUnit}
+                  onChange={(e) => update('windowUnit', e.target.value as 'days' | 'hours')}
+                  className="w-32 shrink-0"
+                >
+                  <option value="days">Days</option>
+                  <option value="hours">Hours</option>
+                </SelectInput>
               </div>
             </FormField>
+
+            {form.windowUnit === 'days' && (
+              <FormField label="Cutoff Time" hint="Optional — the exact time on that day when free cancellation ends.">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={form.cutoffTime !== ''}
+                    onChange={(e) => update('cutoffTime', e.target.checked ? '00:00' : '')}
+                    className="accent-primary w-4 h-4 shrink-0"
+                  />
+                  {form.cutoffTime !== '' ? (
+                    <TextInput
+                      type="time"
+                      value={form.cutoffTime}
+                      onChange={(e) => update('cutoffTime', e.target.value)}
+                    />
+                  ) : (
+                    <span className="text-sm text-on-surface-variant">Set a cutoff time</span>
+                  )}
+                </div>
+              </FormField>
+            )}
 
             <FormField label="Penalty Applied" required hint="What's charged if the guest cancels after the window closes.">
               <SelectInput

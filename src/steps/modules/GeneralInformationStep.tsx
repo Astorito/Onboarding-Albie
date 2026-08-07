@@ -105,6 +105,11 @@ export const GeneralInformationStep = ({ prefill = {} }: { prefill?: StepPrefill
   const stateOptions = COUNTRY_STATES[country] ?? [];
   const cityOptions  = COUNTRY_CITIES[country] ?? [];
 
+  // Controlled the same way country/state/city are — the Yes/No answer must
+  // be in React state so the "Which one?" follow-up field can reveal instantly.
+  const [hasPms, setHasPms] = useState(prefill.hasPms ?? '');
+  const [hasChannelManager, setHasChannelManager] = useState(prefill.hasChannelManager ?? '');
+
   const handleCountryChange = (val: string) => {
     if (val === '__manual__') {
       setCountryManual(true);
@@ -390,6 +395,48 @@ export const GeneralInformationStep = ({ prefill = {} }: { prefill?: StepPrefill
                 key={prefill.termsConditions}
               />
             </FormField>
+
+            <FormField label="Do you have a PMS?" required>
+              <SelectInput name="hasPms" value={hasPms} onChange={(e) => setHasPms(e.target.value)}>
+                <option value="">Select</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </SelectInput>
+            </FormField>
+
+            {hasPms === 'yes' && (
+              <FormField label="Which PMS?" required hint="Name of your Property Management System.">
+                <TextInput
+                  name="pmsName"
+                  placeholder="e.g. Cloudbeds, Mews, Opera"
+                  defaultValue={prefill.pmsName ?? ''}
+                  key={prefill.pmsName}
+                />
+              </FormField>
+            )}
+
+            <FormField label="Do you have a Channel Manager?" required>
+              <SelectInput
+                name="hasChannelManager"
+                value={hasChannelManager}
+                onChange={(e) => setHasChannelManager(e.target.value)}
+              >
+                <option value="">Select</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </SelectInput>
+            </FormField>
+
+            {hasChannelManager === 'yes' && (
+              <FormField label="Which Channel Manager?" required hint="Name of your channel manager.">
+                <TextInput
+                  name="channelManagerName"
+                  placeholder="e.g. SiteMinder, RateGain"
+                  defaultValue={prefill.channelManagerName ?? ''}
+                  key={prefill.channelManagerName}
+                />
+              </FormField>
+            )}
           </div>
         </ConfigSection>
       </form>

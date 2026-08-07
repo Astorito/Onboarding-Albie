@@ -140,8 +140,36 @@ export function createSections(
     </Page>
   );
 
-  const GeneralSection: React.FC<{ data: any; sessionId: string }> = ({ data, sessionId }) => (
-    <SimpleSection title="General Information" eyebrow="STEP 01" data={data} sessionId={sessionId} />
+  const GeneralSection: React.FC<{ data: any; siteMinder?: any; sessionId: string }> = ({ data, siteMinder, sessionId }) => (
+    <Page size="A4" style={styles.page}>
+      <SectionHeader title="General Information" eyebrow="STEP 01" />
+      <View style={styles.contentBody}>
+        <KeyValueGrid data={data ?? {}} />
+
+        <Text style={[styles.sectionTitle, { color: colors.brand, fontSize: 10, marginTop: 16, marginBottom: 6 }]}>
+          SITEMINDER
+        </Text>
+        {!siteMinder?.connect ? (
+          <Text style={styles.empty}>Not connecting to SiteMinder.</Text>
+        ) : !siteMinder.sites?.length ? (
+          <Text style={styles.empty}>Connecting to SiteMinder — no booking sites added yet.</Text>
+        ) : (
+          siteMinder.sites.map((s: any, i: number) => (
+            <View key={s.id ?? i} style={styles.card}>
+              <Text style={styles.cardTitle}>{s.bookingSite || 'Unnamed booking site'}</Text>
+              <Text style={styles.cardSubtitle}>
+                Code: {s.hotelCode || '—'} · Rates: {s.rates || '—'} · Multiplier: {s.rateMultiplier || '—'}
+              </Text>
+              <Text style={styles.cardBody}>
+                My Channel: {s.myChannel ? 'Yes' : 'No'} · Mapped: {s.mapped ? 'Yes' : 'No'} · Enabled: {s.enabled ? 'Yes' : 'No'}
+              </Text>
+            </View>
+          ))
+        )}
+      </View>
+      <Watermark />
+      <PageFooter sessionId={sessionId} />
+    </Page>
   );
 
   const DnsSection: React.FC<{ data: any; sessionId: string }> = ({ data, sessionId }) => (
@@ -188,7 +216,7 @@ export function createSections(
   // ═══════════════════════════════════════════════════════════════════════════
   // CANCELLATION POLICIES
   // ═══════════════════════════════════════════════════════════════════════════
-  const CancellationSection: React.FC<{ items: any[]; siteMinder?: any; sessionId: string }> = ({ items = [], siteMinder, sessionId }) => (
+  const CancellationSection: React.FC<{ items: any[]; sessionId: string }> = ({ items = [], sessionId }) => (
     <Page size="A4" style={styles.page}>
       <SectionHeader
         title="Cancellation Policies"
@@ -198,14 +226,21 @@ export function createSections(
         {items.length === 0 ? (
           <Text style={styles.empty}>No cancellation policies defined.</Text>
         ) : (
-          items.map((p, i) => (
+          items.map((p, i) => {
+            // Policies saved before the days/hours feature have no windowUnit —
+            // that always meant hours. Never reinterpret an existing value.
+            const windowUnit = p.windowUnit ?? 'hours';
+            const windowLabel = (p.window === undefined || p.window === null || p.window === '')
+              ? '—'
+              : `${p.window} ${windowUnit}${windowUnit === 'days' && p.cutoffTime ? ` (until ${p.cutoffTime})` : ''}`;
+            return (
             <View key={p.id ?? i} style={styles.card}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
                 <Text style={styles.cardTitle}>{p.name || 'Unnamed policy'}</Text>
                 {p.isDefault && <Text style={styles.badgeDefault}>DEFAULT</Text>}
               </View>
               <Text style={styles.cardSubtitle}>
-                Window: {p.window || '—'}h · Penalty: {p.penaltyType || p.penalty || 'No penalty'}
+                Window: {windowLabel} · Penalty: {p.penaltyType || p.penalty || 'No penalty'}
                 {p.penaltyValue ? ` (${p.penaltyValue})` : ''}
               </Text>
               {p.description && <Text style={styles.cardBody}>{p.description}</Text>}
@@ -215,28 +250,8 @@ export function createSections(
                 </Text>
               )}
             </View>
-          ))
-        )}
-
-        <Text style={[styles.sectionTitle, { color: colors.brand, fontSize: 10, marginTop: 16, marginBottom: 6 }]}>
-          SITEMINDER
-        </Text>
-        {!siteMinder?.connect ? (
-          <Text style={styles.empty}>Not connecting to SiteMinder.</Text>
-        ) : !siteMinder.sites?.length ? (
-          <Text style={styles.empty}>Connecting to SiteMinder — no booking sites added yet.</Text>
-        ) : (
-          siteMinder.sites.map((s: any, i: number) => (
-            <View key={s.id ?? i} style={styles.card}>
-              <Text style={styles.cardTitle}>{s.bookingSite || 'Unnamed booking site'}</Text>
-              <Text style={styles.cardSubtitle}>
-                Code: {s.hotelCode || '—'} · Rates: {s.rates || '—'} · Multiplier: {s.rateMultiplier || '—'}
-              </Text>
-              <Text style={styles.cardBody}>
-                My Channel: {s.myChannel ? 'Yes' : 'No'} · Mapped: {s.mapped ? 'Yes' : 'No'} · Enabled: {s.enabled ? 'Yes' : 'No'}
-              </Text>
-            </View>
-          ))
+            );
+          })
         )}
       </View>
       <Watermark />
