@@ -4,12 +4,14 @@ import './index.css';
 import App from './App.tsx';
 import { AdminApp } from './admin/AdminApp.tsx';
 import EngagementHubApp from './engagement/EngagementHubApp.tsx';
+import MarketingApp from './marketing/MarketingApp.tsx';
 
 const isAdmin = window.location.pathname.startsWith('/admin');
 const isEngagement = window.location.pathname.startsWith('/e/');
+const isMarketing = window.location.pathname.startsWith('/marketing');
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {isAdmin ? <AdminApp /> : isEngagement ? <EngagementHubApp /> : <App />}
+    {isAdmin ? <AdminApp /> : isEngagement ? <EngagementHubApp /> : isMarketing ? <MarketingApp /> : <App />}
   </StrictMode>,
 );

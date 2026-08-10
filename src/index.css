@@ -1,6 +1,39 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
 @import "tailwindcss";
 
+/* ─── TAG Digital Marketing brand assets (used only by .marketing-theme) ─── */
+@font-face {
+  font-family: 'TAG Helvetica';
+  src: url('/fonts/tag-helvetica/Helvetica-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'TAG Helvetica';
+  src: url('/fonts/tag-helvetica/Helvetica-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'TAG Helvetica';
+  src: url('/fonts/tag-helvetica/Helvetica-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* Scoped brand theme for the Digital Marketing onboarding — overrides the
+   design-token CSS variables only within this subtree, so the Albie hotel
+   onboarding's teal/DM-Sans theme is untouched outside of it. */
+.marketing-theme {
+  --font-hanken: 'TAG Helvetica', Helvetica, Arial, sans-serif;
+  --color-primary: #1d1e1f;
+  --color-on-primary: #ffffff;
+  --color-secondary: #e6007e;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #fce1ef;
+  --color-on-secondary-container: #8a0057;
+}
+
 @theme {
   --color-surface-container-low: #f6f3f2;
   --color-on-tertiary-container: #8e9291;

@@ -54,16 +54,22 @@ export const ConfigSection = ({
   description,
   children,
   icon = 'info',
+  panelColor = '#2F6B6D',
+  panelBorderColor = '#245557',
+  dotColor = '#F2EA5F',
 }: {
   title: string;
   description: string;
   children: React.ReactNode;
   icon?: string;
+  panelColor?: string;
+  panelBorderColor?: string;
+  dotColor?: string;
 }) => (
   <div className="w-full bg-white border border-outline-variant rounded-2xl overflow-hidden shadow-sm flex flex-col md:flex-row mb-4">
-    <div className="w-full md:w-1/3 p-7 border-b md:border-b-0 md:border-r border-[#245557] flex flex-col gap-4" style={{ backgroundColor: '#2F6B6D' }}>
+    <div className="w-full md:w-1/3 p-7 border-b md:border-b-0 md:border-r flex flex-col gap-4" style={{ backgroundColor: panelColor, borderColor: panelBorderColor }}>
       <div className="flex items-start gap-3">
-        <div className="w-2.5 h-2.5 rounded-full mt-2 shrink-0" style={{ backgroundColor: '#F2EA5F' }} />
+        <div className="w-2.5 h-2.5 rounded-full mt-2 shrink-0" style={{ backgroundColor: dotColor }} />
         <div>
           <h3 className="font-bold text-lg leading-tight mb-1.5 text-white">{title}</h3>
           <p className="text-white/70 text-xs leading-relaxed">{description}</p>

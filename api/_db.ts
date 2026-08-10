@@ -133,21 +133,79 @@ function sessionResponseFromHotelRecord(record: AirtableRecord) {
   };
 }
 
-// Marketing table isn't wired to a persistence UI yet (that flow is still
-// client-only) — a minimal shape keeps session.ts's contract satisfiable if a
-// marketing record is ever looked up before that follow-up lands.
+// ─── Marketing field mapping — Airtable fields <-> the payload/session shape ──
+// Field names mirror the Onboardings_Marketing table created for this feature.
+// The Goal checkboxes are real booleans in Airtable, but the frontend's plain
+// HTML checkboxes emit 'on'/'' (the browser's own convention) — converted at
+// this boundary so both sides only ever see their native representation.
+function marketingFieldsFromPayload(payload: any): Record<string, any> {
+  const { basics = {}, accounts = {}, strategy = {} } = payload;
+  const isChecked = (v: any) => v === 'on' || v === true;
+  return {
+    'Session ID': payload.sessionId,
+    'Timestamp': new Date().toISOString(),
+    'Email': basics.email ?? '',
+    'Business Name': basics.businessName ?? '',
+    'Past Campaigns': basics.pastCampaigns ?? '',
+    'Google Ads Account': accounts.googleAdsAccount ?? '',
+    'GTM Account': accounts.gtmAccount ?? '',
+    'GA4 Account': accounts.ga4Account ?? '',
+    'Facebook Account': accounts.facebookAccount ?? '',
+    'Drive Folder URL': accounts.driveFolderUrl ?? '',
+    'YouTube URL': accounts.youtubeUrl ?? '',
+    'Goal Brand Awareness': isChecked(strategy.goalBrandAwareness),
+    'Goal Traffic': isChecked(strategy.goalTraffic),
+    'Goal Leads': isChecked(strategy.goalLeads),
+    'Goal Purchases/Bookings': isChecked(strategy.goalPurchasesBookings),
+    'Goal Other': strategy.goalOther ?? '',
+    'Competitors': strategy.competitors ?? '',
+    'Target Locations': strategy.targetLocations ?? '',
+    'Approve Ad Copy': strategy.approveAdCopy ?? '',
+    'Monthly Budget': strategy.monthlyBudget ?? '',
+    'Own Credit Card': strategy.ownCreditCard ?? '',
+    'Launch Date': strategy.launchDate ?? '',
+    'Ideal Customer Insights': strategy.idealCustomerInsights ?? '',
+    'Additional Info': strategy.additionalInfo ?? '',
+  };
+}
+
 function sessionResponseFromMarketingRecord(record: AirtableRecord) {
   const f = record.fields;
   const onboardingName = f['Onboarding Name'] || null;
   const sessionId = f['Session ID'];
+  const asChecked = (v: any) => (v ? 'on' : '');
   return {
     sessionId,
     slug: slugFromRow(onboardingName ?? '', sessionId) || null,
     onboardingName,
-    propertyType: null,
-    general: {}, brand: {}, dns: {},
-    cancellationPolicies: [], rooms: [], addons: {}, rates: {}, taxes: [], groupMembers: [],
-    siteMinder: { connect: false, sites: [] },
+    basics: {
+      email: f['Email'] ?? '',
+      businessName: f['Business Name'] ?? '',
+      pastCampaigns: f['Past Campaigns'] ?? '',
+    },
+    accounts: {
+      googleAdsAccount: f['Google Ads Account'] ?? '',
+      gtmAccount: f['GTM Account'] ?? '',
+      ga4Account: f['GA4 Account'] ?? '',
+      facebookAccount: f['Facebook Account'] ?? '',
+      driveFolderUrl: f['Drive Folder URL'] ?? '',
+      youtubeUrl: f['YouTube URL'] ?? '',
+    },
+    strategy: {
+      goalBrandAwareness: asChecked(f['Goal Brand Awareness']),
+      goalTraffic: asChecked(f['Goal Traffic']),
+      goalLeads: asChecked(f['Goal Leads']),
+      goalPurchasesBookings: asChecked(f['Goal Purchases/Bookings']),
+      goalOther: f['Goal Other'] ?? '',
+      competitors: f['Competitors'] ?? '',
+      targetLocations: f['Target Locations'] ?? '',
+      approveAdCopy: f['Approve Ad Copy'] ?? '',
+      monthlyBudget: f['Monthly Budget'] ?? '',
+      ownCreditCard: f['Own Credit Card'] ?? '',
+      launchDate: f['Launch Date'] ?? '',
+      idealCustomerInsights: f['Ideal Customer Insights'] ?? '',
+      additionalInfo: f['Additional Info'] ?? '',
+    },
   };
 }
 
@@ -193,6 +251,17 @@ export async function writeHotelFields(recordId: string, payload: any): Promise<
 // visitor with no admin-created row).
 export async function createHotelOnboardingFromPayload(payload: any): Promise<void> {
   await createRecord(HOTEL_TABLE, hotelFieldsFromPayload(payload));
+}
+
+// Same pair, for the marketing flow. Marketing has no Sheets fallback (it
+// never existed there) — Airtable is the only store, so there is no "not
+// found anywhere" branch to worry about like the hotel flow has.
+export async function writeMarketingFields(recordId: string, payload: any): Promise<void> {
+  await updateRecord(MARKETING_TABLE, recordId, marketingFieldsFromPayload(payload));
+}
+
+export async function createMarketingOnboardingFromPayload(payload: any): Promise<void> {
+  await createRecord(MARKETING_TABLE, marketingFieldsFromPayload(payload));
 }
 
 // ─── Admin: onboardings (list / create / delete) ──────────────────────────────
@@ -308,9 +377,9 @@ export async function createEngagement(opts: {
 }): Promise<{ engagementId: string; slug: string }> {
   const engagementId = generateEngagementId();
 
-  // If Albie is one of the selected products, it needs a real row in
-  // Onboardings_Hotel (same as the single-product path) so its onboarding
-  // flow works exactly as it does today — the engagement just remembers its
+  // For each selected product with a real flow, create its own row in that
+  // product's table (same as the single-product path) so the onboarding
+  // works exactly as it does today — the engagement just remembers each
   // Session ID to link to it from the hub.
   let hotelSessionId = '';
   if (opts.products.albie) {
@@ -324,6 +393,18 @@ export async function createEngagement(opts: {
     hotelSessionId = hotel.sessionId;
   }
 
+  let marketingSessionId = '';
+  if (opts.products.marketing) {
+    const marketing = await createAirtableOnboarding({
+      accountId: opts.accountId,
+      onboardingName: opts.onboardingName,
+      pocEmail: opts.pocEmail,
+      createdBy: opts.createdBy,
+      type: 'marketing',
+    });
+    marketingSessionId = marketing.sessionId;
+  }
+
   await createRecord(ENGAGEMENTS_TABLE, {
     'Engagement ID': engagementId,
     'Onboarding Name': opts.onboardingName,
@@ -335,6 +416,7 @@ export async function createEngagement(opts: {
     'Web Design Enabled': opts.products.webDesign,
     'Marketing Enabled': opts.products.marketing,
     'Hotel Session ID': hotelSessionId,
+    'Marketing Session ID': marketingSessionId,
   });
 
   const slug = slugFromRow(opts.onboardingName, engagementId) || engagementId;
@@ -362,6 +444,7 @@ export function engagementResponseFromRecord(record: AirtableRecord) {
   const engagementId = f['Engagement ID'];
   const onboardingName = f['Onboarding Name'] || '';
   const hotelSessionId = f['Hotel Session ID'] || '';
+  const marketingSessionId = f['Marketing Session ID'] || '';
   return {
     engagementSlug: slugFromRow(onboardingName, engagementId) || engagementId,
     engagementName: onboardingName || null,
@@ -371,7 +454,10 @@ export function engagementResponseFromRecord(record: AirtableRecord) {
         slug: f['Albie Enabled'] && hotelSessionId ? (slugFromRow(onboardingName, hotelSessionId) || null) : null,
       },
       webDesign: { enabled: !!f['Web Design Enabled'] },
-      marketing: { enabled: !!f['Marketing Enabled'] },
+      marketing: {
+        enabled: !!f['Marketing Enabled'],
+        slug: f['Marketing Enabled'] && marketingSessionId ? (slugFromRow(onboardingName, marketingSessionId) || null) : null,
+      },
     },
   };
 }

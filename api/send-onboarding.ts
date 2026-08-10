@@ -72,7 +72,7 @@ function buildEmailBody(payload: any, isSandbox: boolean): string {
 }
 
 // ─── Drive upload ──────────────────────────────────────────────────────────────
-async function uploadToDrive(pdfBuffer: Buffer, filename: string): Promise<string> {
+export async function uploadToDrive(pdfBuffer: Buffer, filename: string): Promise<string> {
   const auth = getAuth(['https://www.googleapis.com/auth/drive.file']);
   const drive = google.drive({ version: 'v3', auth });
 

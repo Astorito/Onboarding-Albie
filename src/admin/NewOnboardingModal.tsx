@@ -15,6 +15,7 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
   const [onboardingName, setOnboardingName] = useState('');
   const [pocEmail, setPocEmail] = useState('');
   const [albieEnabled, setAlbieEnabled] = useState(true);
+  const [marketingEnabled, setMarketingEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [generatedLink, setGeneratedLink] = useState('');
@@ -39,26 +40,29 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
 
       if (!accountId) throw new Error('Seleccioná o creá una cuenta');
       if (!onboardingName.trim()) throw new Error('Ingresá el nombre del onboarding');
-      if (!albieEnabled) throw new Error('Seleccioná al menos un producto');
+      if (!albieEnabled && !marketingEnabled) throw new Error('Seleccioná al menos un producto');
 
       const trimmedName = onboardingName.trim();
       const result = await adminApi.createOnboarding(
         accountId,
         trimmedName,
         pocEmail.trim() || undefined,
-        { albie: albieEnabled, webDesign: false, marketing: false },
+        { albie: albieEnabled, webDesign: false, marketing: marketingEnabled },
       );
 
       let link: string;
       if (result.isEngagement === true) {
         link = `${window.location.origin}/e/${result.engagementSlug}`;
       } else {
-        // Readable, resolvable link. The slug is derived (never stored); it
-        // shows the property and resolves back to this Session ID server-side.
+        // Exactly one product was selected — we already know which one (the
+        // backend created it in that product's table), so we know which
+        // readable-link prefix applies. The slug is derived (never stored).
         const slug = slugFromRow(trimmedName, result.sessionId);
+        const basePath = marketingEnabled ? '/marketing/o/' : '/o/';
+        const fallbackPath = marketingEnabled ? '/marketing?token=' : '/?token=';
         link = slug
-          ? `${window.location.origin}/o/${slug}`
-          : `${window.location.origin}/?token=${result.sessionId}`;
+          ? `${window.location.origin}${basePath}${slug}`
+          : `${window.location.origin}${fallbackPath}${result.sessionId}`;
       }
       setGeneratedLink(link);
       onCreated();
@@ -167,12 +171,14 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
                     Próximamente
                   </span>
                 </label>
-                <label className="flex items-center gap-2.5 text-sm text-gray-400 cursor-not-allowed">
-                  <input type="checkbox" checked={false} disabled className="w-4 h-4" />
-                  Marketing
-                  <span className="text-[10px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">
-                    Próximamente
-                  </span>
+                <label className="flex items-center gap-2.5 text-sm text-[#0D3A39] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={marketingEnabled}
+                    onChange={(e) => setMarketingEnabled(e.target.checked)}
+                    className="accent-[#2F6B6D] w-4 h-4"
+                  />
+                  Marketing — Digital Advertising
                 </label>
               </div>
             </div>

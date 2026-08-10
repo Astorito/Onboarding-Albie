@@ -7,7 +7,7 @@ interface EngagementResponse {
   products: {
     albie: { enabled: boolean; slug: string | null };
     webDesign: { enabled: boolean };
-    marketing: { enabled: boolean };
+    marketing: { enabled: boolean; slug: string | null };
   };
 }
 
@@ -133,6 +133,7 @@ export default function EngagementHubApp() {
               title="Marketing"
               description="Your digital advertising onboarding."
               icon="campaign"
+              href={products.marketing.slug ? `/marketing/o/${products.marketing.slug}?engagement=${engagementSlug}` : undefined}
             />
           )}
         </div>
