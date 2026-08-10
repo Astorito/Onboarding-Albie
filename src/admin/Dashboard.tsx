@@ -33,6 +33,23 @@ function formatDate(iso: string): string {
   }
 }
 
+function isThisMonth(iso: string): boolean {
+  if (!iso) return false;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return false;
+  const now = new Date();
+  return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+}
+
+function MetricCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex flex-col gap-1">
+      <span className="text-2xl font-bold text-[#0D3A39]">{value}</span>
+      <span className="text-xs text-gray-500">{label}</span>
+    </div>
+  );
+}
+
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
@@ -121,6 +138,15 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
     return ga.label.localeCompare(gb.label, 'es');
   });
 
+  // Metrics — legacy Sheets rows have no 'Type' field and are all Albie.
+  const metrics = {
+    thisMonth: onboardings.filter(o => isThisMonth(o['Admin Created At'] || o['Timestamp'] || '')).length,
+    marketing: onboardings.filter(o => o['Type'] === 'marketing').length,
+    albie: onboardings.filter(o => !o['Type'] || o['Type'] === 'hotel').length,
+    webDesign: 0,
+    total: onboardings.length,
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 font-[DM_Sans,sans-serif]">
       {/* Header */}
@@ -148,6 +174,16 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
 
       {/* Body */}
       <main className="max-w-5xl mx-auto px-6 py-8">
+        {!loading && onboardings.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+            <MetricCard label="Onboardings este mes" value={metrics.thisMonth} />
+            <MetricCard label="Onboardings Marketing" value={metrics.marketing} />
+            <MetricCard label="Onboardings Albie" value={metrics.albie} />
+            <MetricCard label="Onboardings Web Design" value={metrics.webDesign} />
+            <MetricCard label="Total Onboardings" value={metrics.total} />
+          </div>
+        )}
+
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[#0D3A39]">Onboardings</h1>
           <p className="text-sm text-gray-500 mt-1">{onboardings.length} onboarding{onboardings.length !== 1 ? 's' : ''} en total</p>
