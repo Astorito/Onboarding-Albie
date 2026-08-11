@@ -1,8 +1,17 @@
 // POST /api/admin/login
-// Verifies email + password against the ADMIN_USERS env var and sets an httpOnly cookie.
+// Verifies email + password against the ADMIN_USERS (+ ADMIN_USERS_MARKETING)
+// env vars and sets an httpOnly cookie.
 //
-// ADMIN_USERS format (JSON array):
+// Format (JSON array), same shape for both env vars:
 //   [{"email":"you@company.com","passwordHash":"$2b$10$..."}]
+//
+// ADMIN_USERS_MARKETING exists as a second, independent list — added because
+// ADMIN_USERS is marked "Sensitive" in Vercel, which makes its value
+// permanently unreadable (by design, not a permissions issue) once set. That
+// means new users can't be appended to it without recreating the whole list
+// blind. Keeping a second list additive avoids ever touching the original.
+// Both lists grant the exact same admin access — there's no role separation
+// in the dashboard today.
 //
 // Generate a hash: node -e "require('bcryptjs').hash('yourpassword',10).then(console.log)"
 
@@ -14,14 +23,20 @@ interface AdminUser {
   passwordHash: string;
 }
 
-function loadAdminUsers(): AdminUser[] {
-  const raw = process.env.ADMIN_USERS;
+function parseUserList(raw: string | undefined): AdminUser[] {
   if (!raw) return [];
   try {
     return JSON.parse(raw) as AdminUser[];
   } catch {
     return [];
   }
+}
+
+function loadAdminUsers(): AdminUser[] {
+  return [
+    ...parseUserList(process.env.ADMIN_USERS),
+    ...parseUserList(process.env.ADMIN_USERS_MARKETING),
+  ];
 }
 
 export default async function handler(req: any, res: any) {
