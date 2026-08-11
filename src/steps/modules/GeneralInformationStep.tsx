@@ -415,7 +415,11 @@ export const GeneralInformationStep = ({ prefill = {} }: { prefill?: StepPrefill
               </FormField>
             )}
 
-            <FormField label="Do you have a Channel Manager?" required>
+            <FormField
+              label="Do you have a Channel Manager?"
+              required
+              hint="If you don't have either, we'll create the room and rate codes for you during onboarding."
+            >
               <SelectInput
                 name="hasChannelManager"
                 value={hasChannelManager}

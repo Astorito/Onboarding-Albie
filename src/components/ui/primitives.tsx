@@ -51,6 +51,67 @@ export const FormField = ({
   </div>
 );
 
+// Standalone guidance block for copy that's too long or too important for a
+// FormField `hint` (which renders as a single 10px italic <p>, so it can't hold
+// block-level children).
+export const InfoNote = ({
+  children,
+  icon = 'info',
+  id,
+  className = '',
+}: {
+  children: React.ReactNode;
+  icon?: string;
+  id?: string;
+  className?: string;
+}) => (
+  <div
+    id={id}
+    className={`flex gap-3 rounded-xl border border-outline-variant bg-surface-container-low p-4 ${className}`}
+  >
+    <span aria-hidden="true" className="shrink-0 leading-none">
+      <Icon name={icon} className="text-secondary text-lg" />
+    </span>
+    <div className="text-xs text-on-surface-variant leading-relaxed space-y-1.5 [&_strong]:font-bold [&_strong]:text-primary">
+      {children}
+    </div>
+  </div>
+);
+
+// Shared guidance for the Room Code / Rate Code fields. Hotels were reading the
+// example ("STD-KG-01") as a mandatory naming convention — this spells out that
+// the code is free-form and should mirror whatever already exists in their CM/PMS.
+export const SystemCodeNote = ({
+  kind,
+  id,
+  className = '',
+}: {
+  kind: 'room' | 'rate';
+  id?: string;
+  className?: string;
+}) => {
+  const noun = kind === 'room' ? 'room' : 'rate';
+  const subject = kind === 'room' ? 'room type' : 'rate';
+  return (
+    <InfoNote id={id} className={className}>
+      <p>
+        A unique code assigned to each {subject}. Please enter the{' '}
+        <strong>same {noun} code currently configured in your Channel Manager or PMS</strong>. This
+        code is required to ensure that {noun} information can be correctly mapped and transferred
+        between systems.
+      </p>
+      <p>
+        <strong>Important:</strong> the code does not need to follow a specific format. Use the
+        existing code configured in your CM/PMS — any example shown here is only an illustration.
+      </p>
+      <p>
+        If the property does not use a Channel Manager or PMS, we will create the corresponding
+        codes for you during the onboarding process.
+      </p>
+    </InfoNote>
+  );
+};
+
 export const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
   <button
     type="button"

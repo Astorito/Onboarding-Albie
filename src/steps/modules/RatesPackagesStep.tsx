@@ -1,5 +1,5 @@
 import { type Dispatch, type SetStateAction } from 'react';
-import { FormField, TextInput, TextareaInput, SelectInput } from '../../components/ui/primitives';
+import { FormField, TextInput, TextareaInput, SelectInput, SystemCodeNote } from '../../components/ui/primitives';
 import { ConfigSection } from '../../components/ui/layout';
 import type { RoomItem } from './RoomInformationStep';
 
@@ -31,11 +31,12 @@ export const RatesPackagesStep = ({ rates, setRates, rooms = [] }: Props) => {
         icon="sell"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-          <FormField label="Rate Code" required hint='Internal code. Example: "BAR-2025" or "NRR-SUMMER".'>
+          <FormField label="Rate Code" required hint='A unique code for this rate — e.g. "BAR-2025" (example only).'>
             <TextInput
-              placeholder="BAR-2025"
+              placeholder="e.g. BAR-2025"
               value={rates.rateCode ?? ''}
               onChange={(e) => handleChange('rateCode', e.target.value)}
+              aria-describedby="rate-code-guidance"
             />
           </FormField>
 
@@ -51,6 +52,8 @@ export const RatesPackagesStep = ({ rates, setRates, rooms = [] }: Props) => {
               <option>Promotions</option>
             </SelectInput>
           </FormField>
+
+          <SystemCodeNote kind="rate" id="rate-code-guidance" className="col-span-2" />
 
           <FormField label="Short Title" required hint='Shown in rate cards. Example: "Best Available Rate".'>
             <TextInput

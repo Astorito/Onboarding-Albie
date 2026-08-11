@@ -1,5 +1,5 @@
 import { useState, useImperativeHandle, forwardRef, Fragment, type Dispatch, type SetStateAction } from 'react';
-import { FormField, TextInput, TextareaInput, SelectInput } from '../../components/ui/primitives';
+import { FormField, TextInput, TextareaInput, SelectInput, SystemCodeNote } from '../../components/ui/primitives';
 import { ConfigSection, ItemCard, AddItemButton, FormActions } from '../../components/ui/layout';
 import { formatBeds, type BedConfig } from '../../utils/beds';
 
@@ -233,11 +233,12 @@ export const RoomInformationStep = forwardRef<RoomInformationStepHandle, Props>(
             icon="bed"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-              <FormField label="Room Code" required hint='Internal code like "STD-KG-01".'>
+              <FormField label="Room Code" required hint='A unique code for this room type — e.g. "STD-KG-01" (example only).'>
                 <TextInput
-                  placeholder="STD-KG-01"
+                  placeholder="e.g. STD-KG-01"
                   value={form.code}
                   onChange={(e) => update('code', e.target.value)}
+                  aria-describedby="room-code-guidance"
                 />
               </FormField>
 
@@ -249,6 +250,8 @@ export const RoomInformationStep = forwardRef<RoomInformationStepHandle, Props>(
                   onChange={(e) => update('shortTitle', e.target.value)}
                 />
               </FormField>
+
+              <SystemCodeNote kind="room" id="room-code-guidance" className="col-span-2" />
 
               <FormField label="Long Title" hint="Max 50 chars — appears on the room detail page." className="col-span-2">
                 <TextInput
