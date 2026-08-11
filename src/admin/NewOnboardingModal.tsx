@@ -33,14 +33,14 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
       let accountId = selectedAccountId;
 
       if (isNewAccount) {
-        if (!newAccountName.trim()) throw new Error('Ingresá el nombre de la cuenta');
+        if (!newAccountName.trim()) throw new Error('Enter the account name');
         const acc = await adminApi.createAccount(newAccountName.trim());
         accountId = acc.accountId;
       }
 
-      if (!accountId) throw new Error('Seleccioná o creá una cuenta');
-      if (!onboardingName.trim()) throw new Error('Ingresá el nombre del onboarding');
-      if (!albieEnabled && !marketingEnabled) throw new Error('Seleccioná al menos un producto');
+      if (!accountId) throw new Error('Select or create an account');
+      if (!onboardingName.trim()) throw new Error('Enter the onboarding name');
+      if (!albieEnabled && !marketingEnabled) throw new Error('Select at least one product');
 
       const trimmedName = onboardingName.trim();
       const result = await adminApi.createOnboarding(
@@ -67,7 +67,7 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
       setGeneratedLink(link);
       onCreated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al crear onboarding');
+      setError(err instanceof Error ? err.message : 'Error creating onboarding');
     } finally {
       setLoading(false);
     }
@@ -84,7 +84,7 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-[#0D3A39]">Nuevo onboarding</h2>
+          <h2 className="text-lg font-bold text-[#0D3A39]">New onboarding</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition text-xl leading-none cursor-pointer">✕</button>
         </div>
 
@@ -92,7 +92,7 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
           <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
             {/* Account selector */}
             <div>
-              <label className="block text-xs font-semibold text-[#0D3A39] mb-1.5 uppercase tracking-wide">Cuenta / Cliente</label>
+              <label className="block text-xs font-semibold text-[#0D3A39] mb-1.5 uppercase tracking-wide">Account / Client</label>
 
               {!isNewAccount ? (
                 <div className="flex gap-2">
@@ -101,7 +101,7 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
                     onChange={e => setSelectedAccountId(e.target.value)}
                     className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#0D3A39] outline-none focus:border-[#2F6B6D] focus:ring-2 focus:ring-[#2F6B6D]/10 transition bg-white"
                   >
-                    <option value="">Seleccionar cuenta…</option>
+                    <option value="">Select account…</option>
                     {accounts.map(a => (
                       <option key={a['Account ID']} value={a['Account ID']}>
                         {a['Account Name']}
@@ -113,14 +113,14 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
                     onClick={() => { setIsNewAccount(true); setSelectedAccountId(''); }}
                     className="px-4 py-3 border border-[#2F6B6D] text-[#2F6B6D] text-sm font-semibold rounded-xl hover:bg-[#2F6B6D]/5 transition cursor-pointer whitespace-nowrap"
                   >
-                    + Nueva
+                    + New
                   </button>
                 </div>
               ) : (
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="Nombre de la cuenta"
+                    placeholder="Account name"
                     value={newAccountName}
                     onChange={e => setNewAccountName(e.target.value)}
                     className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#0D3A39] outline-none focus:border-[#2F6B6D] focus:ring-2 focus:ring-[#2F6B6D]/10 transition"
@@ -131,7 +131,7 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
                     onClick={() => { setIsNewAccount(false); setNewAccountName(''); }}
                     className="px-4 py-3 border border-gray-200 text-gray-500 text-sm font-semibold rounded-xl hover:bg-gray-50 transition cursor-pointer"
                   >
-                    Cancelar
+                    Cancel
                   </button>
                 </div>
               )}
@@ -139,10 +139,10 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
 
             {/* Onboarding name */}
             <div>
-              <label className="block text-xs font-semibold text-[#0D3A39] mb-1.5 uppercase tracking-wide">Nombre del lugar</label>
+              <label className="block text-xs font-semibold text-[#0D3A39] mb-1.5 uppercase tracking-wide">Property name</label>
               <input
                 type="text"
-                placeholder="Ej: Hotel Patagonia Norte"
+                placeholder="E.g.: Hotel Patagonia Norte"
                 value={onboardingName}
                 onChange={e => setOnboardingName(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#0D3A39] outline-none focus:border-[#2F6B6D] focus:ring-2 focus:ring-[#2F6B6D]/10 transition"
@@ -152,7 +152,7 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
             {/* Products */}
             <div>
               <label className="block text-xs font-semibold text-[#0D3A39] mb-1.5 uppercase tracking-wide">
-                Productos
+                Products
               </label>
               <div className="flex flex-col gap-2">
                 <label className="flex items-center gap-2.5 text-sm text-[#0D3A39] cursor-pointer">
@@ -168,7 +168,7 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
                   <input type="checkbox" checked={false} disabled className="w-4 h-4" />
                   Web Design
                   <span className="text-[10px] font-semibold uppercase tracking-wide bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">
-                    Próximamente
+                    Coming soon
                   </span>
                 </label>
                 <label className="flex items-center gap-2.5 text-sm text-[#0D3A39] cursor-pointer">
@@ -186,8 +186,8 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
             {/* POC email */}
             <div>
               <label className="block text-xs font-semibold text-[#0D3A39] mb-1.5 uppercase tracking-wide">
-                Email del POC
-                <span className="ml-1.5 font-normal text-gray-400 normal-case tracking-normal">— recibe el PDF al completar</span>
+                POC email
+                <span className="ml-1.5 font-normal text-gray-400 normal-case tracking-normal">— receives the PDF on completion</span>
               </label>
               <input
                 type="email"
@@ -204,10 +204,10 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
 
             <div className="flex gap-3 pt-1">
               <button type="button" onClick={onClose} className="flex-1 border border-gray-200 text-gray-600 font-semibold rounded-xl py-3 text-sm hover:bg-gray-50 transition cursor-pointer">
-                Cancelar
+                Cancel
               </button>
               <button type="submit" disabled={loading} className="flex-1 bg-[#2F6B6D] text-white font-bold rounded-xl py-3 text-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-60 cursor-pointer">
-                {loading ? 'Creando…' : 'Crear onboarding'}
+                {loading ? 'Creating…' : 'Create onboarding'}
               </button>
             </div>
           </form>
@@ -217,13 +217,13 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#F2EA5F] flex items-center justify-center shrink-0 text-[#0D3A39] text-lg font-bold">✓</div>
               <div>
-                <p className="font-bold text-[#0D3A39]">Onboarding creado</p>
-                <p className="text-sm text-gray-500">Compartí el link con el cliente</p>
+                <p className="font-bold text-[#0D3A39]">Onboarding created</p>
+                <p className="text-sm text-gray-500">Share the link with the client</p>
               </div>
             </div>
 
             <div className="bg-gray-50 rounded-xl p-4">
-              <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Link del onboarding</p>
+              <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Onboarding link</p>
               <p className="text-sm text-[#2F6B6D] font-mono break-all">{generatedLink}</p>
             </div>
 
@@ -231,11 +231,11 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
               onClick={copyLink}
               className="w-full bg-[#2F6B6D] text-white font-bold rounded-xl py-3 text-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer"
             >
-              {copied ? '¡Copiado!' : 'Copiar link'}
+              {copied ? 'Copied!' : 'Copy link'}
             </button>
 
             <button onClick={onClose} className="w-full border border-gray-200 text-gray-600 font-semibold rounded-xl py-3 text-sm hover:bg-gray-50 transition cursor-pointer">
-              Cerrar
+              Close
             </button>
           </div>
         )}

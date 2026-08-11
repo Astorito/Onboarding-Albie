@@ -19,7 +19,7 @@ function StatusBadge({ status }: StatusBadgeProps) {
         : 'bg-amber-50 text-amber-700'
     }`}>
       <span className={`w-1.5 h-1.5 rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-amber-400'}`} />
-      {isCompleted ? 'Completado' : 'Pendiente'}
+      {isCompleted ? 'Completed' : 'Pending'}
     </span>
   );
 }
@@ -27,7 +27,7 @@ function StatusBadge({ status }: StatusBadgeProps) {
 function formatDate(iso: string): string {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
+    return new Date(iso).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
   } catch {
     return iso;
   }
@@ -125,7 +125,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
   for (const o of onboardings) {
     const key = o['Account ID'] || '__none__';
     const label = key === '__none__'
-      ? 'Independiente'
+      ? 'Independent'
       : (accountNameById[key] ?? key);
     if (!groups[key]) groups[key] = { label, items: [] };
     groups[key].items.push(o);
@@ -135,7 +135,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
   const sortedGroups = Object.entries(groups).sort(([a, ga], [b, gb]) => {
     if (a === '__none__') return 1;
     if (b === '__none__') return -1;
-    return ga.label.localeCompare(gb.label, 'es');
+    return ga.label.localeCompare(gb.label, 'en');
   });
 
   // Metrics — legacy Sheets rows have no 'Type' field and are all Albie.
@@ -159,14 +159,14 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
               onClick={() => setShowModal(true)}
               className="bg-[#2F6B6D] text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:opacity-90 active:scale-95 transition-all cursor-pointer"
             >
-              + Nuevo onboarding
+              + New onboarding
             </button>
             <button
               onClick={handleLogout}
               className="text-sm text-gray-400 hover:text-gray-600 transition cursor-pointer"
-              title="Cerrar sesión"
+              title="Log out"
             >
-              Salir
+              Log out
             </button>
           </div>
         </div>
@@ -176,7 +176,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
       <main className="max-w-5xl mx-auto px-6 py-8">
         {!loading && onboardings.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
-            <MetricCard label="Onboardings este mes" value={metrics.thisMonth} />
+            <MetricCard label="Onboardings this month" value={metrics.thisMonth} />
             <MetricCard label="Onboardings Marketing" value={metrics.marketing} />
             <MetricCard label="Onboardings Albie" value={metrics.albie} />
             <MetricCard label="Onboardings Web Design" value={metrics.webDesign} />
@@ -186,21 +186,21 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
 
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[#0D3A39]">Onboardings</h1>
-          <p className="text-sm text-gray-500 mt-1">{onboardings.length} onboarding{onboardings.length !== 1 ? 's' : ''} en total</p>
+          <p className="text-sm text-gray-500 mt-1">{onboardings.length} onboarding{onboardings.length !== 1 ? 's' : ''} total</p>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-24 text-gray-400 text-sm">Cargando…</div>
+          <div className="flex items-center justify-center py-24 text-gray-400 text-sm">Loading…</div>
         ) : onboardings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-16 h-16 rounded-2xl bg-[#F2EA5F] flex items-center justify-center text-2xl mb-4">📋</div>
-            <p className="font-bold text-[#0D3A39] text-lg mb-1">No hay onboardings todavía</p>
-            <p className="text-gray-500 text-sm mb-6">Creá el primero para generar un link y enviárselo al cliente</p>
+            <p className="font-bold text-[#0D3A39] text-lg mb-1">No onboardings yet</p>
+            <p className="text-gray-500 text-sm mb-6">Create the first one to generate a link and send it to the client</p>
             <button
               onClick={() => setShowModal(true)}
               className="bg-[#2F6B6D] text-white text-sm font-bold px-6 py-3 rounded-xl hover:opacity-90 active:scale-95 transition-all cursor-pointer"
             >
-              + Nuevo onboarding
+              + New onboarding
             </button>
           </div>
         ) : (
@@ -237,7 +237,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
                                 <StatusBadge status={o['Status']} />
                               </div>
                               <p className="text-xs text-gray-400">
-                                Creado {formatDate(o['Admin Created At'] || o['Timestamp'] || '')}
+                                Created {formatDate(o['Admin Created At'] || o['Timestamp'] || '')}
                                 {o['Created By'] && ` · ${o['Created By']}`}
                                 {o['POC Email'] && ` · POC: ${o['POC Email']}`}
                               </p>
@@ -251,21 +251,21 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
                                   rel="noopener noreferrer"
                                   className="text-xs font-semibold text-[#2F6B6D] border border-[#2F6B6D]/30 px-3 py-2 rounded-lg hover:bg-[#2F6B6D]/5 transition"
                                 >
-                                  Ver PDF
+                                  View PDF
                                 </a>
                               )}
                               <button
                                 onClick={() => copyLink(o)}
                                 className="text-xs font-semibold bg-[#F2EA5F] text-[#0D3A39] px-3 py-2 rounded-lg hover:opacity-80 transition cursor-pointer"
                               >
-                                {copiedId === sessionId ? '¡Copiado!' : 'Copiar link'}
+                                {copiedId === sessionId ? 'Copied!' : 'Copy link'}
                               </button>
                               <button
                                 onClick={() => setDeleteTarget(o)}
                                 className="text-xs font-semibold text-red-400 border border-red-100 px-3 py-2 rounded-lg hover:bg-red-50 transition cursor-pointer"
-                                title="Eliminar onboarding"
+                                title="Delete onboarding"
                               >
-                                Eliminar
+                                Delete
                               </button>
                             </div>
                           </div>

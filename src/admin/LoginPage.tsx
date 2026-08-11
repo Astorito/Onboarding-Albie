@@ -19,7 +19,7 @@ export function LoginPage({ onLogin }: Props) {
       const data = await adminApi.login(email, password);
       onLogin(data.email);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
+      setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -33,8 +33,8 @@ export function LoginPage({ onLogin }: Props) {
         </div>
 
         <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm">
-          <h1 className="text-xl font-bold text-[#0D3A39] mb-1">Panel admin</h1>
-          <p className="text-sm text-gray-500 mb-6">Ingresá con tus credenciales</p>
+          <h1 className="text-xl font-bold text-[#0D3A39] mb-1">Admin panel</h1>
+          <p className="text-sm text-gray-500 mb-6">Sign in with your credentials</p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
@@ -47,14 +47,14 @@ export function LoginPage({ onLogin }: Props) {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#0D3A39] outline-none focus:border-[#2F6B6D] focus:ring-2 focus:ring-[#2F6B6D]/10 transition"
-                placeholder="tu@empresa.com"
+                placeholder="you@company.com"
                 autoComplete="email"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-[#0D3A39] mb-1.5 uppercase tracking-wide">
-                Contraseña
+                Password
               </label>
               <input
                 type="password"
@@ -76,7 +76,7 @@ export function LoginPage({ onLogin }: Props) {
               disabled={loading}
               className="w-full bg-[#2F6B6D] text-white font-bold rounded-xl py-3 text-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-60 cursor-pointer mt-1"
             >
-              {loading ? 'Ingresando…' : 'Ingresar'}
+              {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
         </div>
