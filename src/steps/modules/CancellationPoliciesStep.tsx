@@ -166,7 +166,7 @@ export const CancellationPoliciesStep = forwardRef<CancellationPoliciesStepHandl
                 <SelectInput
                   value={form.windowUnit}
                   onChange={(e) => update('windowUnit', e.target.value as 'days' | 'hours')}
-                  className="w-32 shrink-0"
+                  className="basis-32 shrink-0"
                 >
                   <option value="days">Days</option>
                   <option value="hours">Hours</option>
@@ -176,7 +176,7 @@ export const CancellationPoliciesStep = forwardRef<CancellationPoliciesStepHandl
 
             {form.windowUnit === 'days' && (
               <FormField label="Cutoff Time" hint="Optional — the exact time on that day when free cancellation ends.">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-h-[42px]">
                   <input
                     type="checkbox"
                     checked={form.cutoffTime !== ''}
