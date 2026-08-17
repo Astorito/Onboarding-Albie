@@ -143,7 +143,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
     thisMonth: onboardings.filter(o => isThisMonth(o['Admin Created At'] || o['Timestamp'] || '')).length,
     marketing: onboardings.filter(o => o['Type'] === 'marketing').length,
     albie: onboardings.filter(o => !o['Type'] || o['Type'] === 'hotel').length,
-    webDesign: 0,
+    webDesign: onboardings.filter(o => o['Type'] === 'webdesign').length,
     total: onboardings.length,
   };
 

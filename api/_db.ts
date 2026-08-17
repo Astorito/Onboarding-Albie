@@ -14,9 +14,10 @@ import { slugFromRow } from './_slug';
 
 export const HOTEL_TABLE = 'Onboardings_Hotel';
 export const MARKETING_TABLE = 'Onboardings_Marketing';
+export const WEBDESIGN_TABLE = 'Onboardings_WebDesign';
 export const ACCOUNTS_TABLE = 'Accounts';
 export const ENGAGEMENTS_TABLE = 'Engagements';
-const ONBOARDING_TABLES = [HOTEL_TABLE, MARKETING_TABLE] as const;
+const ONBOARDING_TABLES = [HOTEL_TABLE, MARKETING_TABLE, WEBDESIGN_TABLE] as const;
 
 export function isAirtableConfigured(): boolean {
   return !!(process.env.AIRTABLE_API_KEY && process.env.AIRTABLE_BASE_ID);
@@ -209,8 +210,207 @@ function sessionResponseFromMarketingRecord(record: AirtableRecord) {
   };
 }
 
+// ─── Web Design field mapping — Airtable fields <-> the payload/session shape ─
+// Field names mirror src/website/WebsiteReviewStep.tsx's FIELD_LABELS verbatim
+// (that map can't be imported here — api/ is a separate CJS build context —
+// but keeping the literal strings identical means Airtable's column headers,
+// the Review screen, and the PDF all agree). Checkboxes follow the same
+// isChecked/asChecked 'on'/''-vs-boolean convention as marketing above. The
+// five multi-option fields (industry, propertyType, bookingEngine,
+// domainProperty, hostingProvider) are stored as their RAW value strings
+// (e.g. 'hotel_hospitality'), not translated labels — that keeps read-back
+// trivially correct for resuming a session (the frontend's SelectableCard
+// prefill compares against the raw value), at the cost of the Airtable column
+// showing the raw slug instead of a friendly label. The PDF translates these
+// for display only, never feeding a translated value back into the payload.
+function websiteFieldsFromPayload(payload: any): Record<string, any> {
+  const {
+    company = {}, brand = {}, structure = {}, inspiration = {},
+    hotelGate = {}, hotelGeneral = {}, hotelTechnical = {}, features = {},
+  } = payload;
+  const isChecked = (v: any) => v === 'on' || v === true;
+  return {
+    'Session ID': payload.sessionId,
+    'Timestamp': new Date().toISOString(),
+
+    'Company / Brand Name': company.companyName ?? '',
+    'Industry / Market': company.industry ?? '',
+    'Industry (Other)': company.industryOther ?? '',
+    'Existing Website URL': company.existingWebsiteUrl ?? '',
+    'Main Contact Person': company.contactPerson ?? '',
+    'Email Address': company.email ?? '',
+    'Goal: Brand Awareness': isChecked(company.goalBrandAwareness),
+    'Goal: Lead Generation': isChecked(company.goalLeadGeneration),
+    'Goal: Sales / E-commerce': isChecked(company.goalSalesEcommerce),
+    'Goal: Informational': isChecked(company.goalInformational),
+    'Goal (Other)': company.goalOther ?? '',
+
+    'Has Brand Identity / Guidelines': brand.hasBrandIdentity ?? '',
+    'Resource: Logo': isChecked(brand.resourceLogo),
+    'Resource: Typography / Brand Fonts': isChecked(brand.resourceTypography),
+    'Resource: Colors': isChecked(brand.resourceColors),
+    'Resource: Brand Guidelines': isChecked(brand.resourceGuidelines),
+    'Resource (Other)': brand.resourceOther ?? '',
+    'Brand in 3-5 Words': brand.brandDescriptionWords ?? '',
+
+    'Estimated Number of Pages': structure.estimatedPages ?? '',
+    'Page: Home': isChecked(structure.pageHome),
+    'Page: About Us': isChecked(structure.pageAboutUs),
+    'Page: Services / Products': isChecked(structure.pageServicesProducts),
+    'Page: Blog / News': isChecked(structure.pageBlogNews),
+    'Page: Contact': isChecked(structure.pageContact),
+    'Page: Testimonials / Case Studies': isChecked(structure.pageTestimonials),
+    'Page (Other)': structure.pageOther ?? '',
+    'One-Sentence Description': structure.oneSentenceDescription ?? '',
+    'Ideal Customer': structure.idealCustomer ?? '',
+    'Business Location': structure.businessLocation ?? '',
+    'Company Story': structure.companyStory ?? '',
+    'Main Services / Products': structure.servicesDescription ?? '',
+    'Brand Story / Core Values': structure.brandStoryValues ?? '',
+
+    'Reference Websites': inspiration.referenceWebsites ?? '',
+    'Likes About References': inspiration.likesAboutReferences ?? '',
+    'Dislikes / What to Avoid': inspiration.dislikesToAvoid ?? '',
+    'Competitors': inspiration.competitors ?? '',
+
+    'Hotel / Hospitality Project': hotelGate.isHotelProject ?? '',
+
+    'Property Type': hotelGeneral.propertyType ?? '',
+    'Property Type (Other)': hotelGeneral.propertyTypeOther ?? '',
+    'Location(s)': hotelGeneral.hotelLocations ?? '',
+    'Room Types / Categories': hotelGeneral.roomTypesCount ?? '',
+    'Feature: Experiences': isChecked(hotelGeneral.featureExperiences),
+    'Feature: Activities': isChecked(hotelGeneral.featureActivities),
+    'Feature: Weddings & Events': isChecked(hotelGeneral.featureWeddingsEvents),
+    'Feature: Dining': isChecked(hotelGeneral.featureDining),
+    'Feature: Amenities': isChecked(hotelGeneral.featureAmenities),
+    'Feature: Accommodations': isChecked(hotelGeneral.featureAccommodations),
+    'Feature: Offers & Packages': isChecked(hotelGeneral.featureOffersPackages),
+    'Amenities/Activities to Highlight': hotelGeneral.amenitiesHighlight ?? '',
+    'Professional Photography Access': hotelGeneral.professionalPhotography ?? '',
+
+    'Has Active Booking Engine': hotelTechnical.hasActiveBookingEngine ?? '',
+    'Booking Engine': hotelTechnical.bookingEngine ?? '',
+    'Booking Engine (Other)': hotelTechnical.bookingEngineOther ?? '',
+    'PMS': hotelTechnical.pms ?? '',
+    'Channel Manager': hotelTechnical.channelManager ?? '',
+
+    'Feature: Contact Forms': isChecked(features.featureContactForms),
+    'Feature: Newsletter Subscriptions': isChecked(features.featureNewsletter),
+    'Feature: Booking System': isChecked(features.featureBookingSystem),
+    'Feature: E-commerce': isChecked(features.featureEcommerce),
+    'Feature: Blog / Dynamic Content': isChecked(features.featureBlogDynamic),
+    'Feature: Third-Party Integrations': isChecked(features.featureThirdPartyIntegrations),
+    'Feature (Other)': features.featureOther ?? '',
+    'SEO Goals / Priority Keywords': features.seoGoals ?? '',
+    'Domain Property': features.domainProperty ?? '',
+    'Domain Property (Other)': features.domainPropertyOther ?? '',
+    'Hosting Provider': features.hostingProvider ?? '',
+    'Hosting Provider (Other)': features.hostingProviderOther ?? '',
+    'Additional Info': features.additionalInfo ?? '',
+    'Desired Timeline / Deadline': features.desiredTimeline ?? '',
+  };
+}
+
+function sessionResponseFromWebsiteRecord(record: AirtableRecord) {
+  const f = record.fields;
+  const onboardingName = f['Onboarding Name'] || null;
+  const sessionId = f['Session ID'];
+  const asChecked = (v: any) => (v ? 'on' : '');
+  return {
+    sessionId,
+    slug: slugFromRow(onboardingName ?? '', sessionId) || null,
+    onboardingName,
+    company: {
+      companyName: f['Company / Brand Name'] ?? '',
+      industry: f['Industry / Market'] ?? '',
+      industryOther: f['Industry (Other)'] ?? '',
+      existingWebsiteUrl: f['Existing Website URL'] ?? '',
+      contactPerson: f['Main Contact Person'] ?? '',
+      email: f['Email Address'] ?? '',
+      goalBrandAwareness: asChecked(f['Goal: Brand Awareness']),
+      goalLeadGeneration: asChecked(f['Goal: Lead Generation']),
+      goalSalesEcommerce: asChecked(f['Goal: Sales / E-commerce']),
+      goalInformational: asChecked(f['Goal: Informational']),
+      goalOther: f['Goal (Other)'] ?? '',
+    },
+    brand: {
+      hasBrandIdentity: f['Has Brand Identity / Guidelines'] ?? '',
+      resourceLogo: asChecked(f['Resource: Logo']),
+      resourceTypography: asChecked(f['Resource: Typography / Brand Fonts']),
+      resourceColors: asChecked(f['Resource: Colors']),
+      resourceGuidelines: asChecked(f['Resource: Brand Guidelines']),
+      resourceOther: f['Resource (Other)'] ?? '',
+      brandDescriptionWords: f['Brand in 3-5 Words'] ?? '',
+    },
+    structure: {
+      estimatedPages: f['Estimated Number of Pages'] ?? '',
+      pageHome: asChecked(f['Page: Home']),
+      pageAboutUs: asChecked(f['Page: About Us']),
+      pageServicesProducts: asChecked(f['Page: Services / Products']),
+      pageBlogNews: asChecked(f['Page: Blog / News']),
+      pageContact: asChecked(f['Page: Contact']),
+      pageTestimonials: asChecked(f['Page: Testimonials / Case Studies']),
+      pageOther: f['Page (Other)'] ?? '',
+      oneSentenceDescription: f['One-Sentence Description'] ?? '',
+      idealCustomer: f['Ideal Customer'] ?? '',
+      businessLocation: f['Business Location'] ?? '',
+      companyStory: f['Company Story'] ?? '',
+      servicesDescription: f['Main Services / Products'] ?? '',
+      brandStoryValues: f['Brand Story / Core Values'] ?? '',
+    },
+    inspiration: {
+      referenceWebsites: f['Reference Websites'] ?? '',
+      likesAboutReferences: f['Likes About References'] ?? '',
+      dislikesToAvoid: f['Dislikes / What to Avoid'] ?? '',
+      competitors: f['Competitors'] ?? '',
+    },
+    hotelGate: {
+      isHotelProject: f['Hotel / Hospitality Project'] ?? '',
+    },
+    hotelGeneral: {
+      propertyType: f['Property Type'] ?? '',
+      propertyTypeOther: f['Property Type (Other)'] ?? '',
+      hotelLocations: f['Location(s)'] ?? '',
+      roomTypesCount: f['Room Types / Categories'] ?? '',
+      featureExperiences: asChecked(f['Feature: Experiences']),
+      featureActivities: asChecked(f['Feature: Activities']),
+      featureWeddingsEvents: asChecked(f['Feature: Weddings & Events']),
+      featureDining: asChecked(f['Feature: Dining']),
+      featureAmenities: asChecked(f['Feature: Amenities']),
+      featureAccommodations: asChecked(f['Feature: Accommodations']),
+      featureOffersPackages: asChecked(f['Feature: Offers & Packages']),
+      amenitiesHighlight: f['Amenities/Activities to Highlight'] ?? '',
+      professionalPhotography: f['Professional Photography Access'] ?? '',
+    },
+    hotelTechnical: {
+      hasActiveBookingEngine: f['Has Active Booking Engine'] ?? '',
+      bookingEngine: f['Booking Engine'] ?? '',
+      bookingEngineOther: f['Booking Engine (Other)'] ?? '',
+      pms: f['PMS'] ?? '',
+      channelManager: f['Channel Manager'] ?? '',
+    },
+    features: {
+      featureContactForms: asChecked(f['Feature: Contact Forms']),
+      featureNewsletter: asChecked(f['Feature: Newsletter Subscriptions']),
+      featureBookingSystem: asChecked(f['Feature: Booking System']),
+      featureEcommerce: asChecked(f['Feature: E-commerce']),
+      featureBlogDynamic: asChecked(f['Feature: Blog / Dynamic Content']),
+      featureThirdPartyIntegrations: asChecked(f['Feature: Third-Party Integrations']),
+      featureOther: f['Feature (Other)'] ?? '',
+      seoGoals: f['SEO Goals / Priority Keywords'] ?? '',
+      domainProperty: f['Domain Property'] ?? '',
+      domainPropertyOther: f['Domain Property (Other)'] ?? '',
+      hostingProvider: f['Hosting Provider'] ?? '',
+      hostingProviderOther: f['Hosting Provider (Other)'] ?? '',
+      additionalInfo: f['Additional Info'] ?? '',
+      desiredTimeline: f['Desired Timeline / Deadline'] ?? '',
+    },
+  };
+}
+
 export interface OnboardingHit {
-  table: typeof HOTEL_TABLE | typeof MARKETING_TABLE;
+  table: typeof HOTEL_TABLE | typeof MARKETING_TABLE | typeof WEBDESIGN_TABLE;
   record: AirtableRecord;
 }
 
@@ -236,9 +436,9 @@ export async function findOnboardingBySlug(slug: string): Promise<OnboardingHit 
 }
 
 export function sessionResponseFromHit(hit: OnboardingHit) {
-  return hit.table === HOTEL_TABLE
-    ? sessionResponseFromHotelRecord(hit.record)
-    : sessionResponseFromMarketingRecord(hit.record);
+  if (hit.table === HOTEL_TABLE) return sessionResponseFromHotelRecord(hit.record);
+  if (hit.table === WEBDESIGN_TABLE) return sessionResponseFromWebsiteRecord(hit.record);
+  return sessionResponseFromMarketingRecord(hit.record);
 }
 
 // Update an existing hotel-shaped record by its Airtable record id.
@@ -264,6 +464,16 @@ export async function createMarketingOnboardingFromPayload(payload: any): Promis
   await createRecord(MARKETING_TABLE, marketingFieldsFromPayload(payload));
 }
 
+// Same pair again, for the web design flow. Also Airtable-only — see the
+// marketing comment above.
+export async function writeWebsiteFields(recordId: string, payload: any): Promise<void> {
+  await updateRecord(WEBDESIGN_TABLE, recordId, websiteFieldsFromPayload(payload));
+}
+
+export async function createWebsiteOnboardingFromPayload(payload: any): Promise<void> {
+  await createRecord(WEBDESIGN_TABLE, websiteFieldsFromPayload(payload));
+}
+
 // ─── Admin: onboardings (list / create / delete) ──────────────────────────────
 
 export async function listAirtableOnboardings(): Promise<Record<string, any>[]> {
@@ -271,7 +481,7 @@ export async function listAirtableOnboardings(): Promise<Record<string, any>[]> 
   const out: Record<string, any>[] = [];
   for (const table of ONBOARDING_TABLES) {
     const recs = await listAllRecords(table);
-    const type = table === HOTEL_TABLE ? 'hotel' : 'marketing';
+    const type = table === HOTEL_TABLE ? 'hotel' : table === WEBDESIGN_TABLE ? 'webdesign' : 'marketing';
     recs.forEach((r) => out.push({ ...r.fields, Type: type }));
   }
   return out;
@@ -287,9 +497,9 @@ export async function createAirtableOnboarding(opts: {
   onboardingName: string;
   pocEmail?: string;
   createdBy: string;
-  type?: 'hotel' | 'marketing';
+  type?: 'hotel' | 'marketing' | 'webdesign';
 }): Promise<{ sessionId: string }> {
-  const table = opts.type === 'marketing' ? MARKETING_TABLE : HOTEL_TABLE;
+  const table = opts.type === 'marketing' ? MARKETING_TABLE : opts.type === 'webdesign' ? WEBDESIGN_TABLE : HOTEL_TABLE;
   const sessionId = generateSessionId();
   await createRecord(table, {
     'Session ID': sessionId,
@@ -405,6 +615,18 @@ export async function createEngagement(opts: {
     marketingSessionId = marketing.sessionId;
   }
 
+  let webDesignSessionId = '';
+  if (opts.products.webDesign) {
+    const webDesign = await createAirtableOnboarding({
+      accountId: opts.accountId,
+      onboardingName: opts.onboardingName,
+      pocEmail: opts.pocEmail,
+      createdBy: opts.createdBy,
+      type: 'webdesign',
+    });
+    webDesignSessionId = webDesign.sessionId;
+  }
+
   await createRecord(ENGAGEMENTS_TABLE, {
     'Engagement ID': engagementId,
     'Onboarding Name': opts.onboardingName,
@@ -417,6 +639,7 @@ export async function createEngagement(opts: {
     'Marketing Enabled': opts.products.marketing,
     'Hotel Session ID': hotelSessionId,
     'Marketing Session ID': marketingSessionId,
+    'Web Design Session ID': webDesignSessionId,
   });
 
   const slug = slugFromRow(opts.onboardingName, engagementId) || engagementId;
@@ -445,6 +668,7 @@ export function engagementResponseFromRecord(record: AirtableRecord) {
   const onboardingName = f['Onboarding Name'] || '';
   const hotelSessionId = f['Hotel Session ID'] || '';
   const marketingSessionId = f['Marketing Session ID'] || '';
+  const webDesignSessionId = f['Web Design Session ID'] || '';
   return {
     engagementSlug: slugFromRow(onboardingName, engagementId) || engagementId,
     engagementName: onboardingName || null,
@@ -453,7 +677,10 @@ export function engagementResponseFromRecord(record: AirtableRecord) {
         enabled: !!f['Albie Enabled'],
         slug: f['Albie Enabled'] && hotelSessionId ? (slugFromRow(onboardingName, hotelSessionId) || null) : null,
       },
-      webDesign: { enabled: !!f['Web Design Enabled'] },
+      webDesign: {
+        enabled: !!f['Web Design Enabled'],
+        slug: f['Web Design Enabled'] && webDesignSessionId ? (slugFromRow(onboardingName, webDesignSessionId) || null) : null,
+      },
       marketing: {
         enabled: !!f['Marketing Enabled'],
         slug: f['Marketing Enabled'] && marketingSessionId ? (slugFromRow(onboardingName, marketingSessionId) || null) : null,

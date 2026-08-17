@@ -17,7 +17,7 @@ export interface Onboarding {
   'POC Email'?: string;
   'Property Name'?: string;
   'Timestamp'?: string;
-  'Type'?: 'hotel' | 'marketing';
+  'Type'?: 'hotel' | 'marketing' | 'webdesign';
 }
 
 export type CreateOnboardingResult =

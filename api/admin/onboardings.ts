@@ -78,10 +78,10 @@ export default async function handler(req: any, res: any) {
     }
 
     // ── Exactly 1 product: unchanged single-onboarding path ────────────────
-    const singleType: 'hotel' | 'marketing' | null =
-      products.albie ? 'hotel' : products.marketing ? 'marketing' : null;
+    const singleType: 'hotel' | 'marketing' | 'webdesign' | null =
+      products.albie ? 'hotel' : products.marketing ? 'marketing' : products.webDesign ? 'webdesign' : null;
     if (!singleType) {
-      return res.status(501).json({ error: 'Web Design onboarding is not available yet' });
+      return res.status(400).json({ error: 'Select at least one product' });
     }
 
     if (isAirtableConfigured()) {

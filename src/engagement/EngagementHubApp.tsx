@@ -6,7 +6,7 @@ interface EngagementResponse {
   engagementName: string | null;
   products: {
     albie: { enabled: boolean; slug: string | null };
-    webDesign: { enabled: boolean };
+    webDesign: { enabled: boolean; slug: string | null };
     marketing: { enabled: boolean; slug: string | null };
   };
 }
@@ -126,6 +126,7 @@ export default function EngagementHubApp() {
               title="Web Design"
               description="Your website onboarding."
               icon="palette"
+              href={products.webDesign.slug ? `/website/o/${products.webDesign.slug}?engagement=${engagementSlug}` : undefined}
             />
           )}
           {products.marketing.enabled && (

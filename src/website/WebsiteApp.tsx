@@ -1,29 +1,42 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 import { Icon } from '../components/ui/primitives';
 import { ProgressBar } from '../components/ui/layout';
 
-import { MarketingWelcomeStep } from './MarketingWelcomeStep';
-import { BusinessBasicsStep } from './BusinessBasicsStep';
-import { AccountsAssetsStep } from './AccountsAssetsStep';
-import { StrategyBudgetStep } from './StrategyBudgetStep';
-import { MarketingReviewStep } from './MarketingReviewStep';
-import { MarketingSuccessStep } from './MarketingSuccessStep';
+import { WebsiteWelcomeStep } from './WebsiteWelcomeStep';
+import { CompanyInformationStep } from './CompanyInformationStep';
+import { BrandIdentityStep } from './BrandIdentityStep';
+import { WebsiteStructureContentStep } from './WebsiteStructureContentStep';
+import { InspirationReferencesStep } from './InspirationReferencesStep';
+import { HotelGateStep } from './HotelGateStep';
+import { HotelGeneralInfoStep } from './HotelGeneralInfoStep';
+import { HotelTechnicalInfoStep } from './HotelTechnicalInfoStep';
+import { FeaturesInfrastructureStep } from './FeaturesInfrastructureStep';
+import { WebsiteReviewStep } from './WebsiteReviewStep';
+import { WebsiteSuccessStep } from './WebsiteSuccessStep';
 
-import { DEFAULT_ENABLED } from './constants';
+import { BASE_MODULES, HOTEL_MODULES, FINAL_MODULE } from './constants';
 
-export default function MarketingApp() {
-  // ── Session ID resolution — same pattern as src/App.tsx ────────────────────
-  // /marketing/o/<slug> readable link (preferred, slug resolved async server-
+// A hidden "Other: ___" text input is CSS-revealed, not disabled, so the
+// browser always submits it via FormData — typically as '' but sometimes with
+// stale text if the user typed something into it and then unselected the
+// "Other" option. Clear it whenever its trigger isn't actually selected, so an
+// orphaned answer never gets persisted.
+function clearOther(
+  data: Record<string, string>,
+  otherKey: string,
+  isSelected: boolean,
+): Record<string, string> {
+  return isSelected ? data : { ...data, [otherKey]: '' };
+}
+
+export default function WebsiteApp() {
+  // ── Session ID resolution — same pattern as src/marketing/MarketingApp.tsx ─
+  // /website/o/<slug> readable link (preferred, slug resolved async server-
   // side) or ?token=<id> legacy link, else a returning visitor's stored id.
-  const STORAGE_KEY = 'albie_marketing_session_id';
-  const slugMatch = window.location.pathname.match(/^\/marketing\/o\/(.+)$/);
+  const STORAGE_KEY = 'albie_website_session_id';
+  const slugMatch = window.location.pathname.match(/^\/website\/o\/(.+)$/);
   const initialSlug = slugMatch ? decodeURIComponent(slugMatch[1]) : null;
 
   // Present only when opened from an Engagement hub (multi-product link) —
@@ -41,7 +54,7 @@ export default function MarketingApp() {
     }
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) return stored;
-    const newId = `mktg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const newId = `web_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     localStorage.setItem(STORAGE_KEY, newId);
     return newId;
   });
@@ -53,6 +66,21 @@ export default function MarketingApp() {
   const [savedForms, setSavedForms] = useState<Record<string, Record<string, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // The whole app shares one index.html (and its Albie favicon/title) — swap
+  // in the Digital Marketing favicon and page title while this flow is
+  // mounted, restore both on unmount.
+  useEffect(() => {
+    const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    const previousHref = link?.href;
+    const previousTitle = document.title;
+    if (link) link.href = '/marketing/dm-favicon.png';
+    document.title = 'New Website Project Onboarding | TAG Digital Marketing';
+    return () => {
+      if (link && previousHref) link.href = previousHref;
+      document.title = previousTitle;
+    };
+  }, []);
 
   // ── Load server-side session data ──────────────────────────────────────────
   useEffect(() => {
@@ -72,18 +100,29 @@ export default function MarketingApp() {
           localStorage.setItem(STORAGE_KEY, data.sessionId);
         }
         if (data.slug) {
-          window.history.replaceState(null, '', `/marketing/o/${data.slug}`);
+          window.history.replaceState(null, '', `/website/o/${data.slug}`);
         }
         const update: Record<string, Record<string, string>> = {};
-        if (data.basics && Object.values(data.basics).some(Boolean)) update.basics = data.basics;
-        if (data.accounts && Object.values(data.accounts).some(Boolean)) update.accounts = data.accounts;
-        if (data.strategy && Object.values(data.strategy).some(Boolean)) update.strategy = data.strategy;
+        const modules = [
+          'company', 'brand', 'structure', 'inspiration',
+          'hotelGate', 'hotelGeneral', 'hotelTechnical', 'features',
+        ] as const;
+        for (const m of modules) {
+          if (data[m] && Object.values(data[m]).some(Boolean)) update[m] = data[m];
+        }
         if (Object.keys(update).length) setSavedForms((prev) => ({ ...prev, ...update }));
       })
       .catch(() => {});
   // Runs once on mount — see the identical rationale in src/App.tsx.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Hotel/Hospitality sections only appear once the client confirms their
+  // project is in that sector — computed fresh from savedForms each render.
+  const isHotelProject = savedForms.hotelGate?.isHotelProject === 'yes';
+  const DEFAULT_ENABLED = isHotelProject
+    ? [...BASE_MODULES, ...HOTEL_MODULES, FINAL_MODULE]
+    : [...BASE_MODULES, FINAL_MODULE];
 
   const firstModule = 1;
   const reviewStep = firstModule + DEFAULT_ENABLED.length;
@@ -109,12 +148,48 @@ export default function MarketingApp() {
     return next;
   };
 
-  const buildPayload = (forms = savedForms) => ({
-    sessionId,
-    basics: forms.basics ?? {},
-    accounts: forms.accounts ?? {},
-    strategy: forms.strategy ?? {},
-  });
+  // Builds the submit/autosave payload from savedForms. Two things beyond a
+  // plain copy: strips stale "Other" text left behind when that option was
+  // deselected, and drops the two hotel-only modules entirely unless the
+  // client currently answers 'yes' to isHotelProject — savedForms never clears
+  // them on its own, so switching the gate answer back to 'no' would otherwise
+  // still persist a prior hospitality-specific answer set.
+  const buildPayload = (forms = savedForms) => {
+    const isHotel = forms.hotelGate?.isHotelProject === 'yes';
+
+    let company = forms.company ?? {};
+    company = clearOther(company, 'industryOther', company.industry === 'other');
+    company = clearOther(company, 'goalOther', company.goalOtherEnabled === 'on');
+
+    let brand = forms.brand ?? {};
+    brand = clearOther(brand, 'resourceOther', brand.resourceOtherEnabled === 'on');
+
+    let structure = forms.structure ?? {};
+    structure = clearOther(structure, 'pageOther', structure.pageOtherEnabled === 'on');
+
+    let hotelGeneral = forms.hotelGeneral ?? {};
+    hotelGeneral = clearOther(hotelGeneral, 'propertyTypeOther', hotelGeneral.propertyType === 'other');
+
+    let hotelTechnical = forms.hotelTechnical ?? {};
+    hotelTechnical = clearOther(hotelTechnical, 'bookingEngineOther', hotelTechnical.bookingEngine === 'other');
+
+    let features = forms.features ?? {};
+    features = clearOther(features, 'featureOther', features.featureOtherEnabled === 'on');
+    features = clearOther(features, 'domainPropertyOther', features.domainProperty === 'other');
+    features = clearOther(features, 'hostingProviderOther', features.hostingProvider === 'other');
+
+    return {
+      sessionId,
+      company,
+      brand,
+      structure,
+      inspiration: forms.inspiration ?? {},
+      hotelGate: forms.hotelGate ?? {},
+      hotelGeneral: isHotel ? hotelGeneral : {},
+      hotelTechnical: isHotel ? hotelTechnical : {},
+      features,
+    };
+  };
 
   const saveInBackground = (payload: ReturnType<typeof buildPayload>) => {
     // Don't save until the real Session ID is known (slug still resolving).
@@ -122,7 +197,7 @@ export default function MarketingApp() {
     setSaveStatus('saving');
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
-    fetch('/api/marketing-submit', {
+    fetch('/api/website-submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -157,7 +232,7 @@ export default function MarketingApp() {
       setIsSubmitting(true);
       setSubmitError(null);
       try {
-        const res = await fetch('/api/marketing-submit', {
+        const res = await fetch('/api/website-submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(finalPayload),
@@ -166,13 +241,11 @@ export default function MarketingApp() {
         if (!res.ok) throw new Error(data.error || 'Submit failed');
 
         // Fire-and-forget — email failure shouldn't block the success state.
-        // Shares the unified send-onboarding endpoint with the hotel and
-        // website flows (kept the two functions separate would have pushed
-        // us over Vercel's Hobby-plan function ceiling).
+        // The unified send-onboarding endpoint dispatches by `product`.
         fetch('/api/send-onboarding', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...finalPayload, product: 'marketing' }),
+          body: JSON.stringify({ ...finalPayload, product: 'website' }),
         }).catch((e) => console.warn('[send-onboarding] failed:', e));
 
         window.scrollTo(0, 0);
@@ -188,9 +261,14 @@ export default function MarketingApp() {
   };
 
   const moduleComponents: Record<string, ReactNode> = {
-    basics:   <BusinessBasicsStep prefill={savedForms.basics ?? {}} />,
-    accounts: <AccountsAssetsStep prefill={savedForms.accounts ?? {}} />,
-    strategy: <StrategyBudgetStep prefill={savedForms.strategy ?? {}} />,
+    company:        <CompanyInformationStep prefill={savedForms.company ?? {}} />,
+    brand:          <BrandIdentityStep prefill={savedForms.brand ?? {}} />,
+    structure:      <WebsiteStructureContentStep prefill={savedForms.structure ?? {}} />,
+    inspiration:    <InspirationReferencesStep prefill={savedForms.inspiration ?? {}} />,
+    hotelGate:      <HotelGateStep prefill={savedForms.hotelGate ?? {}} />,
+    hotelGeneral:   <HotelGeneralInfoStep prefill={savedForms.hotelGeneral ?? {}} />,
+    hotelTechnical: <HotelTechnicalInfoStep prefill={savedForms.hotelTechnical ?? {}} />,
+    features:       <FeaturesInfrastructureStep prefill={savedForms.features ?? {}} />,
   };
 
   return (
@@ -201,7 +279,7 @@ export default function MarketingApp() {
           {/* Step 0 – Welcome */}
           {currentStep === 0 && (
             <motion.div key="welcome" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="h-full">
-              <MarketingWelcomeStep onNext={goNext} />
+              <WebsiteWelcomeStep onNext={goNext} />
             </motion.div>
           )}
 
@@ -229,11 +307,16 @@ export default function MarketingApp() {
 
                   {currentStep === reviewStep && (
                     <motion.div key="review" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                      <MarketingReviewStep
+                      <WebsiteReviewStep
                         reviewData={{
-                          basics:   savedForms.basics   ?? {},
-                          accounts: savedForms.accounts ?? {},
-                          strategy: savedForms.strategy ?? {},
+                          company:        savedForms.company        ?? {},
+                          brand:          savedForms.brand          ?? {},
+                          structure:      savedForms.structure      ?? {},
+                          inspiration:    savedForms.inspiration    ?? {},
+                          hotelGate:      savedForms.hotelGate      ?? {},
+                          hotelGeneral:   savedForms.hotelGeneral   ?? {},
+                          hotelTechnical: savedForms.hotelTechnical ?? {},
+                          features:       savedForms.features       ?? {},
                         }}
                       />
                     </motion.div>
@@ -248,7 +331,7 @@ export default function MarketingApp() {
             <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full"
               onAnimationStart={() => localStorage.removeItem(STORAGE_KEY)}
             >
-              <MarketingSuccessStep engagementSlug={engagementSlug} />
+              <WebsiteSuccessStep engagementSlug={engagementSlug} />
             </motion.div>
           )}
 
