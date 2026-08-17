@@ -20,7 +20,8 @@ import { CancellationPoliciesStep, CancellationPolicy, CancellationPoliciesStepH
 import { RoomInformationStep, RoomItem, RoomInformationStepHandle } from './steps/modules/RoomInformationStep';
 import { ExperiencesStep } from './steps/modules/ExperiencesStep';
 import { AddOnsStep, AddonConfig } from './steps/modules/AddOnsStep';
-import { RatesPackagesStep, RatesData } from './steps/modules/RatesPackagesStep';
+import { RatesPackagesStep, RatesPackagesStepHandle, RatesData, RatePlan } from './steps/modules/RatesPackagesStep';
+import { normalizeRatePlans } from './utils/rates';
 import { TaxesFeesStep, TaxItem, TaxesFeesStepHandle } from './steps/modules/TaxesFeesStep';
 import { SiteMinderSection, SiteMinderData, DEFAULT_SITEMINDER } from './steps/modules/SiteMinderSection';
 
@@ -223,7 +224,9 @@ export default function App() {
         if (data.rooms?.length)                setRooms(data.rooms);
         if (data.cancellationPolicies?.length) setCancellationPolicies(data.cancellationPolicies);
         if (data.addons && Object.keys(data.addons).length) setAddons(data.addons);
-        if (data.rates  && Object.keys(data.rates).length)  setRates(data.rates);
+        // Rates may still be stored as a single flat object on onboardings created
+        // before multiple rate plans existed — normalizeRatePlans reads both shapes.
+        setRates(normalizeRatePlans(data.rates));
         if (data.taxes?.length)                setTaxes(data.taxes);
         if (data.siteMinder)                   setSiteMinder(data.siteMinder);
       })
@@ -239,7 +242,7 @@ export default function App() {
   const [siteMinder, setSiteMinder] = useState<SiteMinderData>(DEFAULT_SITEMINDER);
   const [rooms, setRooms] = useState<RoomItem[]>([]);
   const [addons, setAddons] = useState<Record<string, AddonConfig>>(DEFAULT_ADDONS);
-  const [rates, setRates] = useState<RatesData>({});
+  const [rates, setRates] = useState<RatesData>([]);
   const [taxes, setTaxes] = useState<TaxItem[]>(DEFAULT_TAXES);
 
   // Refs into the card-based steps (open form + internal Save button, distinct
@@ -249,6 +252,7 @@ export default function App() {
   const roomsStepRef = useRef<RoomInformationStepHandle>(null);
   const cancellationStepRef = useRef<CancellationPoliciesStepHandle>(null);
   const taxesStepRef = useRef<TaxesFeesStepHandle>(null);
+  const ratesStepRef = useRef<RatesPackagesStepHandle>(null);
 
   // ── Saved simple-form data (collected via FormData on navigation) ─────────
   const [savedForms, setSavedForms] = useState<Record<string, Record<string, string>>>({});
@@ -302,6 +306,7 @@ export default function App() {
     const freshRooms      = roomsStepRef.current?.commitPending()       ?? rooms;
     const freshPolicies   = cancellationStepRef.current?.commitPending() ?? cancellationPolicies;
     const freshTaxes      = taxesStepRef.current?.commitPending()       ?? taxes;
+    const freshRates      = ratesStepRef.current?.commitPending()       ?? rates;
     window.scrollTo(0, 0);
     setCurrentStep((s) => s + 1);
     // Fire-and-forget save with the freshest data
@@ -310,6 +315,7 @@ export default function App() {
         rooms: freshRooms,
         cancellationPolicies: freshPolicies,
         taxes: freshTaxes,
+        rates: freshRates,
       }));
     }
   };
@@ -328,6 +334,7 @@ export default function App() {
       rooms?: RoomItem[];
       cancellationPolicies?: CancellationPolicy[];
       taxes?: TaxItem[];
+      rates?: RatePlan[];
     },
   ) => {
     const forms = extraForms ?? savedForms;
@@ -379,7 +386,7 @@ export default function App() {
       cancellationPolicies: stateOverrides?.cancellationPolicies ?? cancellationPolicies,
       rooms: stateOverrides?.rooms ?? rooms,
       addons,
-      rates,
+      rates: stateOverrides?.rates ?? rates,
       taxes: stateOverrides?.taxes ?? taxes,
       groupMembers,
       siteMinder,
@@ -486,7 +493,7 @@ export default function App() {
     rooms:        <RoomInformationStep ref={roomsStepRef} rooms={rooms} setRooms={setRooms} />,
     experiences:  <ExperiencesStep />,
     addons:       <AddOnsStep addons={addons} setAddons={setAddons} />,
-    rates:        <RatesPackagesStep rates={rates} setRates={setRates} rooms={rooms} />,
+    rates:        <RatesPackagesStep ref={ratesStepRef} rates={rates} setRates={setRates} rooms={rooms} />,
     taxes:        <TaxesFeesStep ref={taxesStepRef} taxes={taxes} setTaxes={setTaxes} />,
   };
 

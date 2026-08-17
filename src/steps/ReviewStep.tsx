@@ -10,6 +10,7 @@ import type { TaxItem } from './modules/TaxesFeesStep';
 import type { SiteMinderData } from './modules/SiteMinderSection';
 import { formatBeds } from '../utils/beds';
 import { formatCancellationWindow } from '../utils/cancellation';
+import { formatAppliesTo, normalizeRatePlans } from '../utils/rates';
 
 export interface ReviewData {
   general: Record<string, string>;
@@ -166,17 +167,32 @@ const ModuleBody = ({ moduleId, data }: { moduleId: string; data: ReviewData }) 
   }
 
   if (moduleId === 'rates') {
-    const entries = Object.entries(data.rates).filter(([, v]) => v && String(v).trim() !== '');
-    if (entries.length === 0) return <Empty />;
+    // normalizeRatePlans so an onboarding still holding the old single-object
+    // shape renders as one plan instead of a list of numeric keys.
+    const plans = normalizeRatePlans(data.rates);
+    if (plans.length === 0) return <Empty />;
     return (
-      <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2.5 text-xs">
-        {entries.map(([k, v]) => (
-          <div key={k} className="flex flex-col gap-0.5">
-            <dt className="font-bold text-primary text-[10px] uppercase tracking-wider">{friendly(k)}</dt>
-            <dd className="text-on-surface-variant break-words">{v}</dd>
-          </div>
+      <ul className="space-y-3 text-xs">
+        {plans.map((p) => (
+          <li key={p.id} className="p-3 bg-surface-container-low/50 rounded-lg">
+            <p className="font-bold text-primary text-sm mb-0.5">
+              {p.shortTitle || p.rateCode || 'Rate Plan'}
+              {p.rateCode && <span className="text-[10px] text-on-surface-variant font-normal"> · {p.rateCode}</span>}
+            </p>
+            <p className="text-on-surface-variant">
+              {[p.rateGroup, p.status, `Rooms: ${formatAppliesTo(p)}`].filter(Boolean).join(' · ')}
+            </p>
+            {(p.availFrom || p.availTo) && (
+              <p className="text-on-surface-variant mt-1 text-[10px]">
+                Bookable {p.availFrom || '—'} → {p.availTo || '—'}
+                {p.minStay ? ` · min ${p.minStay} nights` : ''}
+                {p.maxStay ? ` · max ${p.maxStay} nights` : ''}
+              </p>
+            )}
+            {p.description && <p className="text-on-surface-variant mt-1.5 italic">{p.description}</p>}
+          </li>
         ))}
-      </dl>
+      </ul>
     );
   }
 

@@ -348,19 +348,90 @@ export function createSections(
   // ═══════════════════════════════════════════════════════════════════════════
   // RATES
   // ═══════════════════════════════════════════════════════════════════════════
-  const RatesSection: React.FC<{ rates: Record<string, string>; sessionId: string }> = ({
-    rates = {},
-    sessionId,
-  }) => (
-    <Page size="A4" style={styles.page}>
-      <SectionHeader title="Rates & Packages" eyebrow="STEP 07" />
-      <View style={styles.contentBody}>
-        <KeyValueGrid data={rates} />
-      </View>
-      <Watermark />
-      <PageFooter sessionId={sessionId} />
-    </Page>
-  );
+  // `rates` arrives as an array of plans, but onboardings created before multiple
+  // rate plans existed stored a single flat object — and the payload we render
+  // comes straight from the client, so an older tab can still post that shape.
+  // Duplicated from src/utils/rates.ts because api/ can't import from src/
+  // (same boundary as formatCancellationWindow above). Keep the two in sync.
+  const normalizeRatePlans = (raw: any): any[] => {
+    if (raw === null || raw === undefined) return [];
+    if (typeof raw === 'string') {
+      const t = raw.trim();
+      if (t.startsWith('{') || t.startsWith('[')) {
+        try { return normalizeRatePlans(JSON.parse(t)); } catch { return []; }
+      }
+      return [];
+    }
+    if (typeof raw !== 'object') return [];
+    if (Array.isArray(raw)) {
+      return raw.filter((p) => !!p && typeof p === 'object' && !Array.isArray(p));
+    }
+    const hasValue = Object.values(raw).some(
+      (v) => v !== null && v !== undefined && String(v).trim() !== '',
+    );
+    return hasValue ? [raw] : [];
+  };
+
+  const RatesSection: React.FC<{ rates: any; sessionId: string }> = ({ rates, sessionId }) => {
+    const plans = normalizeRatePlans(rates);
+    return (
+      <Page size="A4" style={styles.page} wrap>
+        <SectionHeader
+          title="Rates & Packages"
+          eyebrow={`${plans.length} RATE PLAN${plans.length === 1 ? '' : 'S'}`}
+        />
+        <View style={styles.contentBody}>
+          {plans.length === 0 ? (
+            <Text style={styles.empty}>No rate plans defined.</Text>
+          ) : (
+            plans.map((p, i) => {
+              // Legacy plans carry a single `appliesTo` room instead of the array.
+              const rooms = Array.isArray(p.appliesToRooms) && p.appliesToRooms.length > 0
+                ? p.appliesToRooms.join(', ')
+                : p.appliesTo || 'All rooms';
+              // Built explicitly rather than spread, for three reasons: `id` must
+              // not leak in as an "Id" label, the multi-select has to be flattened
+              // to a string before KeyValueGrid stringifies it, and the key order
+              // here is the printed order — a spread would inherit whatever
+              // insertion order that particular client happened to produce.
+              const grid = {
+                rateGroup: p.rateGroup,
+                status: p.status,
+                orderIndex: p.orderIndex,
+                availFrom: p.availFrom,
+                availTo: p.availTo,
+                minStay: p.minStay,
+                maxStay: p.maxStay,
+                appliesToRooms: rooms,
+                longTitle: p.longTitle,
+                tags: p.tags,
+                description: p.description,
+                imageUrl: p.imageUrl,
+                salesMessages: p.salesMessages,
+                terms: p.terms,
+              };
+              // No wrap={false} here (unlike RoomsSection): rate plans carry
+              // description / salesMessages / terms, any of which can exceed a
+              // page — an unwrappable over-tall block gets clipped, not paginated.
+              return (
+                <View key={p.id ?? i} style={styles.card}>
+                  <Text style={styles.cardTitle}>
+                    {p.shortTitle || p.rateCode || `Rate plan ${i + 1}`}
+                  </Text>
+                  <Text style={styles.cardSubtitle}>
+                    {[p.rateCode, p.rateGroup, p.status].filter(Boolean).join(' · ') || '—'}
+                  </Text>
+                  <KeyValueGrid data={grid} />
+                </View>
+              );
+            })
+          )}
+        </View>
+        <Watermark />
+        <PageFooter sessionId={sessionId} />
+      </Page>
+    );
+  };
 
   // ═══════════════════════════════════════════════════════════════════════════
   // TAXES

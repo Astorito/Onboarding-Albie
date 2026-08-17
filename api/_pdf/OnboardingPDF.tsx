@@ -42,7 +42,7 @@ export function createOnboardingPDF(pdf: { Document: any; Page: any; Text: any; 
         <CancellationSection items={payload.cancellationPolicies ?? []} sessionId={sessionId} />
         <RoomsSection rooms={payload.rooms ?? []} sessionId={sessionId} />
         <AddonsSection addons={payload.addons ?? {}} sessionId={sessionId} />
-        <RatesSection rates={payload.rates ?? {}} sessionId={sessionId} />
+        <RatesSection rates={payload.rates} sessionId={sessionId} />
         <TaxesSection taxes={payload.taxes ?? []} sessionId={sessionId} />
       </Document>
     );
