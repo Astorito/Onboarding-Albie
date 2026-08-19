@@ -294,6 +294,15 @@ export default function WebsiteApp() {
                     className="h-8 w-auto absolute left-0"
                   />
                   <ProgressBar currentStep={progressCurrent} totalSteps={progressTotal} />
+                  {engagementSlug && (
+                    <a
+                      href={`/e/${engagementSlug}`}
+                      className="absolute right-0 flex items-center gap-1 text-xs font-semibold text-primary hover:text-secondary transition-colors whitespace-nowrap"
+                    >
+                      <Icon name="arrow_back" className="text-sm" />
+                      Your onboardings
+                    </a>
+                  )}
                 </div>
               </div>
 
