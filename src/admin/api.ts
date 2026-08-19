@@ -10,14 +10,19 @@ export interface Onboarding {
   'Session ID': string;
   'Account ID': string;
   'Onboarding Name': string;
-  'Status': string;
-  'PDF Link': string;
+  'Status'?: string;
+  'PDF Link'?: string;
   'Created By': string;
   'Admin Created At': string;
   'POC Email'?: string;
   'Property Name'?: string;
   'Timestamp'?: string;
-  'Type'?: 'hotel' | 'marketing' | 'webdesign';
+  'Type'?: 'hotel' | 'marketing' | 'webdesign' | 'engagement';
+  // Only present on 'engagement' rows — which products are bundled behind
+  // this hub link.
+  'Albie Enabled'?: boolean;
+  'Marketing Enabled'?: boolean;
+  'Web Design Enabled'?: boolean;
 }
 
 export type CreateOnboardingResult =

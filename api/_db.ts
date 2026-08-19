@@ -487,6 +487,15 @@ export async function listAirtableOnboardings(): Promise<Record<string, any>[]> 
   return out;
 }
 
+// Used by the admin dashboard to show each multi-product Engagement as its
+// own list entry (with a working /e/<slug> hub link), instead of only ever
+// surfacing that link once, at creation time.
+export async function listAirtableEngagements(): Promise<Record<string, any>[]> {
+  if (!isAirtableConfigured()) return [];
+  const recs = await listAllRecords(ENGAGEMENTS_TABLE);
+  return recs.map((r) => r.fields);
+}
+
 function generateSessionId(): string {
   const rand = Math.random().toString(36).slice(2, 8);
   return `albie_${Date.now()}_${rand}`;

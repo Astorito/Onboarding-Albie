@@ -8,7 +8,7 @@ import {
   findRowBySessionId, getSpreadsheetMeta, findTab,
 } from '../_sheets';
 import {
-  listAirtableOnboardings, createAirtableOnboarding,
+  listAirtableOnboardings, listAirtableEngagements, createAirtableOnboarding,
   deleteAirtableOnboardingBySessionId, isAirtableConfigured,
   createEngagement, type EngagementProducts,
 } from '../_db';
@@ -33,15 +33,45 @@ export default async function handler(req: any, res: any) {
   const sheetId = process.env.GOOGLE_SHEET_ID;
 
   // ── GET: return all onboardings — Airtable (new) + Sheets (legacy) merged ──
+  // Engagements (2+ products bundled behind one /e/<slug> hub link) are
+  // listed as a single entry rather than one per product, so their hub link
+  // stays discoverable/copyable after the creation modal has been closed —
+  // otherwise the individual product rows below would each generate their
+  // own single-product link and the hub link would be lost for good.
   if (req.method === 'GET') {
-    const airtableRows = await listAirtableOnboardings();
+    const [airtableRows, engagementRows] = await Promise.all([
+      listAirtableOnboardings(),
+      listAirtableEngagements(),
+    ]);
+
+    const bundledSessionIds = new Set<string>();
+    for (const eng of engagementRows) {
+      for (const key of ['Hotel Session ID', 'Marketing Session ID', 'Web Design Session ID']) {
+        if (eng[key]) bundledSessionIds.add(eng[key]);
+      }
+    }
+    const unbundledAirtableRows = airtableRows.filter((r) => !bundledSessionIds.has(r['Session ID']));
+
+    const engagementPseudoRows = engagementRows.map((f) => ({
+      'Session ID': f['Engagement ID'],
+      'Account ID': f['Account ID'] || '',
+      'Onboarding Name': f['Onboarding Name'] || '',
+      'Created By': f['Created By'] || '',
+      'Admin Created At': f['Admin Created At'] || '',
+      'POC Email': f['POC Email'] || '',
+      'Type': 'engagement' as const,
+      'Albie Enabled': !!f['Albie Enabled'],
+      'Marketing Enabled': !!f['Marketing Enabled'],
+      'Web Design Enabled': !!f['Web Design Enabled'],
+    }));
+
     let sheetRows: Record<string, string>[] = [];
     if (sheetId) {
       const sheets = getSheetsClient(getAuth());
       const { rows } = await readSheetAsObjects(sheets, sheetId, ONBOARDINGS_TAB);
       sheetRows = rows;
     }
-    return res.status(200).json([...airtableRows, ...sheetRows]);
+    return res.status(200).json([...engagementPseudoRows, ...unbundledAirtableRows, ...sheetRows]);
   }
 
   // ── POST: create new onboarding ──────────────────────────────────────────

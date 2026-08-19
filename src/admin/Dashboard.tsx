@@ -50,6 +50,15 @@ function MetricCard({ label, value }: { label: string; value: number }) {
   );
 }
 
+function engagementProductsLabel(o: Onboarding): string {
+  const products = [
+    o['Albie Enabled'] && 'Albie',
+    o['Marketing Enabled'] && 'Marketing',
+    o['Web Design Enabled'] && 'Web Design',
+  ].filter(Boolean);
+  return products.join(' + ') || 'No products';
+}
+
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
@@ -104,12 +113,23 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
 
   const copyLink = (o: Onboarding) => {
     const sessionId = o['Session ID'];
+    const slug = slugFromRow(o['Onboarding Name'] ?? '', sessionId);
+    // An engagement bundles 2+ products behind one hub screen — copy that
+    // link, never a single product's direct link.
+    if (o['Type'] === 'engagement') {
+      const link = `${window.location.origin}/e/${slug || sessionId}`;
+      navigator.clipboard.writeText(link);
+      setCopiedId(sessionId);
+      setTimeout(() => setCopiedId(''), 2000);
+      return;
+    }
     // Prefer the readable, resolvable /o/<slug> link; fall back to the legacy
     // ?token= link if we can't derive a slug (e.g. missing name/session id).
-    const slug = slugFromRow(o['Onboarding Name'] ?? '', sessionId);
+    const basePath = o['Type'] === 'webdesign' ? '/website/o/' : o['Type'] === 'marketing' ? '/marketing/o/' : '/o/';
+    const fallbackPath = o['Type'] === 'webdesign' ? '/website?token=' : o['Type'] === 'marketing' ? '/marketing?token=' : '/?token=';
     const link = slug
-      ? `${window.location.origin}/o/${slug}`
-      : `${window.location.origin}/?token=${sessionId}`;
+      ? `${window.location.origin}${basePath}${slug}`
+      : `${window.location.origin}${fallbackPath}${sessionId}`;
     navigator.clipboard.writeText(link);
     setCopiedId(sessionId);
     setTimeout(() => setCopiedId(''), 2000);
@@ -234,7 +254,13 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
                                 <p className="font-semibold text-[#0D3A39] truncate">
                                   {o['Onboarding Name'] || o['Property Name'] || sessionId}
                                 </p>
-                                <StatusBadge status={o['Status']} />
+                                {o['Type'] === 'engagement' ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#2F6B6D]/10 text-[#2F6B6D]">
+                                    {engagementProductsLabel(o)}
+                                  </span>
+                                ) : (
+                                  <StatusBadge status={o['Status'] ?? ''} />
+                                )}
                               </div>
                               <p className="text-xs text-gray-400">
                                 Created {formatDate(o['Admin Created At'] || o['Timestamp'] || '')}
@@ -260,13 +286,15 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
                               >
                                 {copiedId === sessionId ? 'Copied!' : 'Copy link'}
                               </button>
-                              <button
-                                onClick={() => setDeleteTarget(o)}
-                                className="text-xs font-semibold text-red-400 border border-red-100 px-3 py-2 rounded-lg hover:bg-red-50 transition cursor-pointer"
-                                title="Delete onboarding"
-                              >
-                                Delete
-                              </button>
+                              {o['Type'] !== 'engagement' && (
+                                <button
+                                  onClick={() => setDeleteTarget(o)}
+                                  className="text-xs font-semibold text-red-400 border border-red-100 px-3 py-2 rounded-lg hover:bg-red-50 transition cursor-pointer"
+                                  title="Delete onboarding"
+                                >
+                                  Delete
+                                </button>
+                              )}
                             </div>
                           </div>
                         );
