@@ -138,6 +138,15 @@ export default function App() {
       .then(r => r.ok ? r.json() : null)
       .then((data) => {
         if (!data) return;
+        // This product turns out to be bundled into a multi-product
+        // Engagement, but we got here via its own bare link (no ?engagement=
+        // — e.g. an old/stale link, or one shared directly instead of through
+        // the hub). Redirect to the hub instead of silently only showing
+        // this one product.
+        if (!engagementSlug && data.engagementSlug) {
+          window.location.replace(`/e/${data.engagementSlug}`);
+          return;
+        }
         // Learn the real Session ID (essential when we arrived via ?slug=) and
         // persist it so saves target the right row.
         if (data.sessionId) {

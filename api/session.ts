@@ -5,7 +5,10 @@
 import { getAuth, getSheetsClient, ONBOARDINGS_TAB, findRowBySessionId, readSheetAsObjects } from './_sheets';
 import { SHEET_HEADERS } from './submit';
 import { slugFromRow } from './_slug';
-import { findOnboardingBySessionId, findOnboardingBySlug, sessionResponseFromHit } from './_db';
+import {
+  findOnboardingBySessionId, findOnboardingBySlug, sessionResponseFromHit,
+  findEngagementByProductSessionId,
+} from './_db';
 
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -25,7 +28,15 @@ export default async function handler(req: any, res: any) {
       ? await findOnboardingBySlug(slug)
       : await findOnboardingBySessionId(token ?? '');
     if (airtableHit) {
-      return res.status(200).json(sessionResponseFromHit(airtableHit));
+      const response = sessionResponseFromHit(airtableHit);
+      // This product may be bundled into a multi-product Engagement — tell the
+      // client even if the request has no ?engagement= param (e.g. someone
+      // opened the bare product link directly), so it can redirect to the hub.
+      const engagementRecord = await findEngagementByProductSessionId(response.sessionId);
+      const engagementSlug = engagementRecord
+        ? (slugFromRow(engagementRecord.fields['Onboarding Name'] || '', engagementRecord.fields['Engagement ID'] || '') || engagementRecord.fields['Engagement ID'])
+        : null;
+      return res.status(200).json({ ...response, engagementSlug });
     }
 
     // ── Fallback: existing onboardings still live in the Sheet (unchanged) ──

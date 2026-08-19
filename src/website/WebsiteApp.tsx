@@ -95,6 +95,13 @@ export default function WebsiteApp() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!data) return;
+        // This product turns out to be bundled into a multi-product
+        // Engagement, but we got here via its own bare link (no ?engagement=).
+        // Redirect to the hub instead of silently only showing this product.
+        if (!engagementSlug && data.engagementSlug) {
+          window.location.replace(`/e/${data.engagementSlug}`);
+          return;
+        }
         if (data.sessionId) {
           setSessionId(data.sessionId);
           localStorage.setItem(STORAGE_KEY, data.sessionId);

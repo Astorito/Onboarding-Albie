@@ -668,6 +668,23 @@ export async function findEngagementBySlug(slug: string): Promise<AirtableRecord
   ) ?? null;
 }
 
+// Reverse lookup: given a product's OWN Session ID (Hotel/Marketing/WebDesign),
+// find the Engagement that bundles it, if any. Lets session.ts tell the client
+// "this product belongs to a hub" even when someone opened its bare /o/<slug>
+// link directly (i.e. without the ?engagement= query param the hub's own cards
+// always append) — so the client can redirect to the hub instead of silently
+// rendering just that one product.
+export async function findEngagementByProductSessionId(sessionId: string): Promise<AirtableRecord | null> {
+  if (!isAirtableConfigured() || !sessionId) return null;
+  const all = await listAllRecords(ENGAGEMENTS_TABLE);
+  return all.find(
+    (r) =>
+      r.fields['Hotel Session ID'] === sessionId ||
+      r.fields['Marketing Session ID'] === sessionId ||
+      r.fields['Web Design Session ID'] === sessionId,
+  ) ?? null;
+}
+
 // Shape returned by api/engagement.ts. The Albie card's slug is derived the
 // same way the hotel record's own slug is — same onboarding name, its own
 // Session ID — so no extra Airtable lookup is needed.
