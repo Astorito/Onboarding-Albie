@@ -155,6 +155,46 @@ function rowFromPayload(payload: SubmitPayload): string[] {
   ];
 }
 
+// ─── Blank-overwrite guard ────────────────────────────────────────────────────
+// A save is a WHOLE-ROW overwrite. If the client's state never hydrated (failed
+// session load), the payload it builds is all defaults and empty scalars — and
+// writing it destroys the customer's real answers. That is exactly how "Cowboy
+// Village Resort" lost a completed onboarding.
+//
+// The client now refuses to build such a payload (see the `loadState` gate in
+// src/App.tsx), but that only protects clients running the new bundle. A tab
+// opened before that deploy still runs the old code, so the same check has to
+// exist here, where nothing can bypass it.
+//
+// Deliberately narrow: it only refuses when the incoming payload has NO property
+// name AND NO rooms, while the stored row HAS one of them. A partial edit, a
+// genuinely new onboarding, and a still-empty onboarding all pass through
+// untouched. Rejecting is recoverable (the user sees an error and can reload);
+// blanking the row is not.
+function isPayloadBlank(payload: SubmitPayload): boolean {
+  const name = (payload.general?.propertyName ?? '').trim();
+  const rooms = Array.isArray(payload.rooms) ? payload.rooms : [];
+  return name === '' && rooms.length === 0;
+}
+
+function storedHasContent(propertyName: unknown, roomsJson: unknown): boolean {
+  const name = String(propertyName ?? '').trim();
+  if (name !== '') return true;
+  const raw = String(roomsJson ?? '').trim();
+  if (raw === '' || raw === '[]') return false;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0;
+  } catch {
+    // Unparseable but non-empty: treat as content. Better to refuse a write we
+    // can't reason about than to blank something that might be real.
+    return true;
+  }
+}
+
+const BLANK_OVERWRITE_ERROR =
+  'Refused: this would erase existing answers. Your saved data could not be loaded — reload the page and try again.';
+
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -175,6 +215,13 @@ export default async function handler(req: any, res: any) {
     // there and never touch Sheets for this request. ───────────────────────
     const airtableHit = await findOnboardingBySessionId(payload.sessionId);
     if (airtableHit) {
+      if (
+        isPayloadBlank(payload) &&
+        storedHasContent(airtableHit.record.fields['Property Name'], airtableHit.record.fields['Rooms'])
+      ) {
+        console.warn(`[submit] blocked blank overwrite of ${payload.sessionId} (Airtable)`);
+        return res.status(409).json({ error: BLANK_OVERWRITE_ERROR });
+      }
       await writeHotelFields(airtableHit.record.id, payload);
       return res.status(200).json({ success: true, action: 'updated' });
     }
@@ -202,6 +249,25 @@ export default async function handler(req: any, res: any) {
     let action: 'updated' | 'created';
 
     if (sheetRowNumber > 0) {
+      // Same blank-overwrite guard as the Airtable branch above. Read the row
+      // positionally (indices, not header names) because writes here are
+      // positional too — the live header row has drifted from SHEET_HEADERS, so
+      // resolving by name would look at the wrong columns.
+      const existing = await sheets.spreadsheets.values.get({
+        spreadsheetId: sheetId,
+        range: `${ONBOARDINGS_TAB}!A${sheetRowNumber}:AZ${sheetRowNumber}`,
+      });
+      const existingRow = (existing.data.values?.[0] ?? []) as string[];
+      const nameIdx = SHEET_HEADERS.indexOf('Property Name');
+      const roomsIdx = SHEET_HEADERS.indexOf('Rooms');
+      if (
+        isPayloadBlank(payload) &&
+        storedHasContent(existingRow[nameIdx], existingRow[roomsIdx])
+      ) {
+        console.warn(`[submit] blocked blank overwrite of ${payload.sessionId} (Sheets row ${sheetRowNumber})`);
+        return res.status(409).json({ error: BLANK_OVERWRITE_ERROR });
+      }
+
       // ── Update existing row (data cols only — admin cols stay untouched) ─
       await sheets.spreadsheets.values.update({
         spreadsheetId: sheetId,
