@@ -16,9 +16,6 @@ export const SocialWelcomeStep = ({ onNext }: { onNext: () => void }) => (
           Social Media Onboarding
         </h1>
         <p className="font-body-md text-on-surface-variant max-w-lg">
-          <span className="block text-xl font-bold text-primary mb-1.5">
-            Thank you for choosing TAG for your organic social media content.
-          </span>
           This form helps our team understand your business, audience, goals, brand, and
           available resources — so we can develop your content strategy, define your content
           pillars, and plan a monthly calendar that's actually yours. The more detail, links, and

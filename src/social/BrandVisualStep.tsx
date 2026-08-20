@@ -43,7 +43,7 @@ export const BrandVisualStep = ({ prefill = {} }: { prefill?: BrandPrefill }) =>
         panelBorderColor="#000000"
         dotColor="#e6007e"
       >
-        <div className="grid grid-cols-1 gap-y-4">
+        <div className="flex flex-col gap-y-4">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 group/other">
             {VOICE_TRAITS.map(v => (
               <SelectableCard key={v.name} type="checkbox" name={v.name} defaultChecked={prefill[v.name] === 'on'}>
@@ -58,13 +58,12 @@ export const BrandVisualStep = ({ prefill = {} }: { prefill?: BrandPrefill }) =>
             </div>
           </div>
 
-          <FormField label="If your brand were a person, how would you describe its personality?" className="col-span-2">
+          <FormField label="If your brand were a person, how would you describe its personality?">
             <TextareaInput name="brandPersonality" rows={2} defaultValue={prefill.brandPersonality ?? ''} key={prefill.brandPersonality} />
           </FormField>
 
           <FormField
             label="Words & Phrases to Use"
-            className="col-span-2"
             hint="Terms, phrases, taglines, or service names that should be used consistently."
           >
             <TextareaInput name="wordsToUse" rows={2} defaultValue={prefill.wordsToUse ?? ''} key={prefill.wordsToUse} />
@@ -72,14 +71,13 @@ export const BrandVisualStep = ({ prefill = {} }: { prefill?: BrandPrefill }) =>
 
           <FormField
             label="Words & Phrases to Avoid"
-            className="col-span-2"
             hint="Words, phrases, claims, tones, or expressions that should not be used."
           >
             <TextareaInput name="wordsToAvoid" rows={2} defaultValue={prefill.wordsToAvoid ?? ''} key={prefill.wordsToAvoid} />
           </FormField>
 
           <FormField label="Preferred Language" required>
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
               <SelectableCard name="preferredLanguage" value="english" defaultChecked={prefill.preferredLanguage === 'english'} required>
                 English
               </SelectableCard>
@@ -109,7 +107,7 @@ export const BrandVisualStep = ({ prefill = {} }: { prefill?: BrandPrefill }) =>
         panelBorderColor="#000000"
         dotColor="#e6007e"
       >
-        <div className="grid grid-cols-1 gap-y-4">
+        <div className="flex flex-col gap-y-4">
           <FormField label="Do you have an established brand identity?" required>
             <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
               <SelectableCard name="hasBrandIdentity" value="yes" defaultChecked={prefill.hasBrandIdentity === 'yes'} required>
@@ -129,13 +127,12 @@ export const BrandVisualStep = ({ prefill = {} }: { prefill?: BrandPrefill }) =>
 
           <FormField
             label="Brand Materials"
-            className="col-span-2"
             hint="Link to your brand guidelines, brand book, logos, fonts, color palette, graphic templates, photography guidelines, iconography, or previous social media templates. Please confirm TAG has permission to access, edit, and use these materials on social media."
           >
             <TextInput name="brandMaterialsUrl" type="url" placeholder="https://drive.google.com/..." defaultValue={prefill.brandMaterialsUrl ?? ''} key={prefill.brandMaterialsUrl} />
           </FormField>
 
-          <FormField label="How would you describe the visual style you'd like to maintain?" className="col-span-2">
+          <FormField label="How would you describe the visual style you'd like to maintain?">
             <TextareaInput name="visualStyle" rows={2} defaultValue={prefill.visualStyle ?? ''} key={prefill.visualStyle} />
           </FormField>
 

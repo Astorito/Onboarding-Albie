@@ -32,7 +32,7 @@ export const CompanyProfilesStep = ({ prefill = {} }: { prefill?: CompanyPrefill
           </FormField>
 
           <FormField label="Do you have an active website?" required>
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
               <SelectableCard name="hasWebsite" value="yes" defaultChecked={prefill.hasWebsite === 'yes'} required>
                 Yes
               </SelectableCard>

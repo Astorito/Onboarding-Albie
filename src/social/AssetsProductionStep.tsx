@@ -38,7 +38,7 @@ export const AssetsProductionStep = ({ prefill = {} }: { prefill?: AssetsPrefill
         panelBorderColor="#000000"
         dotColor="#e6007e"
       >
-        <div className="grid grid-cols-1 gap-y-4">
+        <div className="flex flex-col gap-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
             {ASSET_TYPES.map(a => (
               <SelectableCard key={a.name} type="checkbox" name={a.name} defaultChecked={prefill[a.name] === 'on'}>
@@ -50,13 +50,12 @@ export const AssetsProductionStep = ({ prefill = {} }: { prefill?: AssetsPrefill
           <FormField
             label="Asset Library"
             required
-            className="col-span-2"
             hint="Link to the main folder or platform where images, videos, logos, and other creative assets are stored."
           >
             <TextInput name="assetLibraryUrl" type="url" placeholder="https://drive.google.com/..." defaultValue={prefill.assetLibraryUrl ?? ''} key={prefill.assetLibraryUrl} />
           </FormField>
 
-          <label className="flex items-start gap-2.5 text-sm text-on-surface cursor-pointer col-span-2">
+          <label className="flex items-start gap-2.5 text-sm text-on-surface cursor-pointer">
             <input
               type="checkbox"
               name="assetLibraryPermissionConfirmed"
@@ -69,7 +68,6 @@ export const AssetsProductionStep = ({ prefill = {} }: { prefill?: AssetsPrefill
 
           <FormField
             label="Restricted Assets"
-            className="col-span-2"
             hint="Any images, videos, people, locations, products, or materials that should not be used."
           >
             <TextareaInput name="restrictedAssets" rows={2} defaultValue={prefill.restrictedAssets ?? ''} key={prefill.restrictedAssets} />
@@ -85,7 +83,7 @@ export const AssetsProductionStep = ({ prefill = {} }: { prefill?: AssetsPrefill
         panelBorderColor="#000000"
         dotColor="#e6007e"
       >
-        <div className="grid grid-cols-1 gap-y-4">
+        <div className="flex flex-col gap-y-4">
           <FormField label="Will your team regularly provide new photos, videos, updates, and information?" required>
             <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
               <SelectableCard name="willProvideNewContent" value="yes" defaultChecked={prefill.willProvideNewContent === 'yes'} required>
@@ -106,7 +104,6 @@ export const AssetsProductionStep = ({ prefill = {} }: { prefill?: AssetsPrefill
           <FormField
             label="Internal Content Contact (POC)"
             required
-            className="col-span-2"
             hint="Who should TAG contact when new photos, videos, event details, menus, promotions, or business updates are needed?"
           >
             <TextInput name="contentContactPerson" placeholder="Name, role, and contact info" defaultValue={prefill.contentContactPerson ?? ''} key={prefill.contentContactPerson} />
@@ -130,8 +127,8 @@ export const AssetsProductionStep = ({ prefill = {} }: { prefill?: AssetsPrefill
             <TextInput name="onSiteContactInfo" defaultValue={prefill.onSiteContactInfo ?? ''} key={prefill.onSiteContactInfo} />
           </FormField>
 
-          <FormField label="Are you interested in professional photography or video production as an additional service?" className="col-span-2">
-            <div className="flex flex-col sm:flex-row gap-2">
+          <FormField label="Are you interested in professional photography or video production as an additional service?">
+            <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
               <SelectableCard name="interestedInProduction" value="yes" defaultChecked={prefill.interestedInProduction === 'yes'}>
                 Yes
               </SelectableCard>

@@ -20,7 +20,7 @@ export const SelectableCard = ({
   children: ReactNode;
   key?: string;
 }) => (
-  <label className="relative flex items-start gap-3 rounded-xl border-2 border-outline-variant bg-white p-4 cursor-pointer transition-all hover:border-secondary/50 hover:bg-secondary-container/40 has-[:checked]:border-secondary has-[:checked]:bg-secondary-container has-[:checked]:shadow-sm">
+  <label className="relative flex items-start gap-3 rounded-xl border-2 border-outline-variant bg-white p-4 cursor-pointer transition-all shrink-0 hover:border-secondary/50 hover:bg-secondary-container/40 has-[:checked]:border-secondary has-[:checked]:bg-secondary-container has-[:checked]:shadow-sm">
     <input
       type={type}
       name={name}

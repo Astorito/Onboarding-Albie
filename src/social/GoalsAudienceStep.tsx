@@ -41,7 +41,7 @@ export const GoalsAudienceStep = ({ prefill = {} }: { prefill?: GoalsPrefill }) 
         panelBorderColor="#000000"
         dotColor="#e6007e"
       >
-        <div className="grid grid-cols-1 gap-y-4">
+        <div className="flex flex-col gap-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 group/other">
             {GOALS.map(g => (
               <SelectableCard key={g.name} type="checkbox" name={g.name} defaultChecked={prefill[g.name] === 'on'}>
@@ -56,13 +56,12 @@ export const GoalsAudienceStep = ({ prefill = {} }: { prefill?: GoalsPrefill }) 
             </div>
           </div>
 
-          <FormField label="Of the goals selected above, which is the most important and why?" required className="col-span-2">
+          <FormField label="Of the goals selected above, which is the most important and why?" required>
             <TextareaInput name="primaryGoal" rows={2} defaultValue={prefill.primaryGoal ?? ''} key={prefill.primaryGoal} />
           </FormField>
 
           <FormField
             label="What would make this service feel successful to you?"
-            className="col-span-2"
             hint="Describe the results, improvements, or outcomes you'd like to see."
           >
             <TextareaInput name="successDefinition" rows={3} defaultValue={prefill.successDefinition ?? ''} key={prefill.successDefinition} />
@@ -70,7 +69,6 @@ export const GoalsAudienceStep = ({ prefill = {} }: { prefill?: GoalsPrefill }) 
 
           <FormField
             label="Inspiration Brands & References"
-            className="col-span-2"
             hint="Brands, competitors, or accounts that in your opinion are successful, or that inspire you."
           >
             <TextareaInput name="inspirationBrands" rows={2} defaultValue={prefill.inspirationBrands ?? ''} key={prefill.inspirationBrands} />
@@ -86,27 +84,25 @@ export const GoalsAudienceStep = ({ prefill = {} }: { prefill?: GoalsPrefill }) 
         panelBorderColor="#000000"
         dotColor="#e6007e"
       >
-        <div className="grid grid-cols-1 gap-y-4">
+        <div className="flex flex-col gap-y-4">
           <FormField
             label="Who is your primary target audience?"
             required
-            className="col-span-2"
             hint="Age range, location, interests, profession, lifestyle, travel or purchasing behavior, needs or challenges, why they'd choose you, local/national/international, and whether you target consumers, businesses, or both."
           >
             <TextareaInput name="primaryAudience" rows={4} defaultValue={prefill.primaryAudience ?? ''} key={prefill.primaryAudience} />
           </FormField>
 
-          <FormField label="Are there any additional audiences you'd like to reach?" className="col-span-2">
+          <FormField label="Are there any additional audiences you'd like to reach?">
             <TextareaInput name="secondaryAudiences" rows={2} defaultValue={prefill.secondaryAudiences ?? ''} key={prefill.secondaryAudiences} />
           </FormField>
 
-          <FormField label="Who are your current customers, guests, patients, clients, visitors, or users?" className="col-span-2">
+          <FormField label="Who are your current customers, guests, patients, clients, visitors, or users?">
             <TextareaInput name="currentCustomerProfile" rows={2} defaultValue={prefill.currentCustomerProfile ?? ''} key={prefill.currentCustomerProfile} />
           </FormField>
 
           <FormField
             label="Audience Misconceptions"
-            className="col-span-2"
             hint="Any common misconceptions, concerns, or questions your audience has about your business or services."
           >
             <TextareaInput name="audienceMisconceptions" rows={2} defaultValue={prefill.audienceMisconceptions ?? ''} key={prefill.audienceMisconceptions} />
