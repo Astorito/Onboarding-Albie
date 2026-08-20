@@ -112,6 +112,18 @@ export default function App() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Load gate — the guardrail against overwriting real data with defaults ──
+  // Every save is a WHOLE-ROW overwrite built from the state below, and that
+  // state starts at DEFAULT_POLICIES / DEFAULT_TAXES / DEFAULT_ADDONS / [] /
+  // {}. So if the session load fails, the form silently sits on defaults and
+  // the next navigation click writes those defaults over the customer's real
+  // answers. That is exactly how "Cowboy Village Resort" lost its data.
+  //
+  // A save is therefore only allowed once the load has actually resolved.
+  // 'failed' is terminal on purpose: better to save nothing than to save
+  // defaults. `saveInBackground` and `handleSubmit` both gate on this.
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'failed'>('loading');
+
   // ── Intro state ───────────────────────────────────────────────────────────
   const [propertyType, setPropertyType] = useState<'independent' | 'group' | null>(null);
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
@@ -132,12 +144,21 @@ export default function App() {
       : sessionId
         ? `token=${encodeURIComponent(sessionId)}`
         : null;
-    if (!query) return;
+    // No slug and no session id: nothing to load, so there is nothing that
+    // could be overwritten either — a brand-new anonymous visitor.
+    if (!query) { setLoadState('ready'); return; }
 
     fetch(`/api/session?${query}`)
-      .then(r => r.ok ? r.json() : null)
+      .then(async (r) => {
+        // A 404 is legitimate: an id we've never seen (fresh anonymous visitor,
+        // or a stale localStorage id whose row is gone). Nothing to load, but
+        // nothing to clobber either — safe to enable saving.
+        if (r.status === 404) return { __notFound: true } as any;
+        if (!r.ok) throw new Error(`/api/session responded ${r.status}`);
+        return r.json();
+      })
       .then((data) => {
-        if (!data) return;
+        if (!data || data.__notFound) { setLoadState('ready'); return; }
         // This product turns out to be bundled into a multi-product
         // Engagement, but we got here via its own bare link (no ?engagement=
         // — e.g. an old/stale link, or one shared directly instead of through
@@ -238,8 +259,16 @@ export default function App() {
         setRates(normalizeRatePlans(data.rates));
         if (data.taxes?.length)                setTaxes(data.taxes);
         if (data.siteMinder)                   setSiteMinder(data.siteMinder);
+        // Hydration done — saving is now safe.
+        setLoadState('ready');
       })
-      .catch(() => {});
+      .catch((err) => {
+        // Never swallow this. A silent failure here is what turns a transient
+        // network error into permanent data loss: the form looks blank, the
+        // user fills/navigates, and the autosave overwrites the real row.
+        console.error('[session] load failed — saving disabled to protect existing data:', err);
+        setLoadState('failed');
+      });
   // Runs once on mount. Intentionally NOT keyed on sessionId: in slug mode we set
   // sessionId inside this effect, and we don't want a second run to re-apply the
   // prefill over any edits the user may have started.
@@ -407,6 +436,10 @@ export default function App() {
     // Don't save until the real Session ID is known (slug still resolving) —
     // otherwise we'd POST with a null key and risk creating a junk row.
     if (!payload.sessionId) return;
+    // Don't save until the session load resolved. A save is a whole-row
+    // overwrite from state, and unhydrated state is all defaults — see the
+    // loadState declaration for why this matters.
+    if (loadState !== 'ready') return;
     setSaveStatus('saving');
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
@@ -424,7 +457,7 @@ export default function App() {
         // Reset to idle after 2 seconds
         saveTimeoutRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
       });
-  }, []);
+  }, [loadState]);
 
   // ── Submit to Google Sheets + trigger PDF email ──────────────────────────
   const handleSubmit = async () => {
@@ -432,6 +465,16 @@ export default function App() {
     // Guard: never submit before the Session ID is resolved (slug mode).
     if (!finalPayload.sessionId) {
       setSubmitError('Cargando la sesión, esperá un segundo e intentá de nuevo.');
+      return;
+    }
+    // Same guard as saveInBackground: submitting unhydrated state would
+    // overwrite the row with defaults.
+    if (loadState !== 'ready') {
+      setSubmitError(
+        loadState === 'loading'
+          ? 'Cargando tus datos, esperá un segundo e intentá de nuevo.'
+          : 'No pudimos cargar tus datos guardados. Recargá la página antes de enviar — si guardamos ahora se perderían tus respuestas anteriores.',
+      );
       return;
     }
     setIsSubmitting(true);
@@ -652,6 +695,25 @@ export default function App() {
           {saveStatus === 'saved'  && <Icon name="check_circle" className="text-sm" />}
           {saveStatus === 'error'  && <Icon name="error" className="text-sm" />}
           {saveStatus === 'saving' ? 'Guardando…' : saveStatus === 'saved' ? 'Guardado' : 'Error al guardar'}
+        </div>
+      )}
+
+      {/* Load-failure banner — the form is showing defaults, NOT the saved
+          answers, and saving is disabled so we don't overwrite them. Has to be
+          loud: a silent failure here is what caused a real data loss. */}
+      {loadState === 'failed' && (
+        <div className="fixed top-0 left-0 right-0 z-[110] bg-red-600 text-white px-6 py-3 text-sm font-bold flex items-center justify-center gap-3">
+          <Icon name="error" className="text-lg shrink-0" />
+          <span>
+            No pudimos cargar tus respuestas guardadas. Para no perderlas, el guardado está
+            desactivado — recargá la página.
+          </span>
+          <button
+            onClick={() => window.location.reload()}
+            className="shrink-0 bg-white text-red-700 rounded-lg px-4 py-1.5 font-bold hover:opacity-90 cursor-pointer"
+          >
+            Recargar
+          </button>
         </div>
       )}
 

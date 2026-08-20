@@ -54,6 +54,11 @@ export default function MarketingApp() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Saving is a whole-record overwrite built from the state below, so it must
+  // not run until the load has resolved — see the identical guard and the
+  // longer rationale in src/App.tsx.
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'failed'>('loading');
+
   // ── Load server-side session data ──────────────────────────────────────────
   useEffect(() => {
     const query = initialSlug
@@ -61,12 +66,16 @@ export default function MarketingApp() {
       : sessionId
         ? `token=${encodeURIComponent(sessionId)}`
         : null;
-    if (!query) return;
+    if (!query) { setLoadState('ready'); return; }
 
     fetch(`/api/session?${query}`)
-      .then((r) => (r.ok ? r.json() : null))
+      .then(async (r) => {
+        if (r.status === 404) return { __notFound: true } as any;
+        if (!r.ok) throw new Error(`/api/session responded ${r.status}`);
+        return r.json();
+      })
       .then((data) => {
-        if (!data) return;
+        if (!data || data.__notFound) { setLoadState('ready'); return; }
         // This product turns out to be bundled into a multi-product
         // Engagement, but we got here via its own bare link (no ?engagement=).
         // Redirect to the hub instead of silently only showing this product.
@@ -86,8 +95,12 @@ export default function MarketingApp() {
         if (data.accounts && Object.values(data.accounts).some(Boolean)) update.accounts = data.accounts;
         if (data.strategy && Object.values(data.strategy).some(Boolean)) update.strategy = data.strategy;
         if (Object.keys(update).length) setSavedForms((prev) => ({ ...prev, ...update }));
+        setLoadState('ready');
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('[session] load failed — saving disabled to protect existing data:', err);
+        setLoadState('failed');
+      });
   // Runs once on mount — see the identical rationale in src/App.tsx.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -126,6 +139,8 @@ export default function MarketingApp() {
   const saveInBackground = (payload: ReturnType<typeof buildPayload>) => {
     // Don't save until the real Session ID is known (slug still resolving).
     if (!payload.sessionId) return;
+    // Don't save unhydrated state over real answers — see src/App.tsx.
+    if (loadState !== 'ready') return;
     setSaveStatus('saving');
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
@@ -159,6 +174,14 @@ export default function MarketingApp() {
       const finalPayload = buildPayload();
       if (!finalPayload.sessionId) {
         setSubmitError('Loading your session — wait a moment and try again.');
+        return;
+      }
+      if (loadState !== 'ready') {
+        setSubmitError(
+          loadState === 'loading'
+            ? 'Loading your saved answers — wait a moment and try again.'
+            : "We couldn't load your saved answers. Please reload before submitting — saving now would overwrite them.",
+        );
         return;
       }
       setIsSubmitting(true);
@@ -287,6 +310,24 @@ export default function MarketingApp() {
           {saveStatus === 'saved'  && <Icon name="check_circle" className="text-sm" />}
           {saveStatus === 'error'  && <Icon name="error" className="text-sm" />}
           {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved' : 'Save failed'}
+        </div>
+      )}
+
+      {/* Load-failure banner — form is showing defaults, not saved answers, and
+          saving is disabled so we don't overwrite them. See src/App.tsx. */}
+      {loadState === 'failed' && (
+        <div className="fixed top-0 left-0 right-0 z-[110] bg-red-600 text-white px-6 py-3 text-sm font-bold flex items-center justify-center gap-3">
+          <Icon name="error" className="text-lg shrink-0" />
+          <span>
+            We couldn't load your saved answers. Saving is disabled so they aren't overwritten —
+            please reload the page.
+          </span>
+          <button
+            onClick={() => window.location.reload()}
+            className="shrink-0 bg-white text-red-700 rounded-lg px-4 py-1.5 font-bold hover:opacity-90 cursor-pointer"
+          >
+            Reload
+          </button>
         </div>
       )}
 

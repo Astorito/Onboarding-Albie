@@ -7,3 +7,11 @@ coverage/
 .env*
 !.env.example
 .vercel
+
+# Sheet snapshots taken before a manual data repair — contain real customer
+# data, so they stay local. Keep them somewhere safe outside the repo.
+_backup_sheet_*.json
+
+# Quarantined destructive scripts (e.g. the old clear-data.ts, which wiped both
+# production tabs with no confirmation and was referenced by nothing).
+_archive/

@@ -32,10 +32,27 @@ export default async function handler(req: any, res: any) {
       // This product may be bundled into a multi-product Engagement — tell the
       // client even if the request has no ?engagement= param (e.g. someone
       // opened the bare product link directly), so it can redirect to the hub.
-      const engagementRecord = await findEngagementByProductSessionId(response.sessionId);
-      const engagementSlug = engagementRecord
-        ? (slugFromRow(engagementRecord.fields['Onboarding Name'] || '', engagementRecord.fields['Engagement ID'] || '') || engagementRecord.fields['Engagement ID'])
-        : null;
+      //
+      // Deliberately non-fatal: _airtable.ts throws on any non-OK response, so
+      // without this guard a problem with the Engagements table alone (renamed,
+      // out of the token's scope, missing a field) would turn a perfectly
+      // healthy onboarding's load into a 500. A failed load leaves the client's
+      // form at its defaults, which is one careless click away from overwriting
+      // real data — so this lookup must never be able to fail the whole read.
+      let engagementSlug: string | null = null;
+      try {
+        const engagementRecord = await findEngagementByProductSessionId(response.sessionId);
+        if (engagementRecord) {
+          engagementSlug =
+            slugFromRow(
+              engagementRecord.fields['Onboarding Name'] || '',
+              engagementRecord.fields['Engagement ID'] || '',
+            ) || engagementRecord.fields['Engagement ID'];
+        }
+      } catch (err: unknown) {
+        const m = err instanceof Error ? err.message : 'Unknown error';
+        console.warn('[session] engagement lookup failed (non-fatal):', m);
+      }
       return res.status(200).json({ ...response, engagementSlug });
     }
 
