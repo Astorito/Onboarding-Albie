@@ -1,4 +1,4 @@
-import { TextInput } from '../components/ui/primitives';
+import { TextInput } from './primitives';
 
 // Pairs with a radio/checkbox option whose value="other" — wrap the whole
 // option group (SelectableCards + this) in a `group/other` container, and

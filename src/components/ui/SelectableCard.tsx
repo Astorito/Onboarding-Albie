@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Icon } from '../components/ui/primitives';
+import { Icon } from './primitives';
 
 // Radio/checkbox-backed card selector (Stripe/Linear/Notion-style): the native
 // input stays functional (still collected via FormData) but is visually
