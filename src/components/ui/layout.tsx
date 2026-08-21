@@ -6,7 +6,7 @@ export const Header = () => (
   <header className="fixed top-0 w-full bg-surface border-b border-outline-variant flex justify-between items-center px-margin-mobile md:px-margin-desktop h-20 z-50">
     <img
       src="/albie-logo-dark.svg"
-      alt="Albie by TAG"
+      alt="ALBIE by TAG"
       className="h-8 w-auto"
     />
     <div className="flex items-center gap-stack-md">

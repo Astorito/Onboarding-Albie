@@ -163,7 +163,7 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
                     onChange={(e) => setAlbieEnabled(e.target.checked)}
                     className="accent-[#2F6B6D] w-4 h-4"
                   />
-                  Albie — Booking Engine
+                  ALBIE — Booking Engine
                 </label>
                 <label className="flex items-center gap-2.5 text-sm text-[#0D3A39] cursor-pointer">
                   <input

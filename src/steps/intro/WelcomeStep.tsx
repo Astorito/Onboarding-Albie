@@ -6,7 +6,7 @@ export const WelcomeStep = ({ onNext, propertyName }: { onNext: () => void; prop
     <div className="absolute top-5 left-6">
       <img
         src="/albie-logo-dark.svg"
-        alt="Albie by TAG"
+        alt="ALBIE by TAG"
         style={{ width: '150px', height: '100px', objectFit: 'contain' }}
       />
     </div>
@@ -17,7 +17,7 @@ export const WelcomeStep = ({ onNext, propertyName }: { onNext: () => void; prop
             ESTIMATED TIME: 8 MINUTES
           </span>
           <h1 className="font-display-lg text-4xl lg:text-6xl text-primary leading-tight">
-            Welcome to Albie
+            Welcome to ALBIE
           </h1>
           {propertyName && (
             <p className="font-display-lg text-2xl lg:text-3xl text-secondary font-bold leading-tight">

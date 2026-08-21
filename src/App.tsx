@@ -597,7 +597,7 @@ export default function App() {
                 <div className="relative flex items-center">
                   <img
                     src="/albie-logo-dark.svg"
-                    alt="Albie by TAG"
+                    alt="ALBIE by TAG"
                     className="h-8 w-auto absolute left-0"
                   />
                   <ProgressBar currentStep={progressCurrent} totalSteps={progressTotal} />

@@ -31,8 +31,8 @@ export function createOnboardingPDF(pdf: { Document: any; Page: any; Text: any; 
 
     return (
       <Document
-        title={`Albie Onboarding · ${payload.general?.propertyName ?? 'Submission'}`}
-        author="Albie by TAG"
+        title={`ALBIE Onboarding · ${payload.general?.propertyName ?? 'Submission'}`}
+        author="ALBIE by TAG"
         subject="Booking Engine Onboarding"
       >
         <CoverPage payload={payload} />

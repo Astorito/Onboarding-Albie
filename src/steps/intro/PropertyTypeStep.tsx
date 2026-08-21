@@ -5,7 +5,7 @@ export const PropertyTypeStep = ({ onSelect }: { onSelect: (type: 'independent' 
     <div className="absolute top-5 left-6">
       <img
         src="/albie-logo-dark.svg"
-        alt="Albie by TAG"
+        alt="ALBIE by TAG"
         className="h-8 w-auto"
       />
     </div>

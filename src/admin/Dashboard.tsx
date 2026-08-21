@@ -52,7 +52,7 @@ function MetricCard({ label, value }: { label: string; value: number }) {
 
 function engagementProductsLabel(o: Onboarding): string {
   const products = [
-    o['Albie Enabled'] && 'Albie',
+    o['Albie Enabled'] && 'ALBIE',
     o['Marketing Enabled'] && 'Marketing',
     o['Web Design Enabled'] && 'Web Design',
   ].filter(Boolean);
@@ -172,7 +172,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
       {/* Header */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <img src="/albie-logo-dark.svg" alt="Albie" className="h-8 w-auto" />
+          <img src="/albie-logo-dark.svg" alt="ALBIE" className="h-8 w-auto" />
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-400 hidden sm:block">{adminEmail}</span>
             <button
@@ -198,7 +198,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
             <MetricCard label="Onboardings this month" value={metrics.thisMonth} />
             <MetricCard label="Onboardings Marketing" value={metrics.marketing} />
-            <MetricCard label="Onboardings Albie" value={metrics.albie} />
+            <MetricCard label="Onboardings ALBIE" value={metrics.albie} />
             <MetricCard label="Onboardings Web Design" value={metrics.webDesign} />
             <MetricCard label="Total Onboardings" value={metrics.total} />
           </div>

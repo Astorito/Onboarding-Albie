@@ -350,7 +350,7 @@ export default async function handler(req: any, res: any) {
     const resend = new Resend(apiKey);
     const [sendResult, driveLink] = await Promise.all([
       resend.emails.send({
-        from: `Albie Onboarding <${fromEmail}>`,
+        from: `ALBIE Onboarding <${fromEmail}>`,
         to,
         bcc,
         subject: `New onboarding: ${hotelName}`,
@@ -370,7 +370,7 @@ export default async function handler(req: any, res: any) {
         .then(async (pocEmail) => {
           if (!pocEmail || pocEmail === adminEmail) return;
           await resend.emails.send({
-            from: `Albie Onboarding <${fromEmail}>`,
+            from: `ALBIE Onboarding <${fromEmail}>`,
             to: pocEmail,
             subject: `New onboarding: ${hotelName}`,
             html: buildHotelEmailBody(payload, false),

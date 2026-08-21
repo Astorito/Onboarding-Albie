@@ -34,7 +34,7 @@ export function createSections(
 
   const PageFooter: React.FC<{ sessionId: string }> = ({ sessionId }) => (
     <View style={styles.pageFooter} fixed>
-      <Text>Albie Onboarding · {sessionId}</Text>
+      <Text>ALBIE Onboarding · {sessionId}</Text>
       <Text render={({ pageNumber, totalPages }: { pageNumber: number; totalPages: number }) => `Page ${pageNumber} of ${totalPages}`} />
     </View>
   );
