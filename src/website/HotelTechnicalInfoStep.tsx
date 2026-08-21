@@ -6,7 +6,7 @@ import { OtherReveal } from './OtherReveal';
 export type HotelTechnicalPrefill = Record<string, string | null | undefined>;
 
 const BOOKING_ENGINES = [
-  { value: 'albie', label: 'ALBIE' },
+  { value: 'albie', label: 'Albie' },
   { value: 'cloudbeds', label: 'Cloudbeds' },
   { value: 'siteminder', label: 'SiteMinder' },
 ];

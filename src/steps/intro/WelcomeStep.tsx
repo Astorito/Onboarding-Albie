@@ -17,7 +17,7 @@ export const WelcomeStep = ({ onNext, propertyName }: { onNext: () => void; prop
             ESTIMATED TIME: 8 MINUTES
           </span>
           <h1 className="font-display-lg text-4xl lg:text-6xl text-primary leading-tight">
-            Welcome to ALBIE
+            Welcome to Albie
           </h1>
           {propertyName && (
             <p className="font-display-lg text-2xl lg:text-3xl text-secondary font-bold leading-tight">

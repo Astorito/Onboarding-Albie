@@ -108,7 +108,7 @@ const VALUE_LABELS: Record<string, Record<string, string>> = {
     boutique_hotel: 'Boutique hotel', lodge: 'Lodge', resort: 'Resort',
     vacation_rental: 'Vacation rental', other: 'Other',
   },
-  bookingEngine: { albie: 'ALBIE', cloudbeds: 'Cloudbeds', siteminder: 'SiteMinder', other: 'Other' },
+  bookingEngine: { albie: 'Albie', cloudbeds: 'Cloudbeds', siteminder: 'SiteMinder', other: 'Other' },
   domainProperty: {
     already_purchased: 'Already purchased', need_assistance: 'Need assistance',
     not_sure: 'Not sure', other: 'Other',
