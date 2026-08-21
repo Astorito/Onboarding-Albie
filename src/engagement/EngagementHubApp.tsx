@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { Icon } from '../components/ui/primitives';
 
 interface EngagementResponse {
@@ -19,39 +19,55 @@ const GRID_COLS: Record<number, string> = {
   3: 'grid-cols-1 sm:grid-cols-3',
 };
 
+// Near-black used throughout the other onboarding flows' dark panels
+// (ConfigSection's panelColor="#1d1e1f") — reused here for the same "ink"
+// tone, since this screen isn't wrapped in any theme and can't rely on a
+// design-token default.
+const INK = '#1d1e1f';
+
 const ProductCard = ({
   title,
   description,
   icon,
+  accentColor,
   href,
 }: {
   title: string;
-  description: string;
+  description: ReactNode;
   icon: string;
+  accentColor: string;
   href?: string;
 }) => {
   const clickable = !!href;
   const body = (
     <div
-      className={`h-full flex flex-col items-center text-center gap-2.5 border rounded-2xl p-5 transition-all ${
+      className={`h-full flex flex-col items-center text-center gap-2 sm:gap-3 border rounded-2xl p-5 sm:p-7 transition-all ${
         clickable
-          ? 'border-outline-variant bg-white hover:border-primary/40 hover:shadow-md cursor-pointer'
+          ? 'border-outline-variant bg-white hover:shadow-md'
           : 'border-outline-variant/50 bg-surface-container-low/50'
       }`}
     >
       <div
-        className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center ${
-          clickable ? 'bg-secondary/15 text-secondary' : 'bg-surface-container-highest text-on-surface-variant/40'
-        }`}
+        className="w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center"
+        style={{ backgroundColor: clickable ? accentColor : undefined }}
       >
-        <Icon name={icon} className="text-2xl" />
+        {icon === 'albie-mark' ? (
+          <img src="/favicon.png" alt="" className={`w-7 h-7 object-contain ${clickable ? 'brightness-0 invert' : 'opacity-40'}`} />
+        ) : (
+          <Icon
+            name={icon}
+            className={`text-3xl ${clickable ? 'text-white' : 'text-on-surface-variant/40'}`}
+          />
+        )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className={`font-bold text-sm ${clickable ? 'text-primary' : 'text-on-surface-variant'}`}>{title}</p>
-        <p className="text-xs text-on-surface-variant mt-1">{description}</p>
+        <p className="font-bold text-base" style={{ color: clickable ? accentColor : undefined }}>
+          {title}
+        </p>
+        <p className="text-sm text-on-surface-variant mt-1.5 leading-snug">{description}</p>
       </div>
       {clickable ? (
-        <Icon name="arrow_forward" className="text-primary text-lg" />
+        <Icon name="arrow_forward" className="text-lg text-[#1d1e1f]" />
       ) : (
         <span className="text-[10px] font-bold uppercase tracking-wide bg-surface-container-highest text-on-surface-variant/60 px-2 py-1 rounded-full">
           Coming soon
@@ -103,43 +119,75 @@ export default function EngagementHubApp() {
     );
   }
 
-  const { products, engagementName, engagementSlug } = data;
+  const { products, engagementSlug } = data;
+
+  // Booking Engine keeps Albie's own teal; Web Design and Marketing share the
+  // TAG Digital Marketing pink — this page isn't wrapped in .marketing-theme,
+  // so these are explicit hex values rather than theme tokens.
+  const ALBIE_TEAL = '#0D3A39';
+  const TAG_PINK = '#e6007e';
+
   const cardData = [
     {
-      id: 'albie', enabled: products.albie.enabled,
-      title: 'Albie — Booking Engine', description: "Set up your property's booking engine.", icon: 'apartment',
+      id: 'albie', enabled: products.albie.enabled, accentColor: ALBIE_TEAL,
+      title: 'Booking Engine', icon: 'albie-mark',
+      description: <>Set up your property's <strong style={{ color: ALBIE_TEAL }}>Booking Engine</strong></>,
+      shortLabel: 'ALBIE',
       href: products.albie.slug ? `/o/${products.albie.slug}?engagement=${engagementSlug}` : undefined,
     },
     {
-      id: 'webDesign', enabled: products.webDesign.enabled,
-      title: 'Web Design', description: 'Your website onboarding.', icon: 'palette',
+      id: 'webDesign', enabled: products.webDesign.enabled, accentColor: TAG_PINK,
+      title: 'Web Design', icon: 'play_arrow',
+      description: <>Let's begin your <strong style={{ color: TAG_PINK }}>website</strong> onboarding</>,
+      shortLabel: 'WEBSITE',
       href: products.webDesign.slug ? `/website/o/${products.webDesign.slug}?engagement=${engagementSlug}` : undefined,
     },
     {
-      id: 'marketing', enabled: products.marketing.enabled,
-      title: 'Marketing', description: 'Your digital advertising onboarding.', icon: 'campaign',
+      id: 'marketing', enabled: products.marketing.enabled, accentColor: TAG_PINK,
+      title: 'Marketing', icon: 'track_changes',
+      description: <>Let's begin your <strong style={{ color: TAG_PINK }}>marketing</strong> onboarding</>,
+      shortLabel: 'DIGITAL MARKETING',
       href: products.marketing.slug ? `/marketing/o/${products.marketing.slug}?engagement=${engagementSlug}` : undefined,
     },
   ].filter((c) => c.enabled);
 
+  // Computed from which products are actually enabled, rather than shown
+  // from the record's free-text name — guarantees consistent, correctly-cased
+  // output ("ALBIE + WEBSITE + DIGITAL MARKETING") for every engagement,
+  // regardless of what an admin typed when creating it.
+  const subtitle = cardData.map((c) => c.shortLabel).join(' + ');
+
   return (
     <main className="h-screen overflow-hidden flex items-center justify-center px-margin-mobile bg-white">
-      <div className="max-w-2xl w-full flex flex-col items-center gap-6">
+      <div className="max-w-3xl w-full flex flex-col items-center gap-5 sm:gap-8">
         <div className="text-center">
-          <h1 className="font-display-lg text-4xl text-primary leading-tight">Welcome to TAG</h1>
-          {engagementName && (
-            <p className="font-display-lg text-xl text-secondary font-bold mt-2">{engagementName}</p>
+          <h1
+            className="uppercase font-black text-4xl sm:text-5xl md:text-6xl leading-none tracking-tight"
+            style={{ color: INK }}
+          >
+            Welcome to TAG
+          </h1>
+          {subtitle && (
+            <p className="uppercase font-bold text-on-surface-variant/60 text-base sm:text-lg md:text-xl tracking-wide mt-2 sm:mt-3">
+              {subtitle}
+            </p>
           )}
-          <p className="font-body-md text-on-surface-variant mt-3 max-w-md mx-auto">
+          <p className="font-body-md text-on-surface-variant mt-3 sm:mt-4 max-w-md mx-auto">
             Complete each onboarding below at your own pace — you can always come back here to
             continue with the rest.
           </p>
         </div>
 
-        <div className={`w-full grid ${GRID_COLS[cardData.length] ?? GRID_COLS[3]} gap-4`}>
+        <div className={`w-full grid ${GRID_COLS[cardData.length] ?? GRID_COLS[3]} gap-3 sm:gap-5`}>
           {cardData.map((c) => (
             <Fragment key={c.id}>
-              <ProductCard title={c.title} description={c.description} icon={c.icon} href={c.href} />
+              <ProductCard
+                title={c.title}
+                description={c.description}
+                icon={c.icon}
+                accentColor={c.accentColor}
+                href={c.href}
+              />
             </Fragment>
           ))}
         </div>
