@@ -48,9 +48,9 @@ const EMPTY_FORM: FormState = {
 
 const roomTypes = [
   'Standard Room', 'Deluxe Room', 'Superior Room', 'Junior Suite', 'Suite',
-  'Executive Room', 'Family Room', 'Studio', 'Villa', 'Apartment', 'Penthouse',
-  'Dormitory', 'Bungalow', 'Cabin', 'Loft', 'Connecting Room', 'Accessible Room',
-  'Ocean View Room', 'Garden View Room',
+  'Executive Room', 'Family Room', 'Studio', 'Villa', 'Apartment', 'Vacation Home',
+  'Penthouse', 'Dormitory', 'Bungalow', 'Cabin', 'Loft', 'Connecting Room',
+  'Accessible Room', 'Ocean View Room', 'Garden View Room',
 ];
 
 const bedTypes = ['Single', 'Double', 'Queen', 'King', 'Super King', 'Sofa Bed', 'Bunk Bed', 'Twin Bed'];
