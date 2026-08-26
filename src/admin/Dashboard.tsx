@@ -125,8 +125,16 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
     }
     // Prefer the readable, resolvable /o/<slug> link; fall back to the legacy
     // ?token= link if we can't derive a slug (e.g. missing name/session id).
-    const basePath = o['Type'] === 'webdesign' ? '/website/o/' : o['Type'] === 'marketing' ? '/marketing/o/' : '/o/';
-    const fallbackPath = o['Type'] === 'webdesign' ? '/website?token=' : o['Type'] === 'marketing' ? '/marketing?token=' : '/?token=';
+    const basePath =
+      o['Type'] === 'webdesign' ? '/website/o/'
+      : o['Type'] === 'marketing' ? '/marketing/o/'
+      : o['Type'] === 'social' ? '/social/o/'
+      : '/o/';
+    const fallbackPath =
+      o['Type'] === 'webdesign' ? '/website?token='
+      : o['Type'] === 'marketing' ? '/marketing?token='
+      : o['Type'] === 'social' ? '/social?token='
+      : '/?token=';
     const link = slug
       ? `${window.location.origin}${basePath}${slug}`
       : `${window.location.origin}${fallbackPath}${sessionId}`;
@@ -164,6 +172,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
     marketing: onboardings.filter(o => o['Type'] === 'marketing').length,
     albie: onboardings.filter(o => !o['Type'] || o['Type'] === 'hotel').length,
     webDesign: onboardings.filter(o => o['Type'] === 'webdesign').length,
+    social: onboardings.filter(o => o['Type'] === 'social').length,
     total: onboardings.length,
   };
 
@@ -195,11 +204,12 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
       {/* Body */}
       <main className="max-w-5xl mx-auto px-6 py-8">
         {!loading && onboardings.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
             <MetricCard label="Onboardings this month" value={metrics.thisMonth} />
             <MetricCard label="Onboardings Marketing" value={metrics.marketing} />
             <MetricCard label="Onboardings ALBIE" value={metrics.albie} />
             <MetricCard label="Onboardings Web Design" value={metrics.webDesign} />
+            <MetricCard label="Onboardings Social" value={metrics.social} />
             <MetricCard label="Total Onboardings" value={metrics.total} />
           </div>
         )}

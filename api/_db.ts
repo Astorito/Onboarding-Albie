@@ -15,9 +15,10 @@ import { slugFromRow } from './_slug';
 export const HOTEL_TABLE = 'Onboardings_Hotel';
 export const MARKETING_TABLE = 'Onboardings_Marketing';
 export const WEBDESIGN_TABLE = 'Onboardings_WebDesign';
+export const SOCIAL_TABLE = 'Onboardings_Social';
 export const ACCOUNTS_TABLE = 'Accounts';
 export const ENGAGEMENTS_TABLE = 'Engagements';
-const ONBOARDING_TABLES = [HOTEL_TABLE, MARKETING_TABLE, WEBDESIGN_TABLE] as const;
+const ONBOARDING_TABLES = [HOTEL_TABLE, MARKETING_TABLE, WEBDESIGN_TABLE, SOCIAL_TABLE] as const;
 
 export function isAirtableConfigured(): boolean {
   return !!(process.env.AIRTABLE_API_KEY && process.env.AIRTABLE_BASE_ID);
@@ -409,8 +410,53 @@ function sessionResponseFromWebsiteRecord(record: AirtableRecord) {
   };
 }
 
+// ─── Social Media field mapping ────────────────────────────────────────────────
+// Unlike hotel/marketing/website (one Airtable column per field), Social's 6
+// modules are each stored as a single JSON blob column ('Company JSON', etc).
+// The form has ~85 individual fields (16 goal checkboxes + 18 voice-trait
+// checkboxes + 14 asset-type checkboxes + ~35 text fields) — one column per
+// field would mean an 85-column Airtable table for comparatively flat,
+// non-relational data. This mirrors how the hotel table already stores its
+// own complex values (Rooms, Cancellation Policies, SiteMinder) as JSON text
+// rather than exploding them into columns.
+const SOCIAL_MODULES = ['company', 'goals', 'offerings', 'brand', 'assets', 'competitors'] as const;
+const SOCIAL_MODULE_FIELDS: Record<typeof SOCIAL_MODULES[number], string> = {
+  company: 'Company JSON',
+  goals: 'Goals JSON',
+  offerings: 'Offerings JSON',
+  brand: 'Brand JSON',
+  assets: 'Assets JSON',
+  competitors: 'Competitors JSON',
+};
+
+function socialFieldsFromPayload(payload: any): Record<string, any> {
+  const fields: Record<string, any> = {
+    'Session ID': payload.sessionId,
+    'Timestamp': new Date().toISOString(),
+  };
+  for (const m of SOCIAL_MODULES) {
+    fields[SOCIAL_MODULE_FIELDS[m]] = JSON.stringify(payload[m] ?? {});
+  }
+  return fields;
+}
+
+function sessionResponseFromSocialRecord(record: AirtableRecord) {
+  const f = record.fields;
+  const onboardingName = f['Onboarding Name'] || null;
+  const sessionId = f['Session ID'];
+  const response: Record<string, any> = {
+    sessionId,
+    slug: slugFromRow(onboardingName ?? '', sessionId) || null,
+    onboardingName,
+  };
+  for (const m of SOCIAL_MODULES) {
+    response[m] = tryJson(f[SOCIAL_MODULE_FIELDS[m]], {});
+  }
+  return response;
+}
+
 export interface OnboardingHit {
-  table: typeof HOTEL_TABLE | typeof MARKETING_TABLE | typeof WEBDESIGN_TABLE;
+  table: typeof HOTEL_TABLE | typeof MARKETING_TABLE | typeof WEBDESIGN_TABLE | typeof SOCIAL_TABLE;
   record: AirtableRecord;
 }
 
@@ -438,6 +484,7 @@ export async function findOnboardingBySlug(slug: string): Promise<OnboardingHit 
 export function sessionResponseFromHit(hit: OnboardingHit) {
   if (hit.table === HOTEL_TABLE) return sessionResponseFromHotelRecord(hit.record);
   if (hit.table === WEBDESIGN_TABLE) return sessionResponseFromWebsiteRecord(hit.record);
+  if (hit.table === SOCIAL_TABLE) return sessionResponseFromSocialRecord(hit.record);
   return sessionResponseFromMarketingRecord(hit.record);
 }
 
@@ -474,6 +521,35 @@ export async function createWebsiteOnboardingFromPayload(payload: any): Promise<
   await createRecord(WEBDESIGN_TABLE, websiteFieldsFromPayload(payload));
 }
 
+// Same pair again, for Social Media. Also Airtable-only.
+export async function writeSocialFields(recordId: string, payload: any): Promise<void> {
+  await updateRecord(SOCIAL_TABLE, recordId, socialFieldsFromPayload(payload));
+}
+
+export async function createSocialOnboardingFromPayload(payload: any): Promise<void> {
+  await createRecord(SOCIAL_TABLE, socialFieldsFromPayload(payload));
+}
+
+// Blank-overwrite guard for the Social flow's save endpoint — same rationale
+// as api/submit.ts's guard (see that file): a save built from unhydrated
+// client state is all-empty, and writing it would erase real answers. Social
+// has no single obvious "is this row empty" field the way hotel has
+// Property Name, so this checks ALL 6 modules for any non-empty value.
+export function isSocialPayloadBlank(payload: any): boolean {
+  return SOCIAL_MODULES.every((m) => {
+    const obj = payload?.[m];
+    if (!obj || typeof obj !== 'object') return true;
+    return Object.values(obj).every((v) => !v || String(v).trim() === '');
+  });
+}
+
+export function socialRecordHasContent(fields: Record<string, any>): boolean {
+  return SOCIAL_MODULES.some((m) => {
+    const obj = tryJson(fields[SOCIAL_MODULE_FIELDS[m]], {});
+    return Object.values(obj).some((v) => v && String(v).trim() !== '');
+  });
+}
+
 // ─── Admin: onboardings (list / create / delete) ──────────────────────────────
 
 export async function listAirtableOnboardings(): Promise<Record<string, any>[]> {
@@ -481,7 +557,11 @@ export async function listAirtableOnboardings(): Promise<Record<string, any>[]> 
   const out: Record<string, any>[] = [];
   for (const table of ONBOARDING_TABLES) {
     const recs = await listAllRecords(table);
-    const type = table === HOTEL_TABLE ? 'hotel' : table === WEBDESIGN_TABLE ? 'webdesign' : 'marketing';
+    const type =
+      table === HOTEL_TABLE ? 'hotel'
+      : table === WEBDESIGN_TABLE ? 'webdesign'
+      : table === SOCIAL_TABLE ? 'social'
+      : 'marketing';
     recs.forEach((r) => out.push({ ...r.fields, Type: type }));
   }
   return out;
@@ -506,9 +586,13 @@ export async function createAirtableOnboarding(opts: {
   onboardingName: string;
   pocEmail?: string;
   createdBy: string;
-  type?: 'hotel' | 'marketing' | 'webdesign';
+  type?: 'hotel' | 'marketing' | 'webdesign' | 'social';
 }): Promise<{ sessionId: string }> {
-  const table = opts.type === 'marketing' ? MARKETING_TABLE : opts.type === 'webdesign' ? WEBDESIGN_TABLE : HOTEL_TABLE;
+  const table =
+    opts.type === 'marketing' ? MARKETING_TABLE
+    : opts.type === 'webdesign' ? WEBDESIGN_TABLE
+    : opts.type === 'social' ? SOCIAL_TABLE
+    : HOTEL_TABLE;
   const sessionId = generateSessionId();
   await createRecord(table, {
     'Session ID': sessionId,

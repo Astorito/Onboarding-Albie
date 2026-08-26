@@ -75,23 +75,33 @@ export default async function handler(req: any, res: any) {
   }
 
   // ── POST: create new onboarding ──────────────────────────────────────────
-  // `products` selects which of Albie / Web Design / Marketing this client
-  // bought. Defaults to Albie-only when omitted, preserving old callers.
+  // `products` selects which of Albie / Web Design / Marketing / Social this
+  // client bought. Defaults to Albie-only when omitted, preserving old
+  // callers.
   // - Exactly 1 product selected -> identical to today's behavior: a single
   //   Onboardings_* row, link goes straight to that product's flow.
-  // - 2+ selected -> an Engagement "hub" record bundling them behind one link.
+  // - 2+ selected (Albie/Web Design/Marketing only) -> an Engagement "hub"
+  //   record bundling them behind one link.
   if (req.method === 'POST') {
     const { accountId, onboardingName, pocEmail } = req.body ?? {};
-    const products: EngagementProducts = req.body?.products ?? {
-      albie: true, webDesign: false, marketing: false,
+    const products: EngagementProducts & { social?: boolean } = req.body?.products ?? {
+      albie: true, webDesign: false, marketing: false, social: false,
     };
     if (!accountId || !onboardingName) {
       return res.status(400).json({ error: 'accountId and onboardingName are required' });
     }
 
-    const enabledCount = [products.albie, products.webDesign, products.marketing].filter(Boolean).length;
+    const enabledCount = [products.albie, products.webDesign, products.marketing, products.social].filter(Boolean).length;
     if (enabledCount === 0) {
       return res.status(400).json({ error: 'Select at least one product' });
+    }
+
+    // Social doesn't participate in Engagement bundling yet — createEngagement
+    // only knows about albie/webDesign/marketing, so letting this through
+    // would silently create the bundle WITHOUT the social row: the request
+    // would look successful while quietly dropping half of what was asked for.
+    if (products.social && enabledCount > 1) {
+      return res.status(400).json({ error: "Social Media can't be bundled with other products yet — create it as its own onboarding." });
     }
 
     // ── 2+ products: create an Engagement (requires Airtable) ──────────────
@@ -108,8 +118,12 @@ export default async function handler(req: any, res: any) {
     }
 
     // ── Exactly 1 product: unchanged single-onboarding path ────────────────
-    const singleType: 'hotel' | 'marketing' | 'webdesign' | null =
-      products.albie ? 'hotel' : products.marketing ? 'marketing' : products.webDesign ? 'webdesign' : null;
+    const singleType: 'hotel' | 'marketing' | 'webdesign' | 'social' | null =
+      products.albie ? 'hotel'
+      : products.marketing ? 'marketing'
+      : products.webDesign ? 'webdesign'
+      : products.social ? 'social'
+      : null;
     if (!singleType) {
       return res.status(400).json({ error: 'Select at least one product' });
     }

@@ -21,6 +21,7 @@ import { google } from 'googleapis';
 import { createOnboardingPDF } from './_pdf/OnboardingPDF';
 import { createMarketingPDF } from './_pdf/MarketingOnboardingPDF';
 import { createWebsitePDF } from './_pdf/WebsiteOnboardingPDF';
+import { createSocialPDF } from './_pdf/SocialOnboardingPDF';
 import {
   getAuth, getSheetsClient, ONBOARDINGS_TAB,
   findRowBySessionId, updateCellByHeader,
@@ -95,6 +96,30 @@ function buildMarketingEmailBody(payload: any): string {
       </table>
       <p style="margin-top:18px;font-size:13px;color:#1c1b1b;line-height:1.5;">
         The full Paid Media onboarding summary is attached as a PDF.
+      </p>
+    </div>
+    <div style="padding:14px 28px;font-size:10px;color:#717878;text-align:center;background:#f0eded;">
+      TAG DIGITAL MARKETING
+    </div>
+  </div>`;
+}
+
+function buildSocialEmailBody(payload: any): string {
+  const companyName = payload.company?.companyName || 'New Business';
+  const email = payload.company?.email || '';
+  return `
+  <div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;color:#1c1b1b;">
+    <div style="background:#1d1e1f;color:#fff;padding:24px 28px;">
+      <div style="font-size:11px;letter-spacing:2px;color:#e6007e;font-weight:bold;">NEW SOCIAL MEDIA ONBOARDING</div>
+      <div style="font-size:22px;font-weight:bold;margin-top:6px;">${companyName}</div>
+    </div>
+    <div style="padding:24px 28px;background:#fcf9f8;">
+      <table style="width:100%;font-size:13px;border-collapse:collapse;">
+        ${email ? `<tr><td style="padding:6px 0;color:#717878;width:140px;">Contact</td><td style="padding:6px 0;font-weight:bold;">${email}</td></tr>` : ''}
+        <tr><td style="padding:6px 0;color:#717878;">Session ID</td><td style="padding:6px 0;font-size:11px;color:#717878;">${payload.sessionId ?? ''}</td></tr>
+      </table>
+      <p style="margin-top:18px;font-size:13px;color:#1c1b1b;line-height:1.5;">
+        The full Social Media onboarding summary is attached as a PDF.
       </p>
     </div>
     <div style="padding:14px 28px;font-size:10px;color:#717878;text-align:center;background:#f0eded;">
@@ -276,7 +301,7 @@ export default async function handler(req: any, res: any) {
 
   // Defaults to 'hotel' so the existing hotel client — which never sends this
   // field — keeps behaving exactly as before.
-  const product: 'hotel' | 'marketing' | 'website' = payload.product ?? 'hotel';
+  const product: 'hotel' | 'marketing' | 'website' | 'social' = payload.product ?? 'hotel';
   const fromEmail = process.env.FROM_EMAIL ?? 'onboarding@resend.dev';
 
   try {
@@ -308,6 +333,23 @@ export default async function handler(req: any, res: any) {
         buildBody: buildMarketingEmailBody,
         pdfBuffer,
         logTag: 'send-onboarding:marketing',
+      });
+      return res.status(200).json({ success: true, ...result });
+    }
+
+    if (product === 'social') {
+      const SocialPDF = createSocialPDF({ Document, Page, Text, View, StyleSheet });
+      const pdfBuffer = await renderToBuffer(React.createElement(SocialPDF, { payload }) as any);
+      const resend = new Resend(apiKey);
+      const result = await sendSimpleProductEmail({
+        resend, payload, adminEmail, fromEmail,
+        fromName: 'TAG Digital Marketing',
+        subjectPrefix: 'New social media onboarding',
+        filenamePrefix: 'tag-social-onboarding',
+        displayName: payload.company?.companyName || 'New Business',
+        buildBody: buildSocialEmailBody,
+        pdfBuffer,
+        logTag: 'send-onboarding:social',
       });
       return res.status(200).json({ success: true, ...result });
     }
