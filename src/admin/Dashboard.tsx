@@ -41,13 +41,56 @@ function isThisMonth(iso: string): boolean {
   return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
 }
 
-function MetricCard({ label, value }: { label: string; value: number }) {
+function MetricCard({
+  label, value, active, onClick,
+}: {
+  label: string;
+  value: number;
+  // When provided, the card doubles as a filter toggle — see `productFilter`
+  // in Dashboard. Cards without onClick (e.g. "this month") stay plain stats.
+  active?: boolean;
+  onClick?: () => void;
+}) {
+  const clickable = !!onClick;
+  const Tag = clickable ? 'button' : 'div';
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex flex-col gap-1">
-      <span className="text-2xl font-bold text-[#0D3A39]">{value}</span>
-      <span className="text-xs text-gray-500">{label}</span>
-    </div>
+    <Tag
+      type={clickable ? 'button' : undefined}
+      onClick={onClick}
+      className={`text-left rounded-2xl border px-5 py-4 flex flex-col gap-1 transition-all ${
+        clickable ? 'cursor-pointer' : ''
+      } ${
+        active
+          ? 'bg-[#2F6B6D] border-[#2F6B6D]'
+          : clickable
+            ? 'bg-white border-gray-100 hover:border-[#2F6B6D]/40'
+            : 'bg-white border-gray-100'
+      }`}
+    >
+      <span className={`text-2xl font-bold ${active ? 'text-white' : 'text-[#0D3A39]'}`}>{value}</span>
+      <span className={`text-xs ${active ? 'text-white/80' : 'text-gray-500'}`}>{label}</span>
+    </Tag>
   );
+}
+
+type ProductFilter = 'all' | 'hotel' | 'webdesign' | 'marketing' | 'social' | 'engagement';
+
+// Engagement rows bundle 2+ products behind one hub link — filtering by a
+// specific product should surface a bundle that INCLUDES it, not just
+// standalone rows of that exact type. Legacy Sheets rows have no 'Type'
+// field and are all hotel/Albie (same convention the metrics below use).
+function matchesProductFilter(o: Onboarding, filter: ProductFilter): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'engagement') return o['Type'] === 'engagement';
+  if (o['Type'] === 'engagement') {
+    if (filter === 'hotel') return !!o['Albie Enabled'];
+    if (filter === 'webdesign') return !!o['Web Design Enabled'];
+    if (filter === 'marketing') return !!o['Marketing Enabled'];
+    if (filter === 'social') return !!o['Social Enabled'];
+    return false;
+  }
+  if (filter === 'hotel') return !o['Type'] || o['Type'] === 'hotel';
+  return o['Type'] === filter;
 }
 
 function engagementProductsLabel(o: Onboarding): string {
@@ -80,6 +123,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
   const [deleteTarget, setDeleteTarget] = useState<Onboarding | null>(null);
   // expanded starts empty → all groups closed by default
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [productFilter, setProductFilter] = useState<ProductFilter>('all');
 
   const fetchAll = useCallback(async () => {
     try {
@@ -149,9 +193,11 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
     onLogout();
   };
 
+  const filteredOnboardings = onboardings.filter(o => matchesProductFilter(o, productFilter));
+
   // Group by Account ID, resolve name from accounts list
   const groups: Record<string, { label: string; items: Onboarding[] }> = {};
-  for (const o of onboardings) {
+  for (const o of filteredOnboardings) {
     const key = o['Account ID'] || '__none__';
     const label = key === '__none__'
       ? 'Independent'
@@ -167,13 +213,16 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
     return ga.label.localeCompare(gb.label, 'en');
   });
 
-  // Metrics — legacy Sheets rows have no 'Type' field and are all Albie.
+  // Metrics — each product count includes engagements that bundle it (same
+  // predicate the filter itself uses), so a tile's number always matches
+  // what clicking it will show.
   const metrics = {
     thisMonth: onboardings.filter(o => isThisMonth(o['Admin Created At'] || o['Timestamp'] || '')).length,
-    marketing: onboardings.filter(o => o['Type'] === 'marketing').length,
-    albie: onboardings.filter(o => !o['Type'] || o['Type'] === 'hotel').length,
-    webDesign: onboardings.filter(o => o['Type'] === 'webdesign').length,
-    social: onboardings.filter(o => o['Type'] === 'social').length,
+    marketing: onboardings.filter(o => matchesProductFilter(o, 'marketing')).length,
+    albie: onboardings.filter(o => matchesProductFilter(o, 'hotel')).length,
+    webDesign: onboardings.filter(o => matchesProductFilter(o, 'webdesign')).length,
+    social: onboardings.filter(o => matchesProductFilter(o, 'social')).length,
+    engagement: onboardings.filter(o => o['Type'] === 'engagement').length,
     total: onboardings.length,
   };
 
@@ -205,19 +254,23 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
       {/* Body */}
       <main className="max-w-5xl mx-auto px-6 py-8">
         {!loading && onboardings.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
             <MetricCard label="Onboardings this month" value={metrics.thisMonth} />
-            <MetricCard label="Onboardings Marketing" value={metrics.marketing} />
-            <MetricCard label="Onboardings ALBIE" value={metrics.albie} />
-            <MetricCard label="Onboardings Web Design" value={metrics.webDesign} />
-            <MetricCard label="Onboardings Social" value={metrics.social} />
-            <MetricCard label="Total Onboardings" value={metrics.total} />
+            <MetricCard label="All onboardings" value={metrics.total} active={productFilter === 'all'} onClick={() => setProductFilter('all')} />
+            <MetricCard label="ALBIE" value={metrics.albie} active={productFilter === 'hotel'} onClick={() => setProductFilter('hotel')} />
+            <MetricCard label="Web Design" value={metrics.webDesign} active={productFilter === 'webdesign'} onClick={() => setProductFilter('webdesign')} />
+            <MetricCard label="Paid Media" value={metrics.marketing} active={productFilter === 'marketing'} onClick={() => setProductFilter('marketing')} />
+            <MetricCard label="Social Media" value={metrics.social} active={productFilter === 'social'} onClick={() => setProductFilter('social')} />
+            <MetricCard label="Engagements" value={metrics.engagement} active={productFilter === 'engagement'} onClick={() => setProductFilter('engagement')} />
           </div>
         )}
 
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[#0D3A39]">Onboardings</h1>
-          <p className="text-sm text-gray-500 mt-1">{onboardings.length} onboarding{onboardings.length !== 1 ? 's' : ''} total</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {filteredOnboardings.length} onboarding{filteredOnboardings.length !== 1 ? 's' : ''}
+            {productFilter === 'all' ? ' total' : ` (filtered, out of ${onboardings.length})`}
+          </p>
         </div>
 
         {loading ? (
@@ -232,6 +285,18 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
               className="bg-[#2F6B6D] text-white text-sm font-bold px-6 py-3 rounded-xl hover:opacity-90 active:scale-95 transition-all cursor-pointer"
             >
               + New onboarding
+            </button>
+          </div>
+        ) : filteredOnboardings.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-2xl mb-4">🔍</div>
+            <p className="font-bold text-[#0D3A39] text-lg mb-1">No onboardings match this filter</p>
+            <p className="text-gray-500 text-sm mb-6">Try a different product, or clear the filter</p>
+            <button
+              onClick={() => setProductFilter('all')}
+              className="bg-[#2F6B6D] text-white text-sm font-bold px-6 py-3 rounded-xl hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+            >
+              Clear filter
             </button>
           </div>
         ) : (

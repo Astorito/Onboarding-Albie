@@ -15,6 +15,16 @@ export function AdminApp() {
       .catch(() => setAuthState('unauthenticated'));
   }, []);
 
+  // The whole app shares one index.html — its title says "ALBIE Onboarding",
+  // correct for the booking-engine product itself, but the admin panel
+  // manages every product (Hotel, Web Design, Marketing, Social), not just
+  // Albie. Same swap-on-mount/restore-on-unmount pattern as the other flows.
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = 'TAG Onboarding';
+    return () => { document.title = previousTitle; };
+  }, []);
+
   if (authState === 'loading') {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
