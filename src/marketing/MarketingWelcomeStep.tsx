@@ -13,7 +13,7 @@ export const MarketingWelcomeStep = ({ onNext }: { onNext: () => void }) => (
           ESTIMATED TIME: 8 MINUTES
         </span>
         <h1 className="font-display-lg text-4xl lg:text-6xl text-primary leading-tight">
-          Onboarding — Digital Advertising
+          Onboarding — Paid Media
         </h1>
         <p className="font-body-md text-on-surface-variant max-w-lg">
           Initial PPC setup includes strategic planning, campaign structure build-out, ad copy

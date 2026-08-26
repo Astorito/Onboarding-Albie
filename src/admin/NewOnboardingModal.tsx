@@ -181,7 +181,7 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
                     onChange={(e) => setMarketingEnabled(e.target.checked)}
                     className="accent-[#2F6B6D] w-4 h-4"
                   />
-                  Marketing — Digital Advertising
+                  Marketing — Paid Media
                 </label>
               </div>
             </div>

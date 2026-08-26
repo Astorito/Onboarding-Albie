@@ -35,7 +35,7 @@ export const MarketingSuccessStep = ({ engagementSlug }: Props) => {
           </div>
           <h1 className="font-display-lg text-5xl text-primary mb-4">Congratulations!</h1>
           <p className="font-body-lg text-on-surface-variant mb-10 max-w-xl mx-auto">
-            Your Digital Advertising onboarding answers have been collected. Our team will
+            Your Paid Media onboarding answers have been collected. Our team will
             review them and reach out with next steps for your campaign setup.
           </p>
           <div className="p-8 bg-surface-container-low border border-outline-variant rounded-3xl inline-block w-full text-left relative group">

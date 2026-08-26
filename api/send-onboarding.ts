@@ -94,7 +94,7 @@ function buildMarketingEmailBody(payload: any): string {
         <tr><td style="padding:6px 0;color:#717878;">Session ID</td><td style="padding:6px 0;font-size:11px;color:#717878;">${payload.sessionId ?? ''}</td></tr>
       </table>
       <p style="margin-top:18px;font-size:13px;color:#1c1b1b;line-height:1.5;">
-        The full Digital Advertising onboarding summary is attached as a PDF.
+        The full Paid Media onboarding summary is attached as a PDF.
       </p>
     </div>
     <div style="padding:14px 28px;font-size:10px;color:#717878;text-align:center;background:#f0eded;">

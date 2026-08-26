@@ -73,7 +73,7 @@ export const MarketingReviewStep = ({ reviewData }: { reviewData: MarketingRevie
     <div className="mb-4 shrink-0">
       <h1 className="font-display-lg text-xl text-primary font-bold">Review Your Answers</h1>
       <p className="text-on-surface-variant text-xs">
-        Double-check everything before submitting your Digital Advertising onboarding.
+        Double-check everything before submitting your Paid Media onboarding.
       </p>
     </div>
     <Section moduleId="basics" data={reviewData.basics} />

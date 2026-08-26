@@ -1,4 +1,4 @@
-// Digital Advertising onboarding summary PDF. Mirrors the structure/factory
+// Paid Media onboarding summary PDF. Mirrors the structure/factory
 // pattern of api/_pdf/OnboardingPDF.tsx (react-pdf components are passed in
 // rather than statically imported — see that file's comment for why), but
 // self-contained: marketing's field set is small enough not to need a
@@ -96,7 +96,7 @@ export function createMarketingPDF(pdf: { Document: any; Page: any; Text: any; V
       <Document
         title={`TAG Digital Marketing · ${payload.basics?.businessName ?? 'Submission'}`}
         author="TAG"
-        subject="Digital Advertising Onboarding"
+        subject="Paid Media Onboarding"
       >
         <MarketingSection title="Business Basics" eyebrow="STEP 01" data={payload.basics} sessionId={sessionId} />
         <MarketingSection title="Accounts & Assets" eyebrow="STEP 02" data={payload.accounts} sessionId={sessionId} />
