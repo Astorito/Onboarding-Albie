@@ -23,6 +23,7 @@ export interface Onboarding {
   'Albie Enabled'?: boolean;
   'Marketing Enabled'?: boolean;
   'Web Design Enabled'?: boolean;
+  'Social Enabled'?: boolean;
 }
 
 export type CreateOnboardingResult =

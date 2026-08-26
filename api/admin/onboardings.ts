@@ -46,7 +46,7 @@ export default async function handler(req: any, res: any) {
 
     const bundledSessionIds = new Set<string>();
     for (const eng of engagementRows) {
-      for (const key of ['Hotel Session ID', 'Marketing Session ID', 'Web Design Session ID']) {
+      for (const key of ['Hotel Session ID', 'Marketing Session ID', 'Web Design Session ID', 'Social Session ID']) {
         if (eng[key]) bundledSessionIds.add(eng[key]);
       }
     }
@@ -63,6 +63,7 @@ export default async function handler(req: any, res: any) {
       'Albie Enabled': !!f['Albie Enabled'],
       'Marketing Enabled': !!f['Marketing Enabled'],
       'Web Design Enabled': !!f['Web Design Enabled'],
+      'Social Enabled': !!f['Social Enabled'],
     }));
 
     let sheetRows: Record<string, string>[] = [];
@@ -80,11 +81,10 @@ export default async function handler(req: any, res: any) {
   // callers.
   // - Exactly 1 product selected -> identical to today's behavior: a single
   //   Onboardings_* row, link goes straight to that product's flow.
-  // - 2+ selected (Albie/Web Design/Marketing only) -> an Engagement "hub"
-  //   record bundling them behind one link.
+  // - 2+ selected -> an Engagement "hub" record bundling them behind one link.
   if (req.method === 'POST') {
     const { accountId, onboardingName, pocEmail } = req.body ?? {};
-    const products: EngagementProducts & { social?: boolean } = req.body?.products ?? {
+    const products: EngagementProducts = req.body?.products ?? {
       albie: true, webDesign: false, marketing: false, social: false,
     };
     if (!accountId || !onboardingName) {
@@ -94,14 +94,6 @@ export default async function handler(req: any, res: any) {
     const enabledCount = [products.albie, products.webDesign, products.marketing, products.social].filter(Boolean).length;
     if (enabledCount === 0) {
       return res.status(400).json({ error: 'Select at least one product' });
-    }
-
-    // Social doesn't participate in Engagement bundling yet — createEngagement
-    // only knows about albie/webDesign/marketing, so letting this through
-    // would silently create the bundle WITHOUT the social row: the request
-    // would look successful while quietly dropping half of what was asked for.
-    if (products.social && enabledCount > 1) {
-      return res.status(400).json({ error: "Social Media can't be bundled with other products yet — create it as its own onboarding." });
     }
 
     // ── 2+ products: create an Engagement (requires Airtable) ──────────────

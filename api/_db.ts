@@ -664,6 +664,7 @@ export interface EngagementProducts {
   albie: boolean;
   webDesign: boolean;
   marketing: boolean;
+  social: boolean;
 }
 
 function generateEngagementId(): string {
@@ -720,6 +721,18 @@ export async function createEngagement(opts: {
     webDesignSessionId = webDesign.sessionId;
   }
 
+  let socialSessionId = '';
+  if (opts.products.social) {
+    const social = await createAirtableOnboarding({
+      accountId: opts.accountId,
+      onboardingName: opts.onboardingName,
+      pocEmail: opts.pocEmail,
+      createdBy: opts.createdBy,
+      type: 'social',
+    });
+    socialSessionId = social.sessionId;
+  }
+
   await createRecord(ENGAGEMENTS_TABLE, {
     'Engagement ID': engagementId,
     'Onboarding Name': opts.onboardingName,
@@ -730,9 +743,11 @@ export async function createEngagement(opts: {
     'Albie Enabled': opts.products.albie,
     'Web Design Enabled': opts.products.webDesign,
     'Marketing Enabled': opts.products.marketing,
+    'Social Enabled': opts.products.social,
     'Hotel Session ID': hotelSessionId,
     'Marketing Session ID': marketingSessionId,
     'Web Design Session ID': webDesignSessionId,
+    'Social Session ID': socialSessionId,
   });
 
   const slug = slugFromRow(opts.onboardingName, engagementId) || engagementId;
@@ -765,7 +780,8 @@ export async function findEngagementByProductSessionId(sessionId: string): Promi
     (r) =>
       r.fields['Hotel Session ID'] === sessionId ||
       r.fields['Marketing Session ID'] === sessionId ||
-      r.fields['Web Design Session ID'] === sessionId,
+      r.fields['Web Design Session ID'] === sessionId ||
+      r.fields['Social Session ID'] === sessionId,
   ) ?? null;
 }
 
@@ -779,6 +795,7 @@ export function engagementResponseFromRecord(record: AirtableRecord) {
   const hotelSessionId = f['Hotel Session ID'] || '';
   const marketingSessionId = f['Marketing Session ID'] || '';
   const webDesignSessionId = f['Web Design Session ID'] || '';
+  const socialSessionId = f['Social Session ID'] || '';
   return {
     engagementSlug: slugFromRow(onboardingName, engagementId) || engagementId,
     engagementName: onboardingName || null,
@@ -794,6 +811,10 @@ export function engagementResponseFromRecord(record: AirtableRecord) {
       marketing: {
         enabled: !!f['Marketing Enabled'],
         slug: f['Marketing Enabled'] && marketingSessionId ? (slugFromRow(onboardingName, marketingSessionId) || null) : null,
+      },
+      social: {
+        enabled: !!f['Social Enabled'],
+        slug: f['Social Enabled'] && socialSessionId ? (slugFromRow(onboardingName, socialSessionId) || null) : null,
       },
     },
   };

@@ -3,11 +3,13 @@ import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { Icon } from '../components/ui/primitives';
 
-// No `engagementSlug` prop yet — this product isn't wired into the Engagement
-// hub (api/engagement.ts, EngagementHubApp.tsx) until it's reviewed and
-// connected for real. See the identical prop on MarketingSuccessStep /
-// WebsiteSuccessStep for how that would slot in later.
-export const SocialSuccessStep = () => {
+interface Props {
+  // Present only when this onboarding was opened from an Engagement hub
+  // (2+ products bought together) — same pattern as MarketingSuccessStep.
+  engagementSlug?: string | null;
+}
+
+export const SocialSuccessStep = ({ engagementSlug }: Props) => {
   useEffect(() => {
     const end = Date.now() + 3 * 1000;
     const colors = ['#1d1e1f', '#e6007e', '#ffffff'];
@@ -50,6 +52,14 @@ export const SocialSuccessStep = () => {
               digital@theanythinggroup.com
             </a>
           </div>
+          {engagementSlug && (
+            <a
+              href={`/e/${engagementSlug}`}
+              className="mt-8 inline-block bg-primary text-on-primary px-12 py-5 rounded-2xl font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xl"
+            >
+              Back to your onboardings
+            </a>
+          )}
         </div>
       </motion.div>
     </div>

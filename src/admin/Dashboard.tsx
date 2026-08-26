@@ -53,8 +53,9 @@ function MetricCard({ label, value }: { label: string; value: number }) {
 function engagementProductsLabel(o: Onboarding): string {
   const products = [
     o['Albie Enabled'] && 'ALBIE',
-    o['Marketing Enabled'] && 'Marketing',
+    o['Marketing Enabled'] && 'Paid Media',
     o['Web Design Enabled'] && 'Web Design',
+    o['Social Enabled'] && 'Social Media',
   ].filter(Boolean);
   return products.join(' + ') || 'No products';
 }

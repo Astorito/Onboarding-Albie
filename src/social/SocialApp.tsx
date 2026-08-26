@@ -21,10 +21,6 @@ import { SocialSuccessStep } from './SocialSuccessStep';
 
 import { DEFAULT_ENABLED } from './constants';
 
-// Not bundled into the Engagement hub yet (see api/admin/onboardings.ts —
-// Social is rejected if combined with another product at creation time), so
-// unlike Marketing/Website there's no engagementSlug/redirect handling here:
-// a Social session id can never be found by the hub's reverse lookup.
 export default function SocialApp() {
   // ── Session ID resolution — same pattern as src/marketing/MarketingApp.tsx ─
   // /social/o/<slug> readable link (preferred, slug resolved async server-
@@ -32,6 +28,12 @@ export default function SocialApp() {
   const STORAGE_KEY = 'albie_social_session_id';
   const slugMatch = window.location.pathname.match(/^\/social\/o\/(.+)$/);
   const initialSlug = slugMatch ? decodeURIComponent(slugMatch[1]) : null;
+
+  // Present only when opened from an Engagement hub (multi-product link) —
+  // shows a "back to hub" button on the success screen.
+  const [engagementSlug] = useState<string | null>(
+    () => new URLSearchParams(window.location.search).get('engagement'),
+  );
 
   const [sessionId, setSessionId] = useState<string | null>(() => {
     if (initialSlug) return null; // resolved async via /api/session?slug=
@@ -92,6 +94,15 @@ export default function SocialApp() {
       })
       .then((data) => {
         if (!data || data.__notFound) { setLoadState('ready'); return; }
+        // This product turns out to be bundled into a multi-product
+        // Engagement, but we got here via its own bare link (no ?engagement=
+        // — e.g. an old/stale link, or one shared directly instead of through
+        // the hub). Redirect to the hub instead of silently only showing
+        // this one product.
+        if (!engagementSlug && data.engagementSlug) {
+          window.location.replace(`/e/${data.engagementSlug}`);
+          return;
+        }
         if (data.sessionId) {
           setSessionId(data.sessionId);
           localStorage.setItem(STORAGE_KEY, data.sessionId);
@@ -262,6 +273,15 @@ export default function SocialApp() {
                     className="h-8 w-auto absolute left-0"
                   />
                   <ProgressBar currentStep={progressCurrent} totalSteps={progressTotal} />
+                  {engagementSlug && (
+                    <a
+                      href={`/e/${engagementSlug}`}
+                      className="absolute right-0 flex items-center gap-1 text-xs font-semibold text-primary hover:text-secondary transition-colors whitespace-nowrap"
+                    >
+                      <Icon name="arrow_back" className="text-sm" />
+                      Your onboardings
+                    </a>
+                  )}
                 </div>
               </div>
 
@@ -297,7 +317,7 @@ export default function SocialApp() {
             <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full"
               onAnimationStart={() => localStorage.removeItem(STORAGE_KEY)}
             >
-              <SocialSuccessStep />
+              <SocialSuccessStep engagementSlug={engagementSlug} />
             </motion.div>
           )}
 

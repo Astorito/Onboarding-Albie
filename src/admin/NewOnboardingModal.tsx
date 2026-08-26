@@ -43,13 +43,6 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
       if (!accountId) throw new Error('Select or create an account');
       if (!onboardingName.trim()) throw new Error('Enter the onboarding name');
       if (!albieEnabled && !webDesignEnabled && !marketingEnabled && !socialEnabled) throw new Error('Select at least one product');
-      // Social doesn't participate in Engagement bundling yet — matches the
-      // same check on api/admin/onboardings.ts, but catching it here avoids a
-      // round-trip for a combination the server would reject anyway.
-      const otherSelected = albieEnabled || webDesignEnabled || marketingEnabled;
-      if (socialEnabled && otherSelected) {
-        throw new Error("Social Media can't be bundled with other products yet — create it as its own onboarding.");
-      }
 
       const trimmedName = onboardingName.trim();
       const result = await adminApi.createOnboarding(
@@ -201,11 +194,6 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
                   Social Media
                 </label>
               </div>
-              {socialEnabled && (albieEnabled || webDesignEnabled || marketingEnabled) && (
-                <p className="text-[11px] text-amber-600 mt-2">
-                  Social Media can't be bundled with other products yet — it'll need its own onboarding.
-                </p>
-              )}
             </div>
 
             {/* POC email */}

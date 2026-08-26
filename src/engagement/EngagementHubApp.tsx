@@ -8,15 +8,17 @@ interface EngagementResponse {
     albie: { enabled: boolean; slug: string | null };
     webDesign: { enabled: boolean; slug: string | null };
     marketing: { enabled: boolean; slug: string | null };
+    social: { enabled: boolean; slug: string | null };
   };
 }
 
 // Tailwind needs literal class names (no `grid-cols-${n}` interpolation), and
-// there are at most 3 products, so a small lookup covers every case.
+// there are at most 4 products, so a small lookup covers every case.
 const GRID_COLS: Record<number, string> = {
   1: 'grid-cols-1',
   2: 'grid-cols-1 sm:grid-cols-2',
   3: 'grid-cols-1 sm:grid-cols-3',
+  4: 'grid-cols-1 sm:grid-cols-2',
 };
 
 // Near-black used throughout the other onboarding flows' dark panels
@@ -148,8 +150,15 @@ export default function EngagementHubApp() {
       id: 'marketing', enabled: products.marketing.enabled, accentColor: TAG_PINK,
       title: 'Paid Media', icon: 'track_changes',
       description: <>Let's begin your <strong style={{ color: TAG_PINK }}>Paid Media</strong> onboarding</>,
-      shortLabel: 'DIGITAL MARKETING',
+      shortLabel: 'PAID MEDIA',
       href: products.marketing.slug ? `/marketing/o/${products.marketing.slug}?engagement=${engagementSlug}` : undefined,
+    },
+    {
+      id: 'social', enabled: products.social.enabled, accentColor: TAG_PINK,
+      title: 'Social Media', icon: 'share',
+      description: <>Let's begin your <strong style={{ color: TAG_PINK }}>social media</strong> onboarding</>,
+      shortLabel: 'SOCIAL MEDIA',
+      href: products.social.slug ? `/social/o/${products.social.slug}?engagement=${engagementSlug}` : undefined,
     },
   ].filter((c) => c.enabled);
 
