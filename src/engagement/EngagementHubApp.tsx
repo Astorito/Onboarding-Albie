@@ -144,8 +144,8 @@ export default function EngagementHubApp() {
     },
     {
       id: 'marketing', enabled: products.marketing.enabled, accentColor: TAG_PINK,
-      title: 'Marketing', icon: 'track_changes',
-      description: <>Let's begin your <strong style={{ color: TAG_PINK }}>marketing</strong> onboarding</>,
+      title: 'Paid Media', icon: 'track_changes',
+      description: <>Let's begin your <strong style={{ color: TAG_PINK }}>Paid Media</strong> onboarding</>,
       shortLabel: 'DIGITAL MARKETING',
       href: products.marketing.slug ? `/marketing/o/${products.marketing.slug}?engagement=${engagementSlug}` : undefined,
     },
