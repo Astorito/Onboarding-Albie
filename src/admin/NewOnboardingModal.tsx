@@ -101,7 +101,7 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
                   <select
                     value={selectedAccountId}
                     onChange={e => setSelectedAccountId(e.target.value)}
-                    className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#0D3A39] outline-none focus:border-[#2F6B6D] focus:ring-2 focus:ring-[#2F6B6D]/10 transition bg-white"
+                    className="flex-1 min-w-0 border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#0D3A39] outline-none focus:border-[#2F6B6D] focus:ring-2 focus:ring-[#2F6B6D]/10 transition bg-white"
                   >
                     <option value="">Select account…</option>
                     {accounts.map(a => (
@@ -113,7 +113,7 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
                   <button
                     type="button"
                     onClick={() => { setIsNewAccount(true); setSelectedAccountId(''); }}
-                    className="px-4 py-3 border border-[#2F6B6D] text-[#2F6B6D] text-sm font-semibold rounded-xl hover:bg-[#2F6B6D]/5 transition cursor-pointer whitespace-nowrap"
+                    className="shrink-0 px-4 py-3 border border-[#2F6B6D] text-[#2F6B6D] text-sm font-semibold rounded-xl hover:bg-[#2F6B6D]/5 transition cursor-pointer whitespace-nowrap"
                   >
                     + New
                   </button>
