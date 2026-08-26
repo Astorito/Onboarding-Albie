@@ -1,7 +1,7 @@
 import { FormField, TextareaInput } from '../components/ui/primitives';
 import { ConfigSection } from '../components/ui/layout';
-import { SelectableCard } from './SelectableCard';
-import { OtherReveal } from './OtherReveal';
+import { SelectableCard } from '../components/ui/SelectableCard';
+import { OtherReveal } from '../components/ui/OtherReveal';
 
 export type BrandPrefill = Record<string, string | null | undefined>;
 

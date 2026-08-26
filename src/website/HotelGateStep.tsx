@@ -1,6 +1,6 @@
 import { FormField } from '../components/ui/primitives';
 import { ConfigSection } from '../components/ui/layout';
-import { SelectableCard } from './SelectableCard';
+import { SelectableCard } from '../components/ui/SelectableCard';
 
 export type HotelGatePrefill = Record<string, string | null | undefined>;
 
