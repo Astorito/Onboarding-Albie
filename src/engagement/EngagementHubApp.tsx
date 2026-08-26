@@ -61,10 +61,12 @@ const ProductCard = ({
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-bold text-base" style={{ color: clickable ? accentColor : undefined }}>
+        <p className="font-hanken font-bold text-base" style={{ color: clickable ? accentColor : undefined }}>
           {title}
         </p>
-        <p className="text-sm text-on-surface-variant mt-1.5 leading-snug">{description}</p>
+        {/* Spec calls for Roobert on this line — not in the repo yet, same as
+            PP Monument above — falls back to TAG Helvetica for now. */}
+        <p className="font-hanken text-sm text-on-surface-variant mt-1.5 leading-snug">{description}</p>
       </div>
       {clickable ? (
         <Icon name="arrow_forward" className="text-lg text-[#1d1e1f]" />
@@ -158,17 +160,20 @@ export default function EngagementHubApp() {
   const subtitle = cardData.map((c) => c.shortLabel).join(' + ');
 
   return (
-    <main className="h-screen overflow-hidden flex items-center justify-center px-margin-mobile bg-white">
+    <main className="marketing-theme h-screen overflow-hidden flex items-center justify-center px-margin-mobile bg-white">
       <div className="max-w-3xl w-full flex flex-col items-center gap-5 sm:gap-8">
         <div className="text-center">
+          {/* Spec calls for PP Monument here — not in the repo yet (paid font,
+              no license file to embed), so this falls back to TAG Helvetica
+              Bold until the .otf/.ttf files are provided. */}
           <h1
-            className="uppercase font-black text-4xl sm:text-5xl md:text-6xl leading-none tracking-tight"
+            className="font-hanken uppercase font-black text-4xl sm:text-5xl md:text-6xl leading-none tracking-tight"
             style={{ color: INK }}
           >
             Welcome to TAG
           </h1>
           {subtitle && (
-            <p className="uppercase font-bold text-on-surface-variant/60 text-base sm:text-lg md:text-xl tracking-wide mt-2 sm:mt-3">
+            <p className="font-hanken uppercase font-bold text-[#A6A6A6] text-base sm:text-lg md:text-xl tracking-wide mt-2 sm:mt-3">
               {subtitle}
             </p>
           )}
