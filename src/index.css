@@ -21,6 +21,20 @@
   font-display: swap;
 }
 @font-face {
+  font-family: 'TAG Helvetica';
+  src: url('/fonts/tag-helvetica/Helvetica-Oblique.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'TAG Helvetica';
+  src: url('/fonts/tag-helvetica/Helvetica-BoldOblique.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
   font-family: 'PP Monument Extended';
   src: url('/fonts/pp-monument/PPMonumentExtended-Black.otf') format('opentype');
   font-weight: 900;
