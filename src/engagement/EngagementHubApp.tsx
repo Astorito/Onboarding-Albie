@@ -50,11 +50,17 @@ const ProductCard = ({
       }`}
     >
       <div
-        className="w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center"
-        style={{ backgroundColor: clickable ? accentColor : undefined }}
+        className="w-14 h-14 shrink-0 rounded-2xl flex items-center justify-center overflow-hidden"
+        style={{ backgroundColor: clickable && !icon.startsWith('img:') ? accentColor : undefined }}
       >
         {icon === 'albie-mark' ? (
           <img src="/favicon.png" alt="" className={`w-7 h-7 object-contain ${clickable ? 'brightness-0 invert' : 'opacity-40'}`} />
+        ) : icon.startsWith('img:') ? (
+          <img
+            src={icon.slice(4)}
+            alt=""
+            className={`w-full h-full object-cover ${clickable ? '' : 'opacity-40 grayscale'}`}
+          />
         ) : (
           <Icon
             name={icon}
@@ -148,14 +154,14 @@ export default function EngagementHubApp() {
     },
     {
       id: 'marketing', enabled: products.marketing.enabled, accentColor: TAG_PINK,
-      title: 'Paid Media', icon: 'track_changes',
+      title: 'Paid Media', icon: 'img:/paid-media-icon.jpg',
       description: <>Let's begin your <strong style={{ color: TAG_PINK }}>Paid Media</strong> onboarding</>,
       shortLabel: 'PAID MEDIA',
       href: products.marketing.slug ? `/marketing/o/${products.marketing.slug}?engagement=${engagementSlug}` : undefined,
     },
     {
       id: 'social', enabled: products.social.enabled, accentColor: TAG_PINK,
-      title: 'Social Media', icon: 'share',
+      title: 'Social Media', icon: 'img:/social-media-icon.jpg',
       description: <>Let's begin your <strong style={{ color: TAG_PINK }}>social media</strong> onboarding</>,
       shortLabel: 'SOCIAL MEDIA',
       href: products.social.slug ? `/social/o/${products.social.slug}?engagement=${engagementSlug}` : undefined,
