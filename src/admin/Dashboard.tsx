@@ -255,7 +255,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
       {/* Header */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <img src="/albie-logo-dark.svg" alt="ALBIE" className="h-8 w-auto" />
+          <img src="/tag-logo-black.png" alt="TAG" className="h-8 w-auto" />
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-400 hidden sm:block">{adminEmail}</span>
             <button

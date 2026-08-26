@@ -20,12 +20,19 @@
   font-weight: 700;
   font-display: swap;
 }
+@font-face {
+  font-family: 'PP Monument Extended';
+  src: url('/fonts/pp-monument/PPMonumentExtended-Black.otf') format('opentype');
+  font-weight: 900;
+  font-display: swap;
+}
 
 /* Scoped brand theme for the Digital Marketing onboarding — overrides the
    design-token CSS variables only within this subtree, so the Albie hotel
    onboarding's teal/DM-Sans theme is untouched outside of it. */
 .marketing-theme {
   --font-hanken: 'TAG Helvetica', Helvetica, Arial, sans-serif;
+  --font-monument: 'PP Monument Extended', 'TAG Helvetica', Helvetica, Arial, sans-serif;
   --color-primary: #1d1e1f;
   --color-on-primary: #ffffff;
   --color-secondary: #e6007e;

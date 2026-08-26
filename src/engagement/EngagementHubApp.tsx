@@ -172,12 +172,9 @@ export default function EngagementHubApp() {
     <main className="marketing-theme h-screen overflow-hidden flex items-center justify-center px-margin-mobile bg-white">
       <div className="max-w-3xl w-full flex flex-col items-center gap-5 sm:gap-8">
         <div className="text-center">
-          {/* Spec calls for PP Monument here — not in the repo yet (paid font,
-              no license file to embed), so this falls back to TAG Helvetica
-              Bold until the .otf/.ttf files are provided. */}
           <h1
-            className="font-hanken uppercase font-black text-4xl sm:text-5xl md:text-6xl leading-none tracking-tight"
-            style={{ color: INK }}
+            className="uppercase font-black text-4xl sm:text-5xl md:text-6xl leading-none tracking-tight"
+            style={{ color: INK, fontFamily: 'var(--font-monument)' }}
           >
             Welcome to TAG
           </h1>

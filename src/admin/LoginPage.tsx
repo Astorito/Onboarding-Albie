@@ -29,7 +29,7 @@ export function LoginPage({ onLogin }: Props) {
     <div className="min-h-screen bg-white flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex justify-center">
-          <img src="/albie-logo-dark.svg" alt="ALBIE" className="h-10 w-auto" />
+          <img src="/tag-logo-black.png" alt="TAG" className="h-10 w-auto" />
         </div>
 
         <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm">
