@@ -93,6 +93,26 @@ function matchesProductFilter(o: Onboarding, filter: ProductFilter): boolean {
   return o['Type'] === filter;
 }
 
+const PRODUCT_FILTER_LABELS: Record<ProductFilter, string> = {
+  all: 'All areas',
+  hotel: 'ALBIE',
+  webdesign: 'Web Design',
+  marketing: 'Paid Media',
+  social: 'Social Media',
+  engagement: 'Engagements',
+};
+
+// Matches against everything visible in a row: the onboarding's own name,
+// the legacy hotel-flow's Property Name, and the account it belongs to (so
+// searching a client name finds all of that client's onboardings even when
+// the onboarding itself was named something else).
+function matchesSearch(o: Onboarding, query: string, accountName: string): boolean {
+  if (!query.trim()) return true;
+  const q = query.trim().toLowerCase();
+  return [o['Onboarding Name'], o['Property Name'], accountName]
+    .some(v => (v ?? '').toLowerCase().includes(q));
+}
+
 function engagementProductsLabel(o: Onboarding): string {
   const products = [
     o['Albie Enabled'] && 'ALBIE',
@@ -124,6 +144,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
   // expanded starts empty → all groups closed by default
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [productFilter, setProductFilter] = useState<ProductFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchAll = useCallback(async () => {
     try {
@@ -193,7 +214,10 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
     onLogout();
   };
 
-  const filteredOnboardings = onboardings.filter(o => matchesProductFilter(o, productFilter));
+  const filteredOnboardings = onboardings.filter(o =>
+    matchesProductFilter(o, productFilter)
+    && matchesSearch(o, searchQuery, accountNameById[o['Account ID']] ?? ''),
+  );
 
   // Group by Account ID, resolve name from accounts list
   const groups: Record<string, { label: string; items: Onboarding[] }> = {};
@@ -265,11 +289,37 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
           </div>
         )}
 
+        {!loading && onboardings.length > 0 && (
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <div className="relative flex-1">
+              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M18 11a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search by onboarding or account name…"
+                className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#0D3A39] outline-none focus:border-[#2F6B6D] focus:ring-2 focus:ring-[#2F6B6D]/10 transition bg-white"
+              />
+            </div>
+            <select
+              value={productFilter}
+              onChange={e => setProductFilter(e.target.value as ProductFilter)}
+              className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-[#0D3A39] outline-none focus:border-[#2F6B6D] focus:ring-2 focus:ring-[#2F6B6D]/10 transition bg-white sm:w-52"
+            >
+              {(Object.keys(PRODUCT_FILTER_LABELS) as ProductFilter[]).map(key => (
+                <option key={key} value={key}>{PRODUCT_FILTER_LABELS[key]}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[#0D3A39]">Onboardings</h1>
           <p className="text-sm text-gray-500 mt-1">
             {filteredOnboardings.length} onboarding{filteredOnboardings.length !== 1 ? 's' : ''}
-            {productFilter === 'all' ? ' total' : ` (filtered, out of ${onboardings.length})`}
+            {productFilter === 'all' && !searchQuery.trim() ? ' total' : ` (filtered, out of ${onboardings.length})`}
           </p>
         </div>
 
@@ -291,12 +341,12 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-2xl mb-4">🔍</div>
             <p className="font-bold text-[#0D3A39] text-lg mb-1">No onboardings match this filter</p>
-            <p className="text-gray-500 text-sm mb-6">Try a different product, or clear the filter</p>
+            <p className="text-gray-500 text-sm mb-6">Try a different search or area, or clear the filters</p>
             <button
-              onClick={() => setProductFilter('all')}
+              onClick={() => { setProductFilter('all'); setSearchQuery(''); }}
               className="bg-[#2F6B6D] text-white text-sm font-bold px-6 py-3 rounded-xl hover:opacity-90 active:scale-95 transition-all cursor-pointer"
             >
-              Clear filter
+              Clear filters
             </button>
           </div>
         ) : (
