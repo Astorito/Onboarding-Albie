@@ -32,7 +32,7 @@ export const MarketingWelcomeStep = ({ onNext }: { onNext: () => void }) => (
       </div>
       <div className="md:col-span-6 hidden md:block h-[450px] rounded-2xl overflow-hidden border border-outline-variant shadow-lg">
         <img
-          src="/marketing/onboarding-marketing.png"
+          src="/marketing/paid-media-hero.jpg"
           alt=""
           className="w-full h-full object-cover"
         />
