@@ -174,17 +174,19 @@ export async function uploadToDrive(pdfBuffer: Buffer, filename: string): Promis
   return uploadRes.data.webViewLink ?? `https://drive.google.com/file/d/${fileId}/view`;
 }
 
-// ─── Save PDF link (Airtable first, then Sheets), return POC email ────────────
+// ─── Save PDF link (Airtable first, then Sheets), return POC + creator email ──
 // Hotel-only: marketing/website never lived in Sheets, so their fallback would
 // always be a no-op — they use updateAirtableOnboardingFields directly instead
 // (see sendSimpleProductEmail below).
-async function savePdfLink(sessionId: string, pdfLink: string): Promise<string> {
+async function savePdfLink(sessionId: string, pdfLink: string): Promise<{ pocEmail: string; createdBy: string }> {
   // Airtable first — if the onboarding lives there, write back and stop.
   const airtableResult = await updateAirtableOnboardingFields(sessionId, {
     'PDF Link': pdfLink,
     'Status': 'completed',
   });
-  if (airtableResult.ok) return airtableResult.pocEmail ?? '';
+  if (airtableResult.ok) {
+    return { pocEmail: airtableResult.pocEmail ?? '', createdBy: airtableResult.createdBy ?? '' };
+  }
 
   // Fallback: existing onboardings still in the Sheet (unchanged).
   const sheetId = process.env.GOOGLE_SHEET_ID!;
@@ -194,10 +196,10 @@ async function savePdfLink(sessionId: string, pdfLink: string): Promise<string> 
   const rowNum = await findRowBySessionId(sheets, sheetId, ONBOARDINGS_TAB, sessionId);
   if (rowNum < 1) {
     console.warn(`[send-onboarding] Session ${sessionId} not found in sheet — skipping PDF link save`);
-    return '';
+    return { pocEmail: '', createdBy: '' };
   }
 
-  // Read the row to get POC Email before updating
+  // Read the row to get POC Email + Created By before updating
   const [headerRes, rowRes] = await Promise.all([
     sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${ONBOARDINGS_TAB}!1:1` }),
     sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: `${ONBOARDINGS_TAB}!${rowNum}:${rowNum}` }),
@@ -205,13 +207,14 @@ async function savePdfLink(sessionId: string, pdfLink: string): Promise<string> 
   const headers = (headerRes.data.values?.[0] ?? []) as string[];
   const rowData = (rowRes.data.values?.[0] ?? []) as string[];
   const pocEmail = rowData[headers.indexOf('POC Email')] ?? '';
+  const createdBy = rowData[headers.indexOf('Created By')] ?? '';
 
   await Promise.all([
     updateCellByHeader(sheets, sheetId, ONBOARDINGS_TAB, rowNum, 'PDF Link', pdfLink),
     updateCellByHeader(sheets, sheetId, ONBOARDINGS_TAB, rowNum, 'Status', 'completed'),
   ]);
 
-  return pocEmail;
+  return { pocEmail, createdBy };
 }
 
 // ─── Shared send path for marketing & website — always admin (+ POC copy) ─────
@@ -253,28 +256,41 @@ async function sendSimpleProductEmail(opts: {
     throw new Error(sendResult.error.message ?? 'Email send failed');
   }
 
-  // Save the Drive link + flip Status, then (fire-and-forget) notify the POC
-  // with a clean copy.
-  updateAirtableOnboardingFields(
-    payload.sessionId,
-    driveLink ? { 'PDF Link': driveLink, 'Status': 'completed' } : { 'Status': 'completed' },
-  )
-    .then(async (result) => {
-      const pocEmail = result.pocEmail;
-      if (!pocEmail || pocEmail === adminEmail) return;
+  // Save the Drive link + flip Status, then notify the POC and whichever admin
+  // created this onboarding in the panel — each gets a copy only if their
+  // address wasn't already covered by an earlier send. Awaited (not
+  // fire-and-forget): a serverless function can be frozen the instant it
+  // returns its response, so unawaited work here would race the freeze and
+  // silently never run — which is exactly why Status used to get stuck on
+  // "pending" after a real send. Failure here is still non-fatal to the
+  // client — it only ever affects who gets notified, not the submission.
+  try {
+    const result = await updateAirtableOnboardingFields(
+      payload.sessionId,
+      driveLink ? { 'PDF Link': driveLink, 'Status': 'completed' } : { 'Status': 'completed' },
+    );
+    const sentTo = new Set([adminEmail.toLowerCase()]);
+    const extraRecipients: string[] = [];
+    for (const raw of [result.pocEmail, result.createdBy]) {
+      const email = raw?.trim();
+      if (!email || sentTo.has(email.toLowerCase())) continue;
+      sentTo.add(email.toLowerCase());
+      extraRecipients.push(email);
+    }
+    for (const recipient of extraRecipients) {
       await resend.emails.send({
         from: `${fromName} <${fromEmail}>`,
-        to: pocEmail,
+        to: recipient,
         subject: `${subjectPrefix}: ${displayName}`,
         html: buildBody(payload),
         attachments: [{ filename: pdfFilename, content: pdfBuffer }],
       });
-      console.log(`[${logTag}] POC copy sent to ${pocEmail}`);
-    })
-    .catch((err: unknown) => {
-      const m = err instanceof Error ? err.message : 'Unknown error';
-      console.warn(`[${logTag}] status update or POC email failed:`, m);
-    });
+      console.log(`[${logTag}] copy sent to ${recipient}`);
+    }
+  } catch (err: unknown) {
+    const m = err instanceof Error ? err.message : 'Unknown error';
+    console.warn(`[${logTag}] status update or copy email failed:`, m);
+  }
 
   console.log(`[${logTag}] sent to ${adminEmail}, id=${sendResult.data?.id}, drive=${driveLink ?? 'none'}`);
   return { id: sendResult.data?.id ?? null, pdfLink: driveLink ?? null };
@@ -407,20 +423,33 @@ export default async function handler(req: any, res: any) {
       return res.status(502).json({ success: false, error: sendResult.error.message ?? 'Email send failed' });
     }
 
+    // Awaited (not fire-and-forget) — see the identical rationale on the
+    // marketing/social/website path in sendSimpleProductEmail above.
     if (driveLink && payload.sessionId && (isAirtableConfigured() || process.env.GOOGLE_SHEET_ID)) {
-      savePdfLink(payload.sessionId, driveLink)
-        .then(async (pocEmail) => {
-          if (!pocEmail || pocEmail === adminEmail) return;
+      try {
+        const { pocEmail, createdBy } = await savePdfLink(payload.sessionId, driveLink);
+        const sentTo = new Set([to.toLowerCase(), ...(bcc ?? []).map((e) => e.toLowerCase())]);
+        const extraRecipients: string[] = [];
+        for (const raw of [pocEmail, createdBy]) {
+          const email = raw?.trim();
+          if (!email || sentTo.has(email.toLowerCase())) continue;
+          sentTo.add(email.toLowerCase());
+          extraRecipients.push(email);
+        }
+        for (const recipient of extraRecipients) {
           await resend.emails.send({
             from: `ALBIE Onboarding <${fromEmail}>`,
-            to: pocEmail,
+            to: recipient,
             subject: `New onboarding: ${hotelName}`,
             html: buildHotelEmailBody(payload, false),
             attachments: [{ filename: pdfFilename, content: pdfBuffer }],
           });
-          console.log(`[send-onboarding] POC copy sent to ${pocEmail}`);
-        })
-        .catch(err => console.warn('[send-onboarding] Sheet update or POC email failed:', err.message));
+          console.log(`[send-onboarding] copy sent to ${recipient}`);
+        }
+      } catch (err: unknown) {
+        const m = err instanceof Error ? err.message : 'Unknown error';
+        console.warn('[send-onboarding] Sheet update or copy email failed:', m);
+      }
     }
 
     console.log(`[send-onboarding] sent (${mode}) to ${to}, id=${sendResult.data?.id}, drive=${driveLink ?? 'none'}`);

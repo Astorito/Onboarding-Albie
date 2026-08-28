@@ -614,14 +614,21 @@ export async function deleteAirtableOnboardingBySessionId(sessionId: string): Pr
 }
 
 // Used by send-onboarding.ts to write back PDF Link / Status after email send.
+// Also hands back who should get a copy: the client's own POC contact, and
+// the admin who created this onboarding in the panel (so its PDF finds its
+// way back to whoever set it up, not just the shared inbox).
 export async function updateAirtableOnboardingFields(
   sessionId: string,
   fields: Record<string, any>,
-): Promise<{ ok: boolean; pocEmail?: string }> {
+): Promise<{ ok: boolean; pocEmail?: string; createdBy?: string }> {
   const hit = await findOnboardingBySessionId(sessionId);
   if (!hit) return { ok: false };
   await updateRecord(hit.table, hit.record.id, fields);
-  return { ok: true, pocEmail: hit.record.fields['POC Email'] ?? '' };
+  return {
+    ok: true,
+    pocEmail: hit.record.fields['POC Email'] ?? '',
+    createdBy: hit.record.fields['Created By'] ?? '',
+  };
 }
 
 // ─── Admin: accounts (list / create) ───────────────────────────────────────────
