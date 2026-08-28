@@ -278,14 +278,22 @@ async function sendSimpleProductEmail(opts: {
       extraRecipients.push(email);
     }
     for (const recipient of extraRecipients) {
-      await resend.emails.send({
+      // resend.emails.send() reports failure via `.error`, not a thrown
+      // exception — checking it is what makes this log trustworthy instead
+      // of claiming "sent" for a copy Resend actually rejected (e.g. a
+      // non-verified recipient while the account is still in sandbox mode).
+      const copyResult = await resend.emails.send({
         from: `${fromName} <${fromEmail}>`,
         to: recipient,
         subject: `${subjectPrefix}: ${displayName}`,
         html: buildBody(payload),
         attachments: [{ filename: pdfFilename, content: pdfBuffer }],
       });
-      console.log(`[${logTag}] copy sent to ${recipient}`);
+      if (copyResult.error) {
+        console.warn(`[${logTag}] copy to ${recipient} failed:`, copyResult.error.message);
+      } else {
+        console.log(`[${logTag}] copy sent to ${recipient}`);
+      }
     }
   } catch (err: unknown) {
     const m = err instanceof Error ? err.message : 'Unknown error';
@@ -437,14 +445,18 @@ export default async function handler(req: any, res: any) {
           extraRecipients.push(email);
         }
         for (const recipient of extraRecipients) {
-          await resend.emails.send({
+          const copyResult = await resend.emails.send({
             from: `ALBIE Onboarding <${fromEmail}>`,
             to: recipient,
             subject: `New onboarding: ${hotelName}`,
             html: buildHotelEmailBody(payload, false),
             attachments: [{ filename: pdfFilename, content: pdfBuffer }],
           });
-          console.log(`[send-onboarding] copy sent to ${recipient}`);
+          if (copyResult.error) {
+            console.warn(`[send-onboarding] copy to ${recipient} failed:`, copyResult.error.message);
+          } else {
+            console.log(`[send-onboarding] copy sent to ${recipient}`);
+          }
         }
       } catch (err: unknown) {
         const m = err instanceof Error ? err.message : 'Unknown error';
