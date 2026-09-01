@@ -7,7 +7,7 @@ export type AccountsPrefill = Record<string, string | null | undefined>;
 // Shared "connect your accounts" instructions sheet linked from every Yes/No
 // question in the source form (Google Ads, GTM, GA4, Facebook).
 const ACCOUNT_INSTRUCTIONS_URL =
-  'https://docs.google.com/spreadsheets/d/1MxvMNbvYEBFT3AAT2I2dasCjYI88lYRnqzbZj63uNVY/edit?usp=sharing';
+  'https://www.google.com/url?q=https://docs.google.com/document/d/1GXw1Ntj4fMQ8u9SUqcvRdJXmxdmuwNKPhVqptiKLIlY/edit?tab%3Dt.0&sa=D&source=docs&ust=1788271088200404&usg=AOvVaw1fyxRkXscWiQ6Fk0IZ1r5f';
 
 export const AccountsAssetsStep = ({ prefill = {} }: { prefill?: AccountsPrefill }) => (
   <div className="w-full max-w-6xl mx-auto flex flex-col py-4">
@@ -32,6 +32,7 @@ export const AccountsAssetsStep = ({ prefill = {} }: { prefill?: AccountsPrefill
             label="Do you have a Google Ads account?"
             instructionsUrl={ACCOUNT_INSTRUCTIONS_URL}
             defaultValue={prefill.googleAdsAccount ?? undefined}
+            notSignedUpLabel="I have not signed up for Google Ads services."
           />
           <AccountAccessField
             name="gtmAccount"
@@ -50,6 +51,7 @@ export const AccountsAssetsStep = ({ prefill = {} }: { prefill?: AccountsPrefill
             label="Do you have a Facebook account/page?"
             instructionsUrl={ACCOUNT_INSTRUCTIONS_URL}
             defaultValue={prefill.facebookAccount ?? undefined}
+            notSignedUpLabel="I have not signed up for Social Ads services."
           />
         </div>
       </ConfigSection>

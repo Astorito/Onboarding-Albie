@@ -36,7 +36,7 @@ const friendly = (key: string) => FIELD_LABELS[key] ?? key;
 
 const yesNo = (key: string, val: string) => {
   if (key === 'googleAdsAccount' || key === 'gtmAccount' || key === 'ga4Account' || key === 'facebookAccount' || key === 'approveAdCopy') {
-    return val === 'yes' ? 'Yes' : val === 'no' ? 'No' : val;
+    return val === 'yes' ? 'Yes' : val === 'no' ? 'No' : val === 'not_signed_up' ? 'Not signed up for this service' : val;
   }
   if (key === 'ownCreditCard') return val === 'yes' ? 'Yes, sharing card details' : val === 'no' ? 'No, other payment method' : val;
   if (key.startsWith('goal') && key !== 'goalOther') return val === 'on' ? 'Selected' : val;

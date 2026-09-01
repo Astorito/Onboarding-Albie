@@ -71,7 +71,7 @@ export function createMarketingPDF(pdf: { Document: any; Page: any; Text: any; V
         {entries.map(([k, v]) => (
           <View key={k} style={styles.kvCell}>
             <Text style={styles.kvLabel}>{friendly(k).toUpperCase()}</Text>
-            <Text style={styles.kvValue}>{v === 'on' ? 'Yes' : String(v)}</Text>
+            <Text style={styles.kvValue}>{v === 'on' ? 'Yes' : v === 'yes' ? 'Yes' : v === 'no' ? 'No' : v === 'not_signed_up' ? 'Not signed up for this service' : String(v)}</Text>
           </View>
         ))}
       </View>

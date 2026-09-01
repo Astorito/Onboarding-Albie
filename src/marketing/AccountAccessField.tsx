@@ -7,11 +7,17 @@ export const AccountAccessField = ({
   label,
   instructionsUrl,
   defaultValue,
+  notSignedUpLabel,
 }: {
   name: string;
   label: string;
   instructionsUrl: string;
   defaultValue?: string;
+  // Only some platforms (Google Ads, Social Ads) get this third option —
+  // not every client has bought every paid media service, so "No, I need
+  // TAG to create it" doesn't fit someone who never signed up for that
+  // service in the first place.
+  notSignedUpLabel?: string;
 }) => (
   <FormField label={label} required className="col-span-2">
     <div className="flex flex-col gap-2">
@@ -29,6 +35,12 @@ export const AccountAccessField = ({
         <input type="radio" name={name} value="no" defaultChecked={defaultValue === 'no'} className="mt-1 accent-primary" required />
         <span>No, I need TAG to create it.</span>
       </label>
+      {notSignedUpLabel && (
+        <label className="flex items-start gap-2.5 text-sm text-on-surface cursor-pointer">
+          <input type="radio" name={name} value="not_signed_up" defaultChecked={defaultValue === 'not_signed_up'} className="mt-1 accent-primary" required />
+          <span>{notSignedUpLabel}</span>
+        </label>
+      )}
     </div>
   </FormField>
 );
