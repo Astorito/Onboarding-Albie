@@ -178,17 +178,13 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
     });
   };
 
-  const copyLink = (o: Onboarding) => {
+  const buildLink = (o: Onboarding): string => {
     const sessionId = o['Session ID'];
     const slug = slugFromRow(o['Onboarding Name'] ?? '', sessionId);
-    // An engagement bundles 2+ products behind one hub screen — copy that
+    // An engagement bundles 2+ products behind one hub screen — its own
     // link, never a single product's direct link.
     if (o['Type'] === 'engagement') {
-      const link = `${window.location.origin}/e/${slug || sessionId}`;
-      navigator.clipboard.writeText(link);
-      setCopiedId(sessionId);
-      setTimeout(() => setCopiedId(''), 2000);
-      return;
+      return `${window.location.origin}/e/${slug || sessionId}`;
     }
     // Prefer the readable, resolvable /o/<slug> link; fall back to the legacy
     // ?token= link if we can't derive a slug (e.g. missing name/session id).
@@ -202,12 +198,19 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
       : o['Type'] === 'marketing' ? '/marketing?token='
       : o['Type'] === 'social' ? '/social?token='
       : '/?token=';
-    const link = slug
+    return slug
       ? `${window.location.origin}${basePath}${slug}`
       : `${window.location.origin}${fallbackPath}${sessionId}`;
-    navigator.clipboard.writeText(link);
-    setCopiedId(sessionId);
+  };
+
+  const copyLink = (o: Onboarding) => {
+    navigator.clipboard.writeText(buildLink(o));
+    setCopiedId(o['Session ID']);
     setTimeout(() => setCopiedId(''), 2000);
+  };
+
+  const openLink = (o: Onboarding) => {
+    window.open(buildLink(o), '_blank', 'noopener,noreferrer');
   };
 
   const handleLogout = async () => {
@@ -410,6 +413,12 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
                                   View PDF
                                 </a>
                               )}
+                              <button
+                                onClick={() => openLink(o)}
+                                className="text-xs font-semibold text-[#0D3A39] border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition cursor-pointer"
+                              >
+                                Open
+                              </button>
                               <button
                                 onClick={() => copyLink(o)}
                                 className="text-xs font-semibold bg-[#F2EA5F] text-[#0D3A39] px-3 py-2 rounded-lg hover:opacity-80 transition cursor-pointer"
