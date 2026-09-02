@@ -63,15 +63,6 @@ function matchesProductFilter(o: Onboarding, filter: ProductFilter): boolean {
   return o['Type'] === filter;
 }
 
-const PRODUCT_FILTER_LABELS: Record<ProductFilter, string> = {
-  all: 'All areas',
-  hotel: 'ALBIE',
-  webdesign: 'Web Design',
-  marketing: 'Paid Media',
-  social: 'Social Media',
-  engagement: 'Engagements',
-};
-
 // Matches against everything visible in a row: the onboarding's own name,
 // the legacy hotel-flow's Property Name, and the account it belongs to (so
 // searching a client name finds all of that client's onboardings even when
@@ -384,25 +375,11 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
               </div>
             </div>
 
-            <div className="mb-6">
+            <div>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2 px-3">Status</p>
               <div className="flex flex-col gap-0.5">
                 <SidebarCheckbox label="Pending" checked={statusFilter.has('pending')} onChange={() => toggleStatusFilter('pending')} />
                 <SidebarCheckbox label="Completed" checked={statusFilter.has('completed')} onChange={() => toggleStatusFilter('completed')} />
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2 px-3">Area</p>
-              <div className="flex flex-col gap-0.5">
-                {(['hotel', 'webdesign', 'marketing', 'social'] as ProductFilter[]).map(key => (
-                  <SidebarCheckbox
-                    key={key}
-                    label={PRODUCT_FILTER_LABELS[key]}
-                    checked={productFilter === key}
-                    onChange={() => setProductFilter(productFilter === key ? 'all' : key)}
-                  />
-                ))}
               </div>
             </div>
           </aside>
