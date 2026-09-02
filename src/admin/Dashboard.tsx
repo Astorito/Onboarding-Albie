@@ -3,6 +3,7 @@ import { adminApi, type Onboarding, type Account } from './api';
 import { NewOnboardingModal } from './NewOnboardingModal';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { slugFromRow } from '../utils/slug';
+import { Icon } from '../components/ui/primitives';
 
 interface Props {
   adminEmail: string;
@@ -303,15 +304,18 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
                 className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm text-[#0D3A39] outline-none focus:border-[#2F6B6D] focus:ring-2 focus:ring-[#2F6B6D]/10 transition bg-white"
               />
             </div>
-            <select
-              value={productFilter}
-              onChange={e => setProductFilter(e.target.value as ProductFilter)}
-              className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-[#0D3A39] outline-none focus:border-[#2F6B6D] focus:ring-2 focus:ring-[#2F6B6D]/10 transition bg-white sm:w-52"
-            >
-              {(Object.keys(PRODUCT_FILTER_LABELS) as ProductFilter[]).map(key => (
-                <option key={key} value={key}>{PRODUCT_FILTER_LABELS[key]}</option>
-              ))}
-            </select>
+            <div className="relative sm:w-52">
+              <select
+                value={productFilter}
+                onChange={e => setProductFilter(e.target.value as ProductFilter)}
+                className="w-full appearance-none border border-gray-200 rounded-xl pl-4 pr-9 py-2.5 text-sm text-[#0D3A39] outline-none focus:border-[#2F6B6D] focus:ring-2 focus:ring-[#2F6B6D]/10 transition bg-white"
+              >
+                {(Object.keys(PRODUCT_FILTER_LABELS) as ProductFilter[]).map(key => (
+                  <option key={key} value={key}>{PRODUCT_FILTER_LABELS[key]}</option>
+                ))}
+              </select>
+              <Icon name="expand_more" className="absolute right-2.5 top-1/2 -translate-y-1/2 text-lg text-gray-400 pointer-events-none" />
+            </div>
           </div>
         )}
 
