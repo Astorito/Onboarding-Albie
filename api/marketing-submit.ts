@@ -1,13 +1,14 @@
 // Vercel Serverless Function — POST /api/marketing-submit
 // Upserts one row in Airtable's Onboardings_Marketing table — OR, when the
-// payload carries `product: 'social'`, one row in Onboardings_Social instead.
+// payload carries `product`, one row in that product's table instead
+// ('social' → Onboardings_Social, 'activities' → Onboardings_Activities).
 //
-// Social piggybacks on this endpoint rather than getting its own
-// api/social-submit.ts because Vercel's Hobby plan caps a project at 12
-// Serverless Functions and this project was already at 11 before Social
-// existed — adding a dedicated file would use the very last slot. Marketing
-// itself is unaffected: its payloads never set `product`, so every branch
-// below defaults to the marketing behavior exactly as it worked before.
+// Social and OnActivities piggyback on this endpoint rather than getting their
+// own api/*-submit.ts because Vercel's Hobby plan caps a project at 12
+// Serverless Functions and this project is at 11 — a dedicated file would use
+// the very last slot. Marketing itself is unaffected: its payloads never set
+// `product`, so every branch below defaults to the marketing behavior exactly
+// as it worked before.
 //
 // Parallel to api/submit.ts, but scoped to these two flows: no Sheets
 // fallback (neither ever lived there) and none of the hotel-specific
@@ -17,12 +18,14 @@ import {
   findOnboardingBySessionId, writeMarketingFields, createMarketingOnboardingFromPayload,
   writeSocialFields, createSocialOnboardingFromPayload,
   isSocialPayloadBlank, socialRecordHasContent,
-  MARKETING_TABLE, SOCIAL_TABLE, isAirtableConfigured,
+  writeActivitiesFields, createActivitiesOnboardingFromPayload,
+  isActivitiesPayloadBlank, activitiesRecordHasContent,
+  MARKETING_TABLE, SOCIAL_TABLE, ACTIVITIES_TABLE, isAirtableConfigured,
 } from './_db';
 
 export interface MarketingSubmitPayload {
   sessionId: string;
-  product?: 'marketing' | 'social';
+  product?: 'marketing' | 'social' | 'activities';
   basics?: { email?: string; businessName?: string; pastCampaigns?: string };
   accounts?: {
     googleAdsAccount?: string; gtmAccount?: string; ga4Account?: string;
@@ -42,6 +45,12 @@ export interface MarketingSubmitPayload {
   brand?: Record<string, string>;
   assets?: Record<string, string>;
   competitors?: Record<string, string>;
+  // OnActivities' shape — `brand` above is shared with Social (same key, both
+  // are flat string maps). See src/activities/types.ts for the item shapes.
+  general?: Record<string, string>;
+  activities?: unknown[];
+  cancellationPolicies?: unknown[];
+  taxes?: unknown[];
 }
 
 const BLANK_OVERWRITE_ERROR =
@@ -64,7 +73,8 @@ export default async function handler(req: any, res: any) {
   }
 
   const isSocial = payload.product === 'social';
-  const targetTable = isSocial ? SOCIAL_TABLE : MARKETING_TABLE;
+  const isActivities = payload.product === 'activities';
+  const targetTable = isSocial ? SOCIAL_TABLE : isActivities ? ACTIVITIES_TABLE : MARKETING_TABLE;
 
   try {
     const hit = await findOnboardingBySessionId(payload.sessionId);
@@ -75,6 +85,12 @@ export default async function handler(req: any, res: any) {
           return res.status(409).json({ error: BLANK_OVERWRITE_ERROR });
         }
         await writeSocialFields(hit.record.id, payload);
+      } else if (isActivities) {
+        if (isActivitiesPayloadBlank(payload) && activitiesRecordHasContent(hit.record.fields)) {
+          console.warn(`[marketing-submit] blocked blank overwrite of ${payload.sessionId} (OnActivities)`);
+          return res.status(409).json({ error: BLANK_OVERWRITE_ERROR });
+        }
+        await writeActivitiesFields(hit.record.id, payload);
       } else {
         await writeMarketingFields(hit.record.id, payload);
       }
@@ -88,6 +104,8 @@ export default async function handler(req: any, res: any) {
     // branch.
     if (isSocial) {
       await createSocialOnboardingFromPayload(payload);
+    } else if (isActivities) {
+      await createActivitiesOnboardingFromPayload(payload);
     } else {
       await createMarketingOnboardingFromPayload(payload);
     }

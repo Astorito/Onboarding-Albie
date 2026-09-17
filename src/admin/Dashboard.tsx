@@ -43,7 +43,7 @@ function isThisMonth(iso: string): boolean {
   return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
 }
 
-type ProductFilter = 'all' | 'hotel' | 'webdesign' | 'marketing' | 'social' | 'engagement';
+type ProductFilter = 'all' | 'hotel' | 'webdesign' | 'marketing' | 'social' | 'activities' | 'engagement';
 
 // Engagement rows bundle 2+ products behind one hub link — filtering by a
 // specific product should surface a bundle that INCLUDES it, not just
@@ -57,6 +57,7 @@ function matchesProductFilter(o: Onboarding, filter: ProductFilter): boolean {
     if (filter === 'webdesign') return !!o['Web Design Enabled'];
     if (filter === 'marketing') return !!o['Marketing Enabled'];
     if (filter === 'social') return !!o['Social Enabled'];
+    if (filter === 'activities') return !!o['Activities Enabled'];
     return false;
   }
   if (filter === 'hotel') return !o['Type'] || o['Type'] === 'hotel';
@@ -91,6 +92,7 @@ function engagementProductsLabel(o: Onboarding): string {
     o['Marketing Enabled'] && 'Paid Media',
     o['Web Design Enabled'] && 'Web Design',
     o['Social Enabled'] && 'Social Media',
+    o['Activities Enabled'] && 'OnActivities',
   ].filter(Boolean);
   return products.join(' + ') || 'No products';
 }
@@ -239,11 +241,13 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
       o['Type'] === 'webdesign' ? '/website/o/'
       : o['Type'] === 'marketing' ? '/marketing/o/'
       : o['Type'] === 'social' ? '/social/o/'
+      : o['Type'] === 'activities' ? '/onactivities/o/'
       : '/o/';
     const fallbackPath =
       o['Type'] === 'webdesign' ? '/website?token='
       : o['Type'] === 'marketing' ? '/marketing?token='
       : o['Type'] === 'social' ? '/social?token='
+      : o['Type'] === 'activities' ? '/onactivities?token='
       : '/?token=';
     return slug
       ? `${window.location.origin}${basePath}${slug}`
@@ -312,6 +316,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
     albie: onboardings.filter(o => matchesProductFilter(o, 'hotel')).length,
     webDesign: onboardings.filter(o => matchesProductFilter(o, 'webdesign')).length,
     social: onboardings.filter(o => matchesProductFilter(o, 'social')).length,
+    activities: onboardings.filter(o => matchesProductFilter(o, 'activities')).length,
     engagement: onboardings.filter(o => o['Type'] === 'engagement').length,
     total: onboardings.length,
   };
@@ -371,6 +376,7 @@ export function Dashboard({ adminEmail, onLogout }: Props) {
                 <SidebarRow label="Web Design" value={metrics.webDesign} active={productFilter === 'webdesign'} onClick={() => setProductFilter('webdesign')} />
                 <SidebarRow label="Paid Media" value={metrics.marketing} active={productFilter === 'marketing'} onClick={() => setProductFilter('marketing')} />
                 <SidebarRow label="Social Media" value={metrics.social} active={productFilter === 'social'} onClick={() => setProductFilter('social')} />
+                <SidebarRow label="OnActivities" value={metrics.activities} active={productFilter === 'activities'} onClick={() => setProductFilter('activities')} />
                 <SidebarRow label="Engagements" value={metrics.engagement} active={productFilter === 'engagement'} onClick={() => setProductFilter('engagement')} />
               </div>
             </div>

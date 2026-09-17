@@ -10,6 +10,7 @@ const AREA_LABELS: Record<string, string> = {
   webdesign: 'Web Design',
   marketing: 'Paid Media',
   social: 'Social Media',
+  activities: 'OnActivities',
 };
 
 function formatDate(iso: string): string {

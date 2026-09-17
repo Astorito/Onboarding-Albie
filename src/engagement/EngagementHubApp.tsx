@@ -9,6 +9,7 @@ interface EngagementResponse {
     webDesign: { enabled: boolean; slug: string | null };
     marketing: { enabled: boolean; slug: string | null };
     social: { enabled: boolean; slug: string | null };
+    activities: { enabled: boolean; slug: string | null };
   };
 }
 
@@ -19,6 +20,7 @@ const GRID_COLS: Record<number, string> = {
   2: 'grid-cols-1 sm:grid-cols-2',
   3: 'grid-cols-1 sm:grid-cols-3',
   4: 'grid-cols-1 sm:grid-cols-2',
+  5: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
 };
 
 // Near-black used throughout the other onboarding flows' dark panels
@@ -159,6 +161,13 @@ export default function EngagementHubApp() {
       description: <>Let's begin your <strong style={{ color: TAG_PINK }}>social media</strong> onboarding</>,
       shortLabel: 'SOCIAL MEDIA',
       href: products.social.slug ? `/social/o/${products.social.slug}?engagement=${engagementSlug}` : undefined,
+    },
+    {
+      id: 'activities', enabled: products.activities.enabled, accentColor: ALBIE_TEAL,
+      title: 'Activities', icon: 'local_activity',
+      description: <>Set up the <strong style={{ color: ALBIE_TEAL }}>activities</strong> you sell</>,
+      shortLabel: 'ONACTIVITIES',
+      href: products.activities.slug ? `/onactivities/o/${products.activities.slug}?engagement=${engagementSlug}` : undefined,
     },
   ].filter((c) => c.enabled);
 

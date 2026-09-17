@@ -101,8 +101,40 @@ const SOCIAL_MODULE_SUBFIELDS: Record<string, string[]> = {
   'Competitors JSON': ['directCompetitors', 'aspirationalBrands', 'contentReferences', 'contentToAvoid'],
 };
 
+const ACTIVITIES_TEXT_FIELDS = [
+  'Property Name', 'Description', 'Address', 'City', 'State / Province', 'Country',
+  'ZIP / Postal Code', 'Timezone', 'Currency', 'Language', 'Phone', 'Notification Email',
+  'Website URL', 'Date Format', 'Property Terms & Conditions',
+  'Site Title', 'Primary Color', 'Secondary Color', 'Accent Color', 'Font Family',
+  'Button Style', 'Logo URL', 'Favicon URL',
+];
+
 function isTextFilled(v: unknown): boolean {
   return typeof v === 'string' && v.trim() !== '';
+}
+
+// The activities step seeds five blank activities, so a saved record almost
+// always holds a non-empty array — isJsonFilled would call that "filled" and
+// report progress the client never made. Count it only when an activity
+// actually carries an answer. Mirrors activityHasContent in api/_db.ts.
+function activitiesColumnFilled(raw: unknown): boolean {
+  if (typeof raw !== 'string' || !raw) return false;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return false;
+  }
+  if (!Array.isArray(parsed)) return false;
+  return parsed.some((a) => {
+    if (!a || typeof a !== 'object') return false;
+    const o = a as Record<string, unknown>;
+    const texts = ['name', 'description', 'termsConditions', 'duration', 'price',
+      'capacity', 'minParticipants', 'maxParticipants', 'seasonFrom', 'seasonTo'];
+    if (texts.some((k) => o[k] && String(o[k]).trim() !== '')) return true;
+    if (['taxIds', 'availableDays', 'timeSlots'].some((k) => Array.isArray(o[k]) && (o[k] as unknown[]).length > 0)) return true;
+    return typeof o.cancellationPolicyId === 'number';
+  });
 }
 
 // A parsed JSON value counts as "filled" only if something inside it is itself non-empty —
@@ -155,6 +187,11 @@ export function computeCompletionPercent(o: Onboarding): number | null {
   } else if (type === 'webdesign') {
     countText(WEBSITE_TEXT_FIELDS);
     countBool(WEBSITE_BOOL_FIELDS);
+  } else if (type === 'activities') {
+    countText(ACTIVITIES_TEXT_FIELDS);
+    countJson(['Cancellation Policies', 'Taxes']);
+    total++;
+    if (activitiesColumnFilled(raw['Activities'])) filled++;
   } else if (type === 'social') {
     for (const [column, subfields] of Object.entries(SOCIAL_MODULE_SUBFIELDS)) {
       let parsedModule: Record<string, unknown> = {};

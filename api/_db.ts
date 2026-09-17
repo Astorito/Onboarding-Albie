@@ -16,9 +16,10 @@ export const HOTEL_TABLE = 'Onboardings_Hotel';
 export const MARKETING_TABLE = 'Onboardings_Marketing';
 export const WEBDESIGN_TABLE = 'Onboardings_WebDesign';
 export const SOCIAL_TABLE = 'Onboardings_Social';
+export const ACTIVITIES_TABLE = 'Onboardings_Activities';
 export const ACCOUNTS_TABLE = 'Accounts';
 export const ENGAGEMENTS_TABLE = 'Engagements';
-const ONBOARDING_TABLES = [HOTEL_TABLE, MARKETING_TABLE, WEBDESIGN_TABLE, SOCIAL_TABLE] as const;
+const ONBOARDING_TABLES = [HOTEL_TABLE, MARKETING_TABLE, WEBDESIGN_TABLE, SOCIAL_TABLE, ACTIVITIES_TABLE] as const;
 
 export function isAirtableConfigured(): boolean {
   return !!(process.env.AIRTABLE_API_KEY && process.env.AIRTABLE_BASE_ID);
@@ -455,8 +456,86 @@ function sessionResponseFromSocialRecord(record: AirtableRecord) {
   return response;
 }
 
+// ─── OnActivities field mapping ───────────────────────────────────────────────
+// For properties that sell activities/experiences and have no lodging. Scalars
+// get one column each (same names as the hotel table where the concept is
+// identical, so the two read alike in Airtable); the three collections —
+// activities, the global tax list and the global cancellation-policy list — are
+// JSON text columns, exactly like the hotel table's Rooms / Rates / Taxes.
+const ACTIVITIES_GENERAL_FIELDS: Record<string, string> = {
+  'Property Name': 'propertyName',
+  'Description': 'description',
+  'Address': 'address',
+  'City': 'city',
+  'State / Province': 'stateProvince',
+  'Country': 'country',
+  'ZIP / Postal Code': 'zipCode',
+  'Timezone': 'timezone',
+  'Currency': 'currency',
+  'Language': 'language',
+  'Phone': 'phone',
+  'Notification Email': 'notificationEmail',
+  'Website URL': 'websiteUrl',
+  'Date Format': 'dateFormat',
+  'Property Terms & Conditions': 'termsConditions',
+};
+
+const ACTIVITIES_BRAND_FIELDS: Record<string, string> = {
+  'Site Title': 'siteTitle',
+  'Primary Color': 'primaryColor',
+  'Secondary Color': 'secondaryColor',
+  'Accent Color': 'accentColor',
+  'Font Family': 'fontFamily',
+  'Button Style': 'buttonStyle',
+  'Logo URL': 'logoUrl',
+  'Favicon URL': 'faviconUrl',
+};
+
+function activitiesFieldsFromPayload(payload: any): Record<string, any> {
+  const { general = {}, brand = {} } = payload;
+  const fields: Record<string, any> = {
+    'Session ID': payload.sessionId,
+    'Timestamp': new Date().toISOString(),
+    'Activities': JSON.stringify(payload.activities ?? []),
+    'Cancellation Policies': JSON.stringify(payload.cancellationPolicies ?? []),
+    'Taxes': JSON.stringify(payload.taxes ?? []),
+  };
+  for (const [column, key] of Object.entries(ACTIVITIES_GENERAL_FIELDS)) {
+    fields[column] = general[key] ?? '';
+  }
+  for (const [column, key] of Object.entries(ACTIVITIES_BRAND_FIELDS)) {
+    fields[column] = brand[key] ?? '';
+  }
+  return fields;
+}
+
+function sessionResponseFromActivitiesRecord(record: AirtableRecord) {
+  const f = record.fields;
+  const onboardingName = f['Onboarding Name'] || null;
+  const sessionId = f['Session ID'];
+  const general: Record<string, string> = {};
+  for (const [column, key] of Object.entries(ACTIVITIES_GENERAL_FIELDS)) {
+    general[key] = f[column] ?? '';
+  }
+  const brand: Record<string, string> = {};
+  for (const [column, key] of Object.entries(ACTIVITIES_BRAND_FIELDS)) {
+    brand[key] = f[column] ?? '';
+  }
+  return {
+    sessionId,
+    slug: slugFromRow(onboardingName ?? '', sessionId) || null,
+    onboardingName,
+    general,
+    brand,
+    activities: tryJson(f['Activities'], []),
+    cancellationPolicies: tryJson(f['Cancellation Policies'], []),
+    taxes: tryJson(f['Taxes'], []),
+  };
+}
+
 export interface OnboardingHit {
-  table: typeof HOTEL_TABLE | typeof MARKETING_TABLE | typeof WEBDESIGN_TABLE | typeof SOCIAL_TABLE;
+  table: typeof HOTEL_TABLE | typeof MARKETING_TABLE | typeof WEBDESIGN_TABLE | typeof SOCIAL_TABLE
+    | typeof ACTIVITIES_TABLE;
   record: AirtableRecord;
 }
 
@@ -485,6 +564,7 @@ export function sessionResponseFromHit(hit: OnboardingHit) {
   if (hit.table === HOTEL_TABLE) return sessionResponseFromHotelRecord(hit.record);
   if (hit.table === WEBDESIGN_TABLE) return sessionResponseFromWebsiteRecord(hit.record);
   if (hit.table === SOCIAL_TABLE) return sessionResponseFromSocialRecord(hit.record);
+  if (hit.table === ACTIVITIES_TABLE) return sessionResponseFromActivitiesRecord(hit.record);
   return sessionResponseFromMarketingRecord(hit.record);
 }
 
@@ -530,6 +610,15 @@ export async function createSocialOnboardingFromPayload(payload: any): Promise<v
   await createRecord(SOCIAL_TABLE, socialFieldsFromPayload(payload));
 }
 
+// Same pair again, for OnActivities. Also Airtable-only.
+export async function writeActivitiesFields(recordId: string, payload: any): Promise<void> {
+  await updateRecord(ACTIVITIES_TABLE, recordId, activitiesFieldsFromPayload(payload));
+}
+
+export async function createActivitiesOnboardingFromPayload(payload: any): Promise<void> {
+  await createRecord(ACTIVITIES_TABLE, activitiesFieldsFromPayload(payload));
+}
+
 // Blank-overwrite guard for the Social flow's save endpoint — same rationale
 // as api/submit.ts's guard (see that file): a save built from unhydrated
 // client state is all-empty, and writing it would erase real answers. Social
@@ -550,6 +639,61 @@ export function socialRecordHasContent(fields: Record<string, any>): boolean {
   });
 }
 
+// ─── Blank-overwrite guard for OnActivities ───────────────────────────────────
+// Same rationale as the hotel and social guards. This one matters more than
+// most: the activities step SEEDS five empty activities on a fresh form, so an
+// unhydrated client would post five blank objects — which must still count as
+// "nothing entered", or it would wipe a completed onboarding.
+//
+// `durationUnit` and `priceType` are deliberately excluded: they carry non-empty
+// defaults ('hours' / 'per_person') that the user never had to touch, so treating
+// them as content would make every blank activity look filled in.
+const ACTIVITY_CONTENT_KEYS = [
+  'name', 'description', 'termsConditions', 'duration', 'price',
+  'capacity', 'minParticipants', 'maxParticipants', 'seasonFrom', 'seasonTo',
+] as const;
+const ACTIVITY_CONTENT_LISTS = ['taxIds', 'availableDays', 'timeSlots'] as const;
+
+function activityHasContent(a: any): boolean {
+  if (!a || typeof a !== 'object') return false;
+  if (ACTIVITY_CONTENT_KEYS.some((k) => a[k] && String(a[k]).trim() !== '')) return true;
+  if (ACTIVITY_CONTENT_LISTS.some((k) => Array.isArray(a[k]) && a[k].length > 0)) return true;
+  return typeof a.cancellationPolicyId === 'number';
+}
+
+function anyListHasContent(list: any): boolean {
+  if (!Array.isArray(list)) return false;
+  return list.some((item) => {
+    if (!item || typeof item !== 'object') return false;
+    // Policies/taxes: any user-entered text counts. `id` and the enum defaults
+    // (windowUnit / penaltyType / calcType) never do.
+    return ['name', 'value', 'notes', 'penaltyValue', 'window'].some(
+      (k) => item[k] && String(item[k]).trim() !== '' && !(k === 'window' && String(item[k]) === '24'),
+    );
+  });
+}
+
+export function isActivitiesPayloadBlank(payload: any): boolean {
+  const general = payload?.general ?? {};
+  const brand = payload?.brand ?? {};
+  const generalFilled = Object.values(general).some((v) => v && String(v).trim() !== '');
+  const brandFilled = Object.values(brand).some((v) => v && String(v).trim() !== '');
+  if (generalFilled || brandFilled) return false;
+  if (Array.isArray(payload?.activities) && payload.activities.some(activityHasContent)) return false;
+  if (anyListHasContent(payload?.cancellationPolicies)) return false;
+  if (anyListHasContent(payload?.taxes)) return false;
+  return true;
+}
+
+export function activitiesRecordHasContent(fields: Record<string, any>): boolean {
+  const scalars = [...Object.keys(ACTIVITIES_GENERAL_FIELDS), ...Object.keys(ACTIVITIES_BRAND_FIELDS)];
+  if (scalars.some((c) => fields[c] && String(fields[c]).trim() !== '')) return true;
+  if (tryJson(fields['Activities'], []).some(activityHasContent)) return true;
+  if (anyListHasContent(tryJson(fields['Cancellation Policies'], []))) return true;
+  if (anyListHasContent(tryJson(fields['Taxes'], []))) return true;
+  return false;
+}
+
 // ─── Admin: onboardings (list / create / delete) ──────────────────────────────
 
 export async function listAirtableOnboardings(): Promise<Record<string, any>[]> {
@@ -561,6 +705,7 @@ export async function listAirtableOnboardings(): Promise<Record<string, any>[]> 
       table === HOTEL_TABLE ? 'hotel'
       : table === WEBDESIGN_TABLE ? 'webdesign'
       : table === SOCIAL_TABLE ? 'social'
+      : table === ACTIVITIES_TABLE ? 'activities'
       : 'marketing';
     recs.forEach((r) => out.push({ ...r.fields, Type: type }));
   }
@@ -586,12 +731,13 @@ export async function createAirtableOnboarding(opts: {
   onboardingName: string;
   pocEmail?: string;
   createdBy: string;
-  type?: 'hotel' | 'marketing' | 'webdesign' | 'social';
+  type?: 'hotel' | 'marketing' | 'webdesign' | 'social' | 'activities';
 }): Promise<{ sessionId: string }> {
   const table =
     opts.type === 'marketing' ? MARKETING_TABLE
     : opts.type === 'webdesign' ? WEBDESIGN_TABLE
     : opts.type === 'social' ? SOCIAL_TABLE
+    : opts.type === 'activities' ? ACTIVITIES_TABLE
     : HOTEL_TABLE;
   const sessionId = generateSessionId();
   await createRecord(table, {
@@ -672,6 +818,7 @@ export interface EngagementProducts {
   webDesign: boolean;
   marketing: boolean;
   social: boolean;
+  activities: boolean;
 }
 
 function generateEngagementId(): string {
@@ -740,6 +887,18 @@ export async function createEngagement(opts: {
     socialSessionId = social.sessionId;
   }
 
+  let activitiesSessionId = '';
+  if (opts.products.activities) {
+    const activities = await createAirtableOnboarding({
+      accountId: opts.accountId,
+      onboardingName: opts.onboardingName,
+      pocEmail: opts.pocEmail,
+      createdBy: opts.createdBy,
+      type: 'activities',
+    });
+    activitiesSessionId = activities.sessionId;
+  }
+
   await createRecord(ENGAGEMENTS_TABLE, {
     'Engagement ID': engagementId,
     'Onboarding Name': opts.onboardingName,
@@ -751,10 +910,12 @@ export async function createEngagement(opts: {
     'Web Design Enabled': opts.products.webDesign,
     'Marketing Enabled': opts.products.marketing,
     'Social Enabled': opts.products.social,
+    'Activities Enabled': opts.products.activities,
     'Hotel Session ID': hotelSessionId,
     'Marketing Session ID': marketingSessionId,
     'Web Design Session ID': webDesignSessionId,
     'Social Session ID': socialSessionId,
+    'Activities Session ID': activitiesSessionId,
   });
 
   const slug = slugFromRow(opts.onboardingName, engagementId) || engagementId;
@@ -788,7 +949,8 @@ export async function findEngagementByProductSessionId(sessionId: string): Promi
       r.fields['Hotel Session ID'] === sessionId ||
       r.fields['Marketing Session ID'] === sessionId ||
       r.fields['Web Design Session ID'] === sessionId ||
-      r.fields['Social Session ID'] === sessionId,
+      r.fields['Social Session ID'] === sessionId ||
+      r.fields['Activities Session ID'] === sessionId,
   ) ?? null;
 }
 
@@ -803,6 +965,7 @@ export function engagementResponseFromRecord(record: AirtableRecord) {
   const marketingSessionId = f['Marketing Session ID'] || '';
   const webDesignSessionId = f['Web Design Session ID'] || '';
   const socialSessionId = f['Social Session ID'] || '';
+  const activitiesSessionId = f['Activities Session ID'] || '';
   return {
     engagementSlug: slugFromRow(onboardingName, engagementId) || engagementId,
     engagementName: onboardingName || null,
@@ -822,6 +985,10 @@ export function engagementResponseFromRecord(record: AirtableRecord) {
       social: {
         enabled: !!f['Social Enabled'],
         slug: f['Social Enabled'] && socialSessionId ? (slugFromRow(onboardingName, socialSessionId) || null) : null,
+      },
+      activities: {
+        enabled: !!f['Activities Enabled'],
+        slug: f['Activities Enabled'] && activitiesSessionId ? (slugFromRow(onboardingName, activitiesSessionId) || null) : null,
       },
     },
   };
