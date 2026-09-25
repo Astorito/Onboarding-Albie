@@ -23,6 +23,7 @@ import { createMarketingPDF } from './_pdf/MarketingOnboardingPDF';
 import { createWebsitePDF } from './_pdf/WebsiteOnboardingPDF';
 import { createSocialPDF } from './_pdf/SocialOnboardingPDF';
 import { createActivitiesPDF } from './_pdf/ActivitiesOnboardingPDF';
+import { createBankingPDF } from './_pdf/BankingOnboardingPDF';
 import {
   getAuth, getSheetsClient, ONBOARDINGS_TAB,
   findRowBySessionId, updateCellByHeader,
@@ -155,6 +156,32 @@ function buildActivitiesEmailBody(payload: any): string {
     </div>
     <div style="padding:14px 28px;font-size:10px;color:#717878;text-align:center;background:#f0eded;">
       ONACTIVITIES BY TAG
+    </div>
+  </div>`;
+}
+
+function buildBankingEmailBody(payload: any): string {
+  const propertyName = payload.general?.propertyName || 'New Property';
+  const contactEmail = payload.general?.contactEmail || '';
+  const bankName = payload.banking?.bankName || '';
+  return `
+  <div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;color:#1c1b1b;">
+    <div style="background:#12433F;color:#fff;padding:24px 28px;">
+      <div style="font-size:11px;letter-spacing:2px;color:#dfec60;font-weight:bold;">NEW BANKING INFORMATION</div>
+      <div style="font-size:22px;font-weight:bold;margin-top:6px;">${propertyName}</div>
+    </div>
+    <div style="padding:24px 28px;background:#fcf9f8;">
+      <table style="width:100%;font-size:13px;border-collapse:collapse;">
+        ${bankName ? `<tr><td style="padding:6px 0;color:#717878;width:140px;">Bank</td><td style="padding:6px 0;">${bankName}</td></tr>` : ''}
+        ${contactEmail ? `<tr><td style="padding:6px 0;color:#717878;">Contact</td><td style="padding:6px 0;font-weight:bold;">${contactEmail}</td></tr>` : ''}
+        <tr><td style="padding:6px 0;color:#717878;">Session ID</td><td style="padding:6px 0;font-size:11px;color:#717878;">${payload.sessionId ?? ''}</td></tr>
+      </table>
+      <p style="margin-top:18px;font-size:13px;color:#1c1b1b;line-height:1.5;">
+        Full account and routing/SWIFT details are attached as a PDF. Handle accordingly.
+      </p>
+    </div>
+    <div style="padding:14px 28px;font-size:10px;color:#717878;text-align:center;background:#f0eded;">
+      TAG · BANKING INFORMATION
     </div>
   </div>`;
 }
@@ -356,7 +383,7 @@ export default async function handler(req: any, res: any) {
 
   // Defaults to 'hotel' so the existing hotel client — which never sends this
   // field — keeps behaving exactly as before.
-  const product: 'hotel' | 'marketing' | 'website' | 'social' | 'activities' = payload.product ?? 'hotel';
+  const product: 'hotel' | 'marketing' | 'website' | 'social' | 'activities' | 'banking' = payload.product ?? 'hotel';
   const fromEmail = process.env.FROM_EMAIL ?? 'onboarding@resend.dev';
 
   try {
@@ -422,6 +449,23 @@ export default async function handler(req: any, res: any) {
         buildBody: buildActivitiesEmailBody,
         pdfBuffer,
         logTag: 'send-onboarding:activities',
+      });
+      return res.status(200).json({ success: true, ...result });
+    }
+
+    if (product === 'banking') {
+      const BankingPDF = createBankingPDF({ Document, Page, Text, View, StyleSheet });
+      const pdfBuffer = await renderToBuffer(React.createElement(BankingPDF, { payload }) as any);
+      const resend = new Resend(apiKey);
+      const result = await sendSimpleProductEmail({
+        resend, payload, adminEmail, fromEmail,
+        fromName: 'TAG Banking Information',
+        subjectPrefix: 'New banking information',
+        filenamePrefix: 'tag-banking-information',
+        displayName: payload.general?.propertyName || 'New Property',
+        buildBody: buildBankingEmailBody,
+        pdfBuffer,
+        logTag: 'send-onboarding:banking',
       });
       return res.status(200).json({ success: true, ...result });
     }

@@ -20,12 +20,14 @@ import {
   isSocialPayloadBlank, socialRecordHasContent,
   writeActivitiesFields, createActivitiesOnboardingFromPayload,
   isActivitiesPayloadBlank, activitiesRecordHasContent,
-  MARKETING_TABLE, SOCIAL_TABLE, ACTIVITIES_TABLE, isAirtableConfigured,
+  writeBankingFields, createBankingOnboardingFromPayload,
+  isBankingPayloadBlank, bankingRecordHasContent,
+  MARKETING_TABLE, SOCIAL_TABLE, ACTIVITIES_TABLE, BANKING_TABLE, isAirtableConfigured,
 } from './_db';
 
 export interface MarketingSubmitPayload {
   sessionId: string;
-  product?: 'marketing' | 'social' | 'activities';
+  product?: 'marketing' | 'social' | 'activities' | 'banking';
   basics?: { email?: string; businessName?: string; pastCampaigns?: string };
   accounts?: {
     googleAdsAccount?: string; gtmAccount?: string; ga4Account?: string;
@@ -51,6 +53,9 @@ export interface MarketingSubmitPayload {
   activities?: unknown[];
   cancellationPolicies?: unknown[];
   taxes?: unknown[];
+  // Banking Information's shape — general is shared with OnActivities above
+  // (same key, both flat string maps).
+  banking?: Record<string, string>;
 }
 
 const BLANK_OVERWRITE_ERROR =
@@ -74,7 +79,8 @@ export default async function handler(req: any, res: any) {
 
   const isSocial = payload.product === 'social';
   const isActivities = payload.product === 'activities';
-  const targetTable = isSocial ? SOCIAL_TABLE : isActivities ? ACTIVITIES_TABLE : MARKETING_TABLE;
+  const isBanking = payload.product === 'banking';
+  const targetTable = isSocial ? SOCIAL_TABLE : isActivities ? ACTIVITIES_TABLE : isBanking ? BANKING_TABLE : MARKETING_TABLE;
 
   try {
     const hit = await findOnboardingBySessionId(payload.sessionId);
@@ -91,6 +97,12 @@ export default async function handler(req: any, res: any) {
           return res.status(409).json({ error: BLANK_OVERWRITE_ERROR });
         }
         await writeActivitiesFields(hit.record.id, payload);
+      } else if (isBanking) {
+        if (isBankingPayloadBlank(payload) && bankingRecordHasContent(hit.record.fields)) {
+          console.warn(`[marketing-submit] blocked blank overwrite of ${payload.sessionId} (Banking)`);
+          return res.status(409).json({ error: BLANK_OVERWRITE_ERROR });
+        }
+        await writeBankingFields(hit.record.id, payload);
       } else {
         await writeMarketingFields(hit.record.id, payload);
       }
@@ -106,6 +118,8 @@ export default async function handler(req: any, res: any) {
       await createSocialOnboardingFromPayload(payload);
     } else if (isActivities) {
       await createActivitiesOnboardingFromPayload(payload);
+    } else if (isBanking) {
+      await createBankingOnboardingFromPayload(payload);
     } else {
       await createMarketingOnboardingFromPayload(payload);
     }

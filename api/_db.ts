@@ -17,9 +17,10 @@ export const MARKETING_TABLE = 'Onboardings_Marketing';
 export const WEBDESIGN_TABLE = 'Onboardings_WebDesign';
 export const SOCIAL_TABLE = 'Onboardings_Social';
 export const ACTIVITIES_TABLE = 'Onboardings_Activities';
+export const BANKING_TABLE = 'Onboardings_Banking';
 export const ACCOUNTS_TABLE = 'Accounts';
 export const ENGAGEMENTS_TABLE = 'Engagements';
-const ONBOARDING_TABLES = [HOTEL_TABLE, MARKETING_TABLE, WEBDESIGN_TABLE, SOCIAL_TABLE, ACTIVITIES_TABLE] as const;
+const ONBOARDING_TABLES = [HOTEL_TABLE, MARKETING_TABLE, WEBDESIGN_TABLE, SOCIAL_TABLE, ACTIVITIES_TABLE, BANKING_TABLE] as const;
 
 export function isAirtableConfigured(): boolean {
   return !!(process.env.AIRTABLE_API_KEY && process.env.AIRTABLE_BASE_ID);
@@ -533,9 +534,75 @@ function sessionResponseFromActivitiesRecord(record: AirtableRecord) {
   };
 }
 
+// ─── Banking Information field mapping ────────────────────────────────────────
+// A short ops form for collecting payout details from an already-onboarded
+// client — property/contact identity plus domestic (ACH/wire) and
+// international (SWIFT) bank details. All flat scalars, one column each — no
+// repeatable collections, unlike every other product's field set.
+const BANKING_FIELDS: Record<string, string> = {
+  'Property Name': 'propertyName',
+  'Contact Name': 'contactName',
+  'Contact Email': 'contactEmail',
+  'Contact Phone': 'contactPhone',
+  'Country': 'country',
+  'Bank Name': 'bankName',
+  'Account Type': 'accountType',
+  'Account Number': 'accountNumber',
+  'Routing Number': 'routingNumber',
+  'SWIFT Recipient Name': 'swiftRecipientName',
+  'SWIFT Account Number / IBAN': 'swiftAccountNumber',
+  'SWIFT / BIC Code': 'swiftBicCode',
+  'SWIFT Bank Name & Address': 'swiftBankNameAddress',
+  'SWIFT Intermediary Bank': 'swiftIntermediaryBank',
+};
+
+function bankingFieldsFromPayload(payload: any): Record<string, any> {
+  const { general = {}, banking = {} } = payload;
+  const source = { ...general, ...banking };
+  const fields: Record<string, any> = {
+    'Session ID': payload.sessionId,
+    'Timestamp': new Date().toISOString(),
+  };
+  for (const [column, key] of Object.entries(BANKING_FIELDS)) {
+    fields[column] = source[key] ?? '';
+  }
+  return fields;
+}
+
+function sessionResponseFromBankingRecord(record: AirtableRecord) {
+  const f = record.fields;
+  const onboardingName = f['Onboarding Name'] || null;
+  const sessionId = f['Session ID'];
+  const general: Record<string, string> = {};
+  const banking: Record<string, string> = {};
+  const GENERAL_KEYS = new Set(['propertyName', 'contactName', 'contactEmail', 'contactPhone', 'country']);
+  for (const [column, key] of Object.entries(BANKING_FIELDS)) {
+    (GENERAL_KEYS.has(key) ? general : banking)[key] = f[column] ?? '';
+  }
+  return {
+    sessionId,
+    slug: slugFromRow(onboardingName ?? '', sessionId) || null,
+    onboardingName,
+    general,
+    banking,
+  };
+}
+
+// Blank-overwrite guard, same rationale as the hotel/social/activities guards —
+// financial data is exactly the kind of thing an unhydrated client must never
+// be able to wipe with a background autosave.
+export function isBankingPayloadBlank(payload: any): boolean {
+  const source = { ...(payload?.general ?? {}), ...(payload?.banking ?? {}) };
+  return Object.values(source).every((v) => !v || String(v).trim() === '');
+}
+
+export function bankingRecordHasContent(fields: Record<string, any>): boolean {
+  return Object.keys(BANKING_FIELDS).some((c) => fields[c] && String(fields[c]).trim() !== '');
+}
+
 export interface OnboardingHit {
   table: typeof HOTEL_TABLE | typeof MARKETING_TABLE | typeof WEBDESIGN_TABLE | typeof SOCIAL_TABLE
-    | typeof ACTIVITIES_TABLE;
+    | typeof ACTIVITIES_TABLE | typeof BANKING_TABLE;
   record: AirtableRecord;
 }
 
@@ -565,6 +632,7 @@ export function sessionResponseFromHit(hit: OnboardingHit) {
   if (hit.table === WEBDESIGN_TABLE) return sessionResponseFromWebsiteRecord(hit.record);
   if (hit.table === SOCIAL_TABLE) return sessionResponseFromSocialRecord(hit.record);
   if (hit.table === ACTIVITIES_TABLE) return sessionResponseFromActivitiesRecord(hit.record);
+  if (hit.table === BANKING_TABLE) return sessionResponseFromBankingRecord(hit.record);
   return sessionResponseFromMarketingRecord(hit.record);
 }
 
@@ -617,6 +685,15 @@ export async function writeActivitiesFields(recordId: string, payload: any): Pro
 
 export async function createActivitiesOnboardingFromPayload(payload: any): Promise<void> {
   await createRecord(ACTIVITIES_TABLE, activitiesFieldsFromPayload(payload));
+}
+
+// Same pair again, for Banking Information. Also Airtable-only.
+export async function writeBankingFields(recordId: string, payload: any): Promise<void> {
+  await updateRecord(BANKING_TABLE, recordId, bankingFieldsFromPayload(payload));
+}
+
+export async function createBankingOnboardingFromPayload(payload: any): Promise<void> {
+  await createRecord(BANKING_TABLE, bankingFieldsFromPayload(payload));
 }
 
 // Blank-overwrite guard for the Social flow's save endpoint — same rationale
@@ -706,6 +783,7 @@ export async function listAirtableOnboardings(): Promise<Record<string, any>[]> 
       : table === WEBDESIGN_TABLE ? 'webdesign'
       : table === SOCIAL_TABLE ? 'social'
       : table === ACTIVITIES_TABLE ? 'activities'
+      : table === BANKING_TABLE ? 'banking'
       : 'marketing';
     recs.forEach((r) => out.push({ ...r.fields, Type: type }));
   }
@@ -731,13 +809,14 @@ export async function createAirtableOnboarding(opts: {
   onboardingName: string;
   pocEmail?: string;
   createdBy: string;
-  type?: 'hotel' | 'marketing' | 'webdesign' | 'social' | 'activities';
+  type?: 'hotel' | 'marketing' | 'webdesign' | 'social' | 'activities' | 'banking';
 }): Promise<{ sessionId: string }> {
   const table =
     opts.type === 'marketing' ? MARKETING_TABLE
     : opts.type === 'webdesign' ? WEBDESIGN_TABLE
     : opts.type === 'social' ? SOCIAL_TABLE
     : opts.type === 'activities' ? ACTIVITIES_TABLE
+    : opts.type === 'banking' ? BANKING_TABLE
     : HOTEL_TABLE;
   const sessionId = generateSessionId();
   await createRecord(table, {
@@ -819,6 +898,7 @@ export interface EngagementProducts {
   marketing: boolean;
   social: boolean;
   activities: boolean;
+  banking: boolean;
 }
 
 function generateEngagementId(): string {
@@ -899,6 +979,18 @@ export async function createEngagement(opts: {
     activitiesSessionId = activities.sessionId;
   }
 
+  let bankingSessionId = '';
+  if (opts.products.banking) {
+    const banking = await createAirtableOnboarding({
+      accountId: opts.accountId,
+      onboardingName: opts.onboardingName,
+      pocEmail: opts.pocEmail,
+      createdBy: opts.createdBy,
+      type: 'banking',
+    });
+    bankingSessionId = banking.sessionId;
+  }
+
   await createRecord(ENGAGEMENTS_TABLE, {
     'Engagement ID': engagementId,
     'Onboarding Name': opts.onboardingName,
@@ -911,11 +1003,13 @@ export async function createEngagement(opts: {
     'Marketing Enabled': opts.products.marketing,
     'Social Enabled': opts.products.social,
     'Activities Enabled': opts.products.activities,
+    'Banking Enabled': opts.products.banking,
     'Hotel Session ID': hotelSessionId,
     'Marketing Session ID': marketingSessionId,
     'Web Design Session ID': webDesignSessionId,
     'Social Session ID': socialSessionId,
     'Activities Session ID': activitiesSessionId,
+    'Banking Session ID': bankingSessionId,
   });
 
   const slug = slugFromRow(opts.onboardingName, engagementId) || engagementId;
@@ -950,7 +1044,8 @@ export async function findEngagementByProductSessionId(sessionId: string): Promi
       r.fields['Marketing Session ID'] === sessionId ||
       r.fields['Web Design Session ID'] === sessionId ||
       r.fields['Social Session ID'] === sessionId ||
-      r.fields['Activities Session ID'] === sessionId,
+      r.fields['Activities Session ID'] === sessionId ||
+      r.fields['Banking Session ID'] === sessionId,
   ) ?? null;
 }
 
@@ -966,6 +1061,7 @@ export function engagementResponseFromRecord(record: AirtableRecord) {
   const webDesignSessionId = f['Web Design Session ID'] || '';
   const socialSessionId = f['Social Session ID'] || '';
   const activitiesSessionId = f['Activities Session ID'] || '';
+  const bankingSessionId = f['Banking Session ID'] || '';
   return {
     engagementSlug: slugFromRow(onboardingName, engagementId) || engagementId,
     engagementName: onboardingName || null,
@@ -989,6 +1085,10 @@ export function engagementResponseFromRecord(record: AirtableRecord) {
       activities: {
         enabled: !!f['Activities Enabled'],
         slug: f['Activities Enabled'] && activitiesSessionId ? (slugFromRow(onboardingName, activitiesSessionId) || null) : null,
+      },
+      banking: {
+        enabled: !!f['Banking Enabled'],
+        slug: f['Banking Enabled'] && bankingSessionId ? (slugFromRow(onboardingName, bankingSessionId) || null) : null,
       },
     },
   };

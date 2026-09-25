@@ -19,6 +19,7 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
   const [marketingEnabled, setMarketingEnabled] = useState(false);
   const [socialEnabled, setSocialEnabled] = useState(false);
   const [activitiesEnabled, setActivitiesEnabled] = useState(false);
+  const [bankingEnabled, setBankingEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [generatedLink, setGeneratedLink] = useState('');
@@ -43,14 +44,14 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
 
       if (!accountId) throw new Error('Select or create an account');
       if (!onboardingName.trim()) throw new Error('Enter the onboarding name');
-      if (!albieEnabled && !webDesignEnabled && !marketingEnabled && !socialEnabled && !activitiesEnabled) throw new Error('Select at least one product');
+      if (!albieEnabled && !webDesignEnabled && !marketingEnabled && !socialEnabled && !activitiesEnabled && !bankingEnabled) throw new Error('Select at least one product');
 
       const trimmedName = onboardingName.trim();
       const result = await adminApi.createOnboarding(
         accountId,
         trimmedName,
         pocEmail.trim() || undefined,
-        { albie: albieEnabled, webDesign: webDesignEnabled, marketing: marketingEnabled, social: socialEnabled, activities: activitiesEnabled },
+        { albie: albieEnabled, webDesign: webDesignEnabled, marketing: marketingEnabled, social: socialEnabled, activities: activitiesEnabled, banking: bankingEnabled },
       );
 
       let link: string;
@@ -61,8 +62,8 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
         // backend created it in that product's table), so we know which
         // readable-link prefix applies. The slug is derived (never stored).
         const slug = slugFromRow(trimmedName, result.sessionId);
-        const basePath = webDesignEnabled ? '/website/o/' : marketingEnabled ? '/marketing/o/' : socialEnabled ? '/social/o/' : activitiesEnabled ? '/onactivities/o/' : '/o/';
-        const fallbackPath = webDesignEnabled ? '/website?token=' : marketingEnabled ? '/marketing?token=' : socialEnabled ? '/social?token=' : activitiesEnabled ? '/onactivities?token=' : '/?token=';
+        const basePath = webDesignEnabled ? '/website/o/' : marketingEnabled ? '/marketing/o/' : socialEnabled ? '/social/o/' : activitiesEnabled ? '/onactivities/o/' : bankingEnabled ? '/banking/o/' : '/o/';
+        const fallbackPath = webDesignEnabled ? '/website?token=' : marketingEnabled ? '/marketing?token=' : socialEnabled ? '/social?token=' : activitiesEnabled ? '/onactivities?token=' : bankingEnabled ? '/banking?token=' : '/?token=';
         link = slug
           ? `${window.location.origin}${basePath}${slug}`
           : `${window.location.origin}${fallbackPath}${result.sessionId}`;
@@ -202,6 +203,15 @@ export function NewOnboardingModal({ onClose, onCreated }: Props) {
                     className="accent-[#2F6B6D] w-4 h-4"
                   />
                   OnActivities — Experiences
+                </label>
+                <label className="flex items-center gap-2.5 text-sm text-[#0D3A39] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={bankingEnabled}
+                    onChange={(e) => setBankingEnabled(e.target.checked)}
+                    className="accent-[#2F6B6D] w-4 h-4"
+                  />
+                  Banking Information
                 </label>
               </div>
             </div>

@@ -11,6 +11,7 @@ const AREA_LABELS: Record<string, string> = {
   marketing: 'Paid Media',
   social: 'Social Media',
   activities: 'OnActivities',
+  banking: 'Banking Info',
 };
 
 function formatDate(iso: string): string {

@@ -10,6 +10,7 @@ interface EngagementResponse {
     marketing: { enabled: boolean; slug: string | null };
     social: { enabled: boolean; slug: string | null };
     activities: { enabled: boolean; slug: string | null };
+    banking: { enabled: boolean; slug: string | null };
   };
 }
 
@@ -21,6 +22,7 @@ const GRID_COLS: Record<number, string> = {
   3: 'grid-cols-1 sm:grid-cols-3',
   4: 'grid-cols-1 sm:grid-cols-2',
   5: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+  6: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
 };
 
 // Near-black used throughout the other onboarding flows' dark panels
@@ -168,6 +170,13 @@ export default function EngagementHubApp() {
       description: <>Set up the <strong style={{ color: ALBIE_TEAL }}>activities</strong> you sell</>,
       shortLabel: 'ONACTIVITIES',
       href: products.activities.slug ? `/onactivities/o/${products.activities.slug}?engagement=${engagementSlug}` : undefined,
+    },
+    {
+      id: 'banking', enabled: products.banking.enabled, accentColor: ALBIE_TEAL,
+      title: 'Banking Info', icon: 'account_balance',
+      description: <>Share your <strong style={{ color: ALBIE_TEAL }}>banking details</strong></>,
+      shortLabel: 'BANKING INFO',
+      href: products.banking.slug ? `/banking/o/${products.banking.slug}?engagement=${engagementSlug}` : undefined,
     },
   ].filter((c) => c.enabled);
 

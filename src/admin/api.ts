@@ -17,7 +17,7 @@ export interface Onboarding {
   'POC Email'?: string;
   'Property Name'?: string;
   'Timestamp'?: string;
-  'Type'?: 'hotel' | 'marketing' | 'webdesign' | 'social' | 'activities' | 'engagement';
+  'Type'?: 'hotel' | 'marketing' | 'webdesign' | 'social' | 'activities' | 'banking' | 'engagement';
   // Only present on 'engagement' rows — which products are bundled behind
   // this hub link.
   'Albie Enabled'?: boolean;
@@ -25,6 +25,7 @@ export interface Onboarding {
   'Web Design Enabled'?: boolean;
   'Social Enabled'?: boolean;
   'Activities Enabled'?: boolean;
+  'Banking Enabled'?: boolean;
 }
 
 export type CreateOnboardingResult =
@@ -66,7 +67,7 @@ export const adminApi = {
     accountId: string,
     onboardingName: string,
     pocEmail: string | undefined,
-    products: { albie: boolean; webDesign: boolean; marketing: boolean; social: boolean; activities: boolean },
+    products: { albie: boolean; webDesign: boolean; marketing: boolean; social: boolean; activities: boolean; banking: boolean },
   ): Promise<CreateOnboardingResult> =>
     apiFetch<CreateOnboardingResult>('/api/admin/onboardings', {
       method: 'POST',

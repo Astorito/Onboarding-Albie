@@ -46,7 +46,7 @@ export default async function handler(req: any, res: any) {
 
     const bundledSessionIds = new Set<string>();
     for (const eng of engagementRows) {
-      for (const key of ['Hotel Session ID', 'Marketing Session ID', 'Web Design Session ID', 'Social Session ID', 'Activities Session ID']) {
+      for (const key of ['Hotel Session ID', 'Marketing Session ID', 'Web Design Session ID', 'Social Session ID', 'Activities Session ID', 'Banking Session ID']) {
         if (eng[key]) bundledSessionIds.add(eng[key]);
       }
     }
@@ -65,6 +65,7 @@ export default async function handler(req: any, res: any) {
       'Web Design Enabled': !!f['Web Design Enabled'],
       'Social Enabled': !!f['Social Enabled'],
       'Activities Enabled': !!f['Activities Enabled'],
+      'Banking Enabled': !!f['Banking Enabled'],
     }));
 
     let sheetRows: Record<string, string>[] = [];
@@ -86,13 +87,13 @@ export default async function handler(req: any, res: any) {
   if (req.method === 'POST') {
     const { accountId, onboardingName, pocEmail } = req.body ?? {};
     const products: EngagementProducts = req.body?.products ?? {
-      albie: true, webDesign: false, marketing: false, social: false, activities: false,
+      albie: true, webDesign: false, marketing: false, social: false, activities: false, banking: false,
     };
     if (!accountId || !onboardingName) {
       return res.status(400).json({ error: 'accountId and onboardingName are required' });
     }
 
-    const enabledCount = [products.albie, products.webDesign, products.marketing, products.social, products.activities].filter(Boolean).length;
+    const enabledCount = [products.albie, products.webDesign, products.marketing, products.social, products.activities, products.banking].filter(Boolean).length;
     if (enabledCount === 0) {
       return res.status(400).json({ error: 'Select at least one product' });
     }
@@ -111,12 +112,13 @@ export default async function handler(req: any, res: any) {
     }
 
     // ── Exactly 1 product: unchanged single-onboarding path ────────────────
-    const singleType: 'hotel' | 'marketing' | 'webdesign' | 'social' | 'activities' | null =
+    const singleType: 'hotel' | 'marketing' | 'webdesign' | 'social' | 'activities' | 'banking' | null =
       products.albie ? 'hotel'
       : products.marketing ? 'marketing'
       : products.webDesign ? 'webdesign'
       : products.social ? 'social'
       : products.activities ? 'activities'
+      : products.banking ? 'banking'
       : null;
     if (!singleType) {
       return res.status(400).json({ error: 'Select at least one product' });

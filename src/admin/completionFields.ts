@@ -109,6 +109,18 @@ const ACTIVITIES_TEXT_FIELDS = [
   'Button Style', 'Logo URL', 'Favicon URL',
 ];
 
+// Banking Information is the simplest product: 14 flat scalar fields, no
+// collections at all. computeCompletionPercent only ever reports a 0-100
+// count of filled-vs-total fields — it never surfaces the actual values (no
+// account/routing/SWIFT numbers appear here), so this stays safe to compute
+// even though the underlying data is sensitive.
+const BANKING_TEXT_FIELDS = [
+  'Property Name', 'Contact Name', 'Contact Email', 'Contact Phone', 'Country',
+  'Bank Name', 'Account Type', 'Account Number', 'Routing Number',
+  'SWIFT Recipient Name', 'SWIFT Account Number / IBAN', 'SWIFT / BIC Code',
+  'SWIFT Bank Name & Address', 'SWIFT Intermediary Bank',
+];
+
 function isTextFilled(v: unknown): boolean {
   return typeof v === 'string' && v.trim() !== '';
 }
@@ -187,6 +199,8 @@ export function computeCompletionPercent(o: Onboarding): number | null {
   } else if (type === 'webdesign') {
     countText(WEBSITE_TEXT_FIELDS);
     countBool(WEBSITE_BOOL_FIELDS);
+  } else if (type === 'banking') {
+    countText(BANKING_TEXT_FIELDS);
   } else if (type === 'activities') {
     countText(ACTIVITIES_TEXT_FIELDS);
     countJson(['Cancellation Policies', 'Taxes']);
