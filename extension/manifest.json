@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Albie Autofill (TAG)",
+  "version": "0.1.0",
+  "description": "Rellena el formulario de Site Customization de Albie con los datos del onboarding de Onboarding-Albie (Airtable).",
+  "action": {
+    "default_popup": "src/popup.html"
+  },
+  "options_page": "src/options.html",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": [
+    "https://app.albiebytag.com/*",
+    "https://api.airtable.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://app.albiebytag.com/dashboard/sites/*/site-customization*"],
+      "js": ["src/mapping.js", "src/content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

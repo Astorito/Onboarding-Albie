@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Albie Autofill</title>
+<style>
+  body { font-family: system-ui, sans-serif; width: 340px; padding: 14px; color: #0D3A39; }
+  h1 { font-size: 14px; margin: 0 0 10px; }
+  input[type="text"] { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; margin-bottom: 8px; }
+  #results { max-height: 220px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; }
+  .result { padding: 8px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+  .result:last-child { border-bottom: none; }
+  .result:hover, .result.selected { background: #F2EA5F33; }
+  .result .name { font-weight: 600; }
+  .result .sub { font-size: 11px; color: #666; }
+  #fillBtn { width: 100%; margin-top: 10px; background: #0D3A39; color: white; border: none; padding: 9px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+  #fillBtn:disabled { background: #ccc; cursor: not-allowed; }
+  #fillBtn:not(:disabled):hover { background: #2F6B6D; }
+  #msg { margin-top: 10px; font-size: 12px; white-space: pre-line; }
+  #configWarning { font-size: 12px; color: #b00020; margin-bottom: 8px; }
+  a { color: #2F6B6D; }
+</style>
+</head>
+<body>
+  <h1>Albie Autofill — Site Customization</h1>
+  <div id="configWarning" style="display:none;">
+    Falta configurar el Airtable token/base. <a href="#" id="openOptions">Abrir configuración</a>.
+  </div>
+  <input id="search" type="text" placeholder="Buscar por nombre de propiedad..." />
+  <div id="results"></div>
+  <button id="fillBtn" disabled>Rellenar página actual</button>
+  <div id="msg"></div>
+
+  <script src="mapping.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
