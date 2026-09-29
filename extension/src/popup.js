@@ -82,8 +82,8 @@ fillBtn.addEventListener('click', async () => {
   const skippedText = describeSkipped(selectedRecord.fields, plan);
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.url?.includes('/site-customization')) {
-    msgEl.textContent = 'Abrí la tab de Site Customization en Albie antes de rellenar.';
+  if (!tab?.url?.includes('/site-customization') && !tab?.url?.includes('/sites/create')) {
+    msgEl.textContent = 'Abrí la tab de Site Customization (o de creación de site) en Albie antes de rellenar.';
     return;
   }
 

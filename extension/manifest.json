@@ -14,7 +14,10 @@
   ],
   "content_scripts": [
     {
-      "matches": ["https://app.albiebytag.com/dashboard/sites/*/site-customization*"],
+      "matches": [
+        "https://app.albiebytag.com/dashboard/sites/*/site-customization*",
+        "https://app.albiebytag.com/dashboard/sites/create*"
+      ],
       "js": ["src/mapping.js", "src/content.js"],
       "run_at": "document_idle"
     }
