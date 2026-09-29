@@ -71,6 +71,46 @@ async function fillSelectField(labelText, value) {
   return { label: labelText, ok: true };
 }
 
+// Country/State/City use a cmdk (command-menu) searchable input, not a
+// Radix Select. There is no hidden <select> — typing filters a list of
+// [cmdk-item] elements and we click the matching one.
+async function fillCmdkField(labelText, value) {
+  const needle = labelText.trim().toLowerCase();
+  const allLabels = Array.from(document.querySelectorAll('label'));
+  // Find the visible label (skip cmdk's own aria-hidden label inside the widget)
+  const label = allLabels.find(
+    (l) => !l.hasAttribute('cmdk-label') && l.textContent.trim().toLowerCase().startsWith(needle)
+  );
+  if (!label) return { label: labelText, ok: false, reason: 'label-not-found' };
+
+  const container = label.parentElement;
+  const input = container?.querySelector('input[cmdk-input]');
+  if (!input) return { label: labelText, ok: false, reason: 'cmdk-input-not-found' };
+
+  // Type into the cmdk input to filter options
+  input.focus();
+  NATIVE_INPUT_VALUE_SETTER.call(input, value);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  await sleep(500);
+
+  // Click the first option whose text matches (exact first, then partial)
+  const items = Array.from(document.querySelectorAll('[cmdk-item]')).filter(
+    (el) => !el.hasAttribute('aria-disabled') || el.getAttribute('aria-disabled') === 'false'
+  );
+  const valueLower = value.trim().toLowerCase();
+  const match =
+    items.find((el) => el.textContent.trim().toLowerCase() === valueLower) ||
+    items.find((el) => el.textContent.trim().toLowerCase().startsWith(valueLower));
+
+  if (!match) {
+    input.blur();
+    return { label: labelText, ok: false, reason: 'option-not-found' };
+  }
+  match.click();
+  await sleep(300);
+  return { label: labelText, ok: true };
+}
+
 async function runFill(plan) {
   const results = { text: [], select: [] };
   for (const [name, value] of Object.entries(plan.textFields || {})) {
@@ -79,10 +119,10 @@ async function runFill(plan) {
   for (const [label, value] of Object.entries(plan.selectFields || {})) {
     results.select.push(await fillSelectField(label, value));
   }
-  // Cascade fields (Country → State → City) filled in order with extra delay
-  // so each dependent dropdown has time to repopulate after the parent changes.
+  // Cascade fields (Country → State → City) use cmdk searchable inputs.
+  // Fill in order with delays so each dependent field repopulates after selection.
   for (const { label, value } of (plan.cascadeFields || [])) {
-    results.select.push(await fillSelectField(label, value));
+    results.select.push(await fillCmdkField(label, value));
     await sleep(800);
   }
   return results;
