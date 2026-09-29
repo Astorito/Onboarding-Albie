@@ -68,12 +68,12 @@ const CURRENCY_SUPPORTED = new Set([
 function buildFillPlan(fields) {
   const textFields = {};
   const selectFields = {};
+  const cascadeFields = [];
 
+  // Address text field: street address only (City/State/Country go in their own dropdowns)
   const addressParts = [
     fields['Address'],
-    fields['City'],
     [fields['State / Province'], fields['ZIP / Postal Code']].filter(Boolean).join(' '),
-    fields['Country'],
   ].filter((p) => p && String(p).trim());
   if (addressParts.length) textFields['siteDetails.location.address'] = addressParts.join(', ');
 
@@ -82,6 +82,11 @@ function buildFillPlan(fields) {
   if (fields['Website URL']) textFields['siteDetails.url'] = fields['Website URL'];
   if (fields['Subdomain']) textFields['siteDetails.subDomain'] = fields['Subdomain'];
   if (fields['Notification Email']) textFields['notifications.primaryEmail'] = fields['Notification Email'];
+
+  // Cascade dropdowns: order matters — Country populates State options, State populates City
+  if (fields['Country']) cascadeFields.push({ label: 'Country', value: fields['Country'] });
+  if (fields['State / Province']) cascadeFields.push({ label: 'State', value: fields['State / Province'] });
+  if (fields['City']) cascadeFields.push({ label: 'City', value: fields['City'] });
 
   if (fields['Date Format']) selectFields['Date format'] = fields['Date Format'];
 
@@ -94,5 +99,5 @@ function buildFillPlan(fields) {
   const lang = fields['Language'] && LANGUAGE_MAP[fields['Language']];
   if (lang) selectFields['Primary Language'] = lang;
 
-  return { textFields, selectFields };
+  return { textFields, selectFields, cascadeFields };
 }

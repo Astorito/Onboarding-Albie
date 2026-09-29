@@ -25,9 +25,10 @@ function fillTextField(name, value) {
 // Finds the field's wrapper (the div holding both the <label> and its
 // control) by matching the <label>'s text, case-insensitively.
 function findFieldContainer(labelText) {
+  const needle = labelText.trim().toLowerCase();
   const labels = Array.from(document.querySelectorAll('label'));
   const label = labels.find(
-    (l) => l.textContent.trim().toLowerCase() === labelText.trim().toLowerCase()
+    (l) => l.textContent.trim().toLowerCase().startsWith(needle)
   );
   if (!label) return null;
   let node = label;
@@ -51,7 +52,10 @@ async function fillSelectField(labelText, value) {
   const button = container.querySelector('button[role="combobox"]');
   if (!hiddenSelect || !button) return { label: labelText, ok: false, reason: 'control-not-found' };
 
-  const optionIndex = Array.from(hiddenSelect.options).findIndex((o) => o.value === value);
+  const needle = value.trim().toLowerCase();
+  const optionIndex = Array.from(hiddenSelect.options).findIndex(
+    (o) => o.value.toLowerCase() === needle || o.textContent.trim().toLowerCase() === needle
+  );
   if (optionIndex === -1) return { label: labelText, ok: false, reason: 'value-not-offered' };
 
   button.click();
@@ -74,6 +78,12 @@ async function runFill(plan) {
   }
   for (const [label, value] of Object.entries(plan.selectFields || {})) {
     results.select.push(await fillSelectField(label, value));
+  }
+  // Cascade fields (Country → State → City) filled in order with extra delay
+  // so each dependent dropdown has time to repopulate after the parent changes.
+  for (const { label, value } of (plan.cascadeFields || [])) {
+    results.select.push(await fillSelectField(label, value));
+    await sleep(800);
   }
   return results;
 }
