@@ -8,8 +8,14 @@ const NATIVE_INPUT_VALUE_SETTER = Object.getOwnPropertyDescriptor(
   'value'
 ).set;
 
+const NATIVE_TEXTAREA_VALUE_SETTER = Object.getOwnPropertyDescriptor(
+  window.HTMLTextAreaElement.prototype,
+  'value'
+).set;
+
 function setReactInputValue(input, value) {
-  NATIVE_INPUT_VALUE_SETTER.call(input, value);
+  const setter = input.tagName === 'TEXTAREA' ? NATIVE_TEXTAREA_VALUE_SETTER : NATIVE_INPUT_VALUE_SETTER;
+  setter.call(input, value);
   input.dispatchEvent(new Event('input', { bubbles: true }));
   input.dispatchEvent(new Event('change', { bubbles: true }));
   input.dispatchEvent(new Event('blur', { bubbles: true }));

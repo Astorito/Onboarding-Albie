@@ -60,44 +60,154 @@ const CURRENCY_SUPPORTED = new Set([
   'AED', 'MXN', 'BRL', 'ARS', 'CLP', 'COP', 'PEN',
 ]);
 
+// Albie's Primary/Secondary Font select offers exactly these 15 fonts (plus
+// "Upload custom font…", which we never pick automatically).
+const ALBIE_FONTS = [
+  'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Oswald', 'Poppins', 'Raleway',
+  'Noto Sans', 'Merriweather', 'Nunito Sans', 'PT Sans', 'Source Sans Pro',
+  'Ubuntu', 'Playfair Display', 'Work Sans',
+];
+
+// Albie's Terms And Conditions textarea (Info & Messages) caps at 1000 chars.
+const TERMS_MAX_LENGTH = 1000;
+
+const clean = (v) => (v == null ? '' : String(v).trim());
+
+// Onboarding stores "N/A" as literal text when a hotel has no state/province.
+const cleanOrEmpty = (v) => (/^(n\/?a|none|-+)$/i.test(clean(v)) ? '' : clean(v));
+
+// Albie's color inputs only accept #rrggbb. Returns null when the value
+// can't be turned into that safely.
+function normalizeHex(value) {
+  let s = clean(value).toLowerCase();
+  if (!s) return null;
+  if (s[0] !== '#') s = '#' + s;
+  if (/^#[0-9a-f]{3}$/.test(s)) s = '#' + s[1] + s[1] + s[2] + s[2] + s[3] + s[3];
+  return /^#[0-9a-f]{6}$/.test(s) ? s : null;
+}
+
+// Our free-text "Button Style" vs Albie's binary Border Radius select
+// (value "0" = right angles, "1" = rounded). Unknown text -> null (skipped).
+function borderRadiusValue(buttonStyle) {
+  const s = clean(buttonStyle).toLowerCase();
+  if (/square|sharp|right.?angle/.test(s)) return '0';
+  if (/round|pill/.test(s)) return '1';
+  return null;
+}
+
 // Builds the fill plan from a raw Airtable record's `fields` object
 // (Onboardings_Hotel field names, see api/_db.ts:hotelFieldsFromPayload).
-// Returns { textFields: {name: value}, selectFields: {label: value} } —
-// only entries we have a confident source/mapping for are included;
-// everything else is left for the human to fill in manually.
+// Returns {
+//   textFields:    { rhfName: value }   inputs/textareas, found by name attr
+//   labels:        { rhfName: label }   friendly names for the popup report
+//   selectFields:  { labelText: value } Radix selects, found by label text
+//   cascadeFields: [{label, value}]     cmdk searchable inputs, filled in order
+//   notes:         [string]             values we deliberately did NOT fill
+// }
+// Only entries we have a confident source/mapping for are included, and empty
+// values are never included, so a blank in Airtable can't overwrite a field.
 function buildFillPlan(fields) {
   const textFields = {};
+  const labels = {};
   const selectFields = {};
   const cascadeFields = [];
+  const notes = [];
 
+  const addText = (name, label, value) => {
+    const v = clean(value);
+    if (!v) return;
+    textFields[name] = v;
+    labels[name] = label;
+  };
+
+  // ---- General Info -------------------------------------------------------
   // Address text field: street address only (City/State/Country go in their own dropdowns)
   const addressParts = [
     fields['Address'],
-    [fields['State / Province'], fields['ZIP / Postal Code']].filter(Boolean).join(' '),
-  ].filter((p) => p && String(p).trim());
-  if (addressParts.length) textFields['siteDetails.location.address'] = addressParts.join(', ');
+    [cleanOrEmpty(fields['State / Province']), clean(fields['ZIP / Postal Code'])].filter(Boolean).join(' '),
+  ].filter((p) => clean(p));
+  addText('siteDetails.location.address', 'Address', addressParts.join(', '));
 
-  if (fields['Property Name']) textFields['siteDetails.siteName'] = fields['Property Name'];
-  if (fields['Phone']) textFields['siteDetails.phone'] = fields['Phone'];
-  if (fields['Website URL']) textFields['siteDetails.url'] = fields['Website URL'];
-  if (fields['Subdomain']) textFields['siteDetails.subDomain'] = fields['Subdomain'];
-  if (fields['Notification Email']) textFields['notifications.primaryEmail'] = fields['Notification Email'];
+  addText('siteDetails.siteName', 'Site Name', fields['Property Name']);
+  addText('siteDetails.phone', 'Phone Number', fields['Phone']);
+  addText('siteDetails.url', 'Web Address', fields['Website URL']);
+  addText('siteDetails.subDomain', 'Subdomain', fields['Subdomain']);
+  addText('notifications.primaryEmail', 'Primary Email', fields['Notification Email']);
 
   // Cascade dropdowns: order matters — Country populates State options, State populates City
-  if (fields['Country']) cascadeFields.push({ label: 'Country', value: fields['Country'] });
-  if (fields['State / Province']) cascadeFields.push({ label: 'State', value: fields['State / Province'] });
-  if (fields['City']) cascadeFields.push({ label: 'City', value: fields['City'] });
+  if (clean(fields['Country'])) cascadeFields.push({ label: 'Country', value: clean(fields['Country']) });
+  if (cleanOrEmpty(fields['State / Province'])) cascadeFields.push({ label: 'State', value: cleanOrEmpty(fields['State / Province']) });
+  if (clean(fields['City'])) cascadeFields.push({ label: 'City', value: clean(fields['City']) });
 
-  if (fields['Date Format']) selectFields['Date format'] = fields['Date Format'];
+  if (clean(fields['Date Format'])) selectFields['Date format'] = clean(fields['Date Format']);
 
-  const tz = fields['Timezone'] && TIMEZONE_MAP[fields['Timezone']];
-  if (tz) selectFields['timezone'] = tz;
+  const tzRaw = clean(fields['Timezone']);
+  if (tzRaw) {
+    if (TIMEZONE_MAP[tzRaw]) selectFields['timezone'] = TIMEZONE_MAP[tzRaw];
+    else notes.push(`Timezone sin mapeo: "${tzRaw}" — completar a mano.`);
+  }
 
-  const currency = fields['Currency'];
-  if (currency && CURRENCY_SUPPORTED.has(currency)) selectFields['currency'] = currency;
+  const currency = clean(fields['Currency']);
+  if (currency) {
+    if (CURRENCY_SUPPORTED.has(currency)) selectFields['currency'] = currency;
+    else notes.push(`Currency "${currency}" no soportada por Albie — completar a mano.`);
+  }
 
-  const lang = fields['Language'] && LANGUAGE_MAP[fields['Language']];
-  if (lang) selectFields['Primary Language'] = lang;
+  const langRaw = clean(fields['Language']);
+  if (langRaw) {
+    if (LANGUAGE_MAP[langRaw]) selectFields['Primary Language'] = LANGUAGE_MAP[langRaw];
+    else notes.push(`Language "${langRaw}" no soportado por Albie (solo EN/ES/PT-BR) — completar a mano.`);
+  }
 
-  return { textFields, selectFields, cascadeFields };
+  // ---- Info & Messages ----------------------------------------------------
+  const terms = clean(fields['Property Terms & Conditions']);
+  if (terms) {
+    if (terms.length <= TERMS_MAX_LENGTH) {
+      addText('messages.termsAndConditions', 'Terms And Conditions', terms);
+    } else {
+      notes.push(
+        `Terms And Conditions: el texto tiene ${terms.length} caracteres y Albie acepta ${TERMS_MAX_LENGTH}. No se recortó para no cortar texto legal — pegalo a mano.`
+      );
+    }
+  }
+
+  // ---- Customization ------------------------------------------------------
+  addText('customize.siteTitle', 'Site Title', fields['Site Title']);
+
+  [
+    ['Primary Color', 'customize.primaryColor'],
+    ['Secondary Color', 'customize.secondaryColor'],
+    ['Accent Color', 'customize.accentColor'],
+  ].forEach(([column, name]) => {
+    const raw = clean(fields[column]);
+    if (!raw) return;
+    const hex = normalizeHex(raw);
+    if (hex) addText(name, column, hex);
+    else notes.push(`${column} "${raw}" no es un color hex válido — completar a mano.`);
+  });
+
+  const font = clean(fields['Font Family']);
+  if (font) {
+    const match = ALBIE_FONTS.find((f) => f.toLowerCase() === font.toLowerCase());
+    if (match) selectFields['Primary Font'] = match;
+    else notes.push(`Font "${font}" no está en la lista de Albie — elegir otra o subir la fuente a mano.`);
+  }
+
+  const buttonStyle = clean(fields['Button Style']);
+  if (buttonStyle) {
+    const radius = borderRadiusValue(buttonStyle);
+    if (radius !== null) selectFields['Border Radius'] = radius;
+    else notes.push(`Button Style "${buttonStyle}" no se pudo traducir a Border Radius — elegir a mano.`);
+  }
+
+  if (clean(fields['Logo URL']) || clean(fields['Favicon URL'])) {
+    notes.push('Logo y Favicon: hay que subir los archivos a mano (Airtable guarda links, Albie pide el archivo).');
+  }
+
+  // ---- Advanced -----------------------------------------------------------
+  addText('advanced.googleTagManagerCode', 'Google Tag Manager Code', fields['GTM ID']);
+  addText('advanced.googleAnalytic4Code', 'Google Analytics 4 Measurement ID', fields['GA4 Measurement ID']);
+  addText('advanced.googleMapId', 'Google Map ID', fields['Google Map ID']);
+
+  return { textFields, labels, selectFields, cascadeFields, notes };
 }

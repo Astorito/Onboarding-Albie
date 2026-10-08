@@ -79,7 +79,6 @@ searchEl.addEventListener('input', () => {
 fillBtn.addEventListener('click', async () => {
   if (!selectedRecord) return;
   const plan = buildFillPlan(selectedRecord.fields);
-  const skippedText = describeSkipped(selectedRecord.fields, plan);
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.url?.includes('/site-customization') && !tab?.url?.includes('/sites/create')) {
@@ -95,30 +94,24 @@ fillBtn.addEventListener('click', async () => {
       msgEl.textContent = `No se pudo rellenar: ${chrome.runtime.lastError?.message || 'sin respuesta del content script'}. Recargá la página de Albie e intentá de nuevo.`;
       return;
     }
-    const okText = [...response.text, ...response.select].filter((r) => r.ok).length;
-    const failed = [...response.text, ...response.select].filter((r) => !r.ok);
-    let text = `${okText} campo(s) completados. Revisá y guardá manualmente.`;
-    if (failed.length) {
-      text += `\nNo se pudieron completar: ${failed.map((f) => f.name || f.label).join(', ')}`;
+    const all = [...response.text, ...response.select];
+    const nameOf = (r) => (r.name ? plan.labels[r.name] || r.name : r.label);
+    const okCount = all.filter((r) => r.ok).length;
+    // Fields that aren't in the DOM belong to another tab of the Albie form.
+    const missing = all.filter((r) => !r.ok && (r.reason === 'not-found' || r.reason === 'field-not-found'));
+    const failed = all.filter((r) => !r.ok && !missing.includes(r));
+
+    let text = `${okCount} campo(s) completados. Revisá y guardá manualmente.`;
+    if (missing.length) {
+      text += `\n\nNo están en esta pestaña: ${missing.map(nameOf).join(', ')}. Cambiá de pestaña en Albie y apretá Rellenar de nuevo.`;
     }
-    if (skippedText) text += `\n\n${skippedText}`;
+    if (failed.length) {
+      text += `\n\nNo se pudieron completar: ${failed.map(nameOf).join(', ')}`;
+    }
+    if (plan.notes.length) text += `\n\n${plan.notes.join('\n')}`;
     msgEl.textContent = text;
   });
 });
-
-function describeSkipped(fields, plan) {
-  const notes = [];
-  if (fields['Timezone'] && !plan.selectFields['timezone']) {
-    notes.push(`Timezone sin mapeo: "${fields['Timezone']}" — completar a mano.`);
-  }
-  if (fields['Currency'] && !plan.selectFields['currency']) {
-    notes.push(`Currency "${fields['Currency']}" no soportada por Albie — completar a mano.`);
-  }
-  if (fields['Language'] && !plan.selectFields['Primary Language']) {
-    notes.push(`Language "${fields['Language']}" no soportado por Albie (solo EN/ES/PT-BR) — completar a mano.`);
-  }
-  return notes.join('\n');
-}
 
 chrome.storage.local.get(['airtablePat', 'airtableBaseId', 'airtableTable'], (stored) => {
   if (!stored.airtablePat || !stored.airtableBaseId) {
