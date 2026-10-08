@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Albie Autofill (TAG)",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Rellena el formulario de Site Customization de Albie con los datos del onboarding de Onboarding-Albie (Airtable).",
   "action": {
     "default_popup": "src/popup.html"

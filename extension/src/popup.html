@@ -13,6 +13,9 @@
   .result:hover, .result.selected { background: #F2EA5F33; }
   .result .name { font-weight: 600; }
   .result .sub { font-size: 11px; color: #666; }
+  #ratesBox { margin-top: 10px; }
+  #ratesTitle { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+  #rates { max-height: 140px; overflow-y: auto; border: 1px solid #eee; border-radius: 6px; }
   #fillBtn { width: 100%; margin-top: 10px; background: #0D3A39; color: white; border: none; padding: 9px; border-radius: 6px; cursor: pointer; font-weight: 600; }
   #fillBtn:disabled { background: #ccc; cursor: not-allowed; }
   #fillBtn:not(:disabled):hover { background: #2F6B6D; }
@@ -28,6 +31,10 @@
   </div>
   <input id="search" type="text" placeholder="Buscar por nombre de propiedad..." />
   <div id="results"></div>
+  <div id="ratesBox" style="display:none;">
+    <div id="ratesTitle">Elegí la tarifa a cargar</div>
+    <div id="rates"></div>
+  </div>
   <button id="fillBtn" disabled>Rellenar página actual</button>
   <div id="msg"></div>
 

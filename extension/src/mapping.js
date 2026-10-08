@@ -211,3 +211,115 @@ function buildFillPlan(fields) {
 
   return { textFields, labels, selectFields, cascadeFields, notes };
 }
+
+// ---- Rates & Packages -> Create Rate ----------------------------------------
+// The `Rates` column of Onboardings_Hotel is a JSON array with one object per
+// rate, so the popup lets the person pick ONE rate and we fill the Create Rate
+// form from it.
+
+// Character limits enforced by Albie's Create Rate form.
+const RATE_LIMITS = { shortTitle: 25, longTitle: 40, rateCode: 60 };
+
+function parseJsonArray(raw) {
+  if (Array.isArray(raw)) return raw.filter((r) => r && typeof r === 'object');
+  try {
+    const parsed = JSON.parse(clean(raw));
+    return Array.isArray(parsed) ? parsed.filter((r) => r && typeof r === 'object') : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function parseRates(fields) {
+  return parseJsonArray(fields['Rates']);
+}
+
+function rateDisplayName(rate, index) {
+  return clean(rate.shortTitle) || clean(rate.longTitle) || clean(rate.rateCode) || `Tarifa ${index + 1}`;
+}
+
+// appliesToRooms holds room ids or codes; the Rooms column maps them to names.
+function resolveRoomNames(rate, fields) {
+  const applies = Array.isArray(rate.appliesToRooms) ? rate.appliesToRooms : [];
+  const rooms = parseJsonArray(fields['Rooms']);
+  const names = applies
+    .map((ref) => {
+      const room = rooms.find((r) => clean(r.id) === clean(ref) || clean(r.code) === clean(ref));
+      return clean(room && (room.shortTitle || room.code)) || clean(ref);
+    })
+    .filter(Boolean);
+  return [...new Set(names)];
+}
+
+// Same return shape as buildFillPlan. Only fields with a direct, safe mapping
+// are filled; the rest are reported in `notes` so the person finishes them.
+function buildRatePlan(rate, fields) {
+  const textFields = {};
+  const labels = {};
+  const selectFields = {};
+  const notes = [];
+
+  const addText = (name, label, value) => {
+    const v = clean(value);
+    if (!v) return;
+    textFields[name] = v;
+    labels[name] = label;
+  };
+  const addLimited = (name, label, value, max) => {
+    const v = clean(value);
+    if (!v) return;
+    if (v.length <= max) addText(name, label, v);
+    else notes.push(`${label}: "${v}" tiene ${v.length} caracteres y Albie acepta ${max} — acortalo a mano.`);
+  };
+  const addInteger = (name, label, value) => {
+    const v = clean(value);
+    if (!v) return;
+    if (/^\d+$/.test(v)) addText(name, label, v);
+    else notes.push(`${label} "${v}" no es un número entero — completar a mano.`);
+  };
+
+  addLimited('rateDetails.shortTitle', 'Short Title', rate.shortTitle, RATE_LIMITS.shortTitle);
+  addLimited('rateDetails.longTitle', 'Long Title', rate.longTitle, RATE_LIMITS.longTitle);
+  addLimited('rateDetails.rateCode', 'Rate Code', rate.rateCode, RATE_LIMITS.rateCode);
+  addInteger('rateDetails.orderIndex', 'Order Index', rate.orderIndex);
+  addInteger('limitations.minimumLengthOfStay', 'Minimum Length Of Stay', rate.minStay);
+  addInteger('limitations.maximumLengthOfStay', 'Maximum Length Of Stay', rate.maxStay);
+
+  const status = clean(rate.status);
+  if (status) {
+    if (/^active$/i.test(status)) selectFields['Status'] = 'Active';
+    else if (/^paused?$/i.test(status)) selectFields['Status'] = 'Paused';
+    else notes.push(`Status "${status}" no es Active/Paused — elegir a mano.`);
+  }
+
+  // ---- Left manual on purpose (reported, never guessed) ----
+  const description = clean(rate.description);
+  if (description) {
+    notes.push(
+      `Rate Description (máx. 350) y Terms And Conditions (máx. 500) son obligatorios y el onboarding trae un solo texto mezclado. Partilo a mano. Texto original: "${description}"`
+    );
+  } else {
+    notes.push('Rate Description y Terms And Conditions son obligatorios y el onboarding no trae descripción — completar a mano.');
+  }
+
+  const from = clean(rate.availFrom);
+  const to = clean(rate.availTo);
+  if (from || to) {
+    notes.push(`Availability: en el onboarding va de ${from || '?'} a ${to || '?'} — elegir "Specific Range" y las fechas a mano.`);
+  }
+
+  const group = clean(rate.rateGroup);
+  if (group) notes.push(`Rate Group "${group}": elegirlo a mano (Albie necesita un grupo ya creado en su pestaña Groups).`);
+
+  const roomNames = resolveRoomNames(rate, fields || {});
+  if (roomNames.length) {
+    notes.push(`Select Rooms (obligatorio): elegir a mano → ${roomNames.join(', ')}.`);
+  } else {
+    notes.push('Select Rooms es obligatorio y esta tarifa no tiene habitaciones asignadas en el onboarding — elegirlas a mano.');
+  }
+
+  const image = clean(rate.imageUrl);
+  if (image) notes.push(`Imagen de la tarifa: subirla a mano desde ${image}`);
+
+  return { textFields, labels, selectFields, cascadeFields: [], notes };
+}

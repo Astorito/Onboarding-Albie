@@ -83,6 +83,24 @@ Dropbox) y Albie pide subir el archivo. La extensión lo avisa.
 | Google Analytics 4 Measurement ID | GA4 Measurement ID |
 | Google Map ID | Google Map ID |
 
+### Rates & Packages → crear tarifa
+
+En `/rates-and-packages/rates/create` el popup, después de elegir el hotel,
+muestra las tarifas de su columna `Rates` y se elige una por vez.
+
+| Campo Albie | Fuente (objeto de `Rates`) |
+|---|---|
+| Short Title / Long Title / Rate Code | `shortTitle` / `longTitle` / `rateCode` (topes de Albie: 25 / 40 / 60 caracteres; si se pasa, se avisa en vez de recortar) |
+| Status | `status` (Active / Paused) |
+| Order Index | `orderIndex` |
+| Minimum / Maximum Length Of Stay | `minStay` / `maxStay` |
+
+Quedan **a mano** y el popup lo avisa con los datos del onboarding a la vista:
+Rate Description y Terms And Conditions (el onboarding trae un solo texto
+mezclado), Availability y sus fechas, Rate Group (Albie necesita un grupo ya
+creado), Select Rooms (se muestran los nombres resueltos con la columna
+`Rooms`) e imagen de la tarifa.
+
 ## Qué NO completa (todavía)
 
 - **Organization**, **Star Rating**: el onboarding no recolecta esos datos hoy.
@@ -92,9 +110,10 @@ Dropbox) y Albie pide subir el archivo. La extensión lo avisa.
   Secondary Email**: el onboarding actual no recolecta estos campos. Si en
   algún momento se agregan al formulario de onboarding, sumarlos a
   `buildFillPlan` en `src/mapping.js` es mecánico (mismo patrón).
-- **Rates & Packages** (crear tarifas): cada hotel trae varias tarifas en
-  la columna `Rates` y hay decisiones de mapeo pendientes (partir la
-  descripción en Rate Description / Terms, grupos, habitaciones).
+- **Rates**: el llenado automático de Select Rooms, Rate Group, Availability
+  y la descripción está pendiente (ver arriba). Impuestos, política de
+  cancelación, depósitos, Limitations (lead-in, días, distribución) y
+  Add-ons de la tarifa no vienen en el onboarding.
 - **Best Rate Guarantee, mensajes de confirmación/cancelación, Secondary Font,
   Background Color, Featured Image, Booking Wording, Metasearch Tracking,
   Payment Connections**: el onboarding no recolecta esos datos.

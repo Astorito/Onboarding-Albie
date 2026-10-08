@@ -3,10 +3,54 @@ const resultsEl = document.getElementById('results');
 const fillBtn = document.getElementById('fillBtn');
 const msgEl = document.getElementById('msg');
 const configWarningEl = document.getElementById('configWarning');
+const ratesBoxEl = document.getElementById('ratesBox');
+const ratesEl = document.getElementById('rates');
 
 let config = null;
 let selectedRecord = null;
+let selectedRate = null;
 let debounceTimer = null;
+
+const isRatesUrl = (url) => !!url && url.includes('/rates-and-packages/rates');
+const isSiteFormUrl = (url) => !!url && (url.includes('/site-customization') || url.includes('/sites/create'));
+
+// On a Rates page the hotel has several rates, so the person picks one;
+// everywhere else the Fill button is ready as soon as a hotel is selected.
+async function updateRatesUI() {
+  ratesEl.innerHTML = '';
+  selectedRate = null;
+  ratesBoxEl.style.display = 'none';
+  if (!selectedRecord) return;
+
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!isRatesUrl(tab?.url)) {
+    fillBtn.disabled = false;
+    return;
+  }
+
+  fillBtn.disabled = true;
+  ratesBoxEl.style.display = 'block';
+  const rates = parseRates(selectedRecord.fields);
+  if (!rates.length) {
+    ratesEl.innerHTML = '<div class="result">Este hotel no tiene tarifas cargadas en el onboarding.</div>';
+    return;
+  }
+  rates.forEach((rate, index) => {
+    const div = document.createElement('div');
+    div.className = 'result';
+    div.innerHTML = '<div class="name"></div><div class="sub"></div>';
+    div.querySelector('.name').textContent = rateDisplayName(rate, index);
+    div.querySelector('.sub').textContent = [rate.rateCode, rate.status].filter(Boolean).join(' · ');
+    div.addEventListener('click', () => {
+      ratesEl.querySelectorAll('.result.selected').forEach((el) => el.classList.remove('selected'));
+      div.classList.add('selected');
+      selectedRate = rate;
+      fillBtn.disabled = false;
+      msgEl.textContent = '';
+    });
+    ratesEl.appendChild(div);
+  });
+}
 
 document.getElementById('openOptions').addEventListener('click', (e) => {
   e.preventDefault();
@@ -46,11 +90,11 @@ function renderResults(records) {
     div.querySelector('.name').textContent = name;
     div.querySelector('.sub').textContent = sub;
     div.addEventListener('click', () => {
-      document.querySelectorAll('.result.selected').forEach((el) => el.classList.remove('selected'));
+      resultsEl.querySelectorAll('.result.selected').forEach((el) => el.classList.remove('selected'));
       div.classList.add('selected');
       selectedRecord = record;
-      fillBtn.disabled = false;
       msgEl.textContent = '';
+      updateRatesUI();
     });
     resultsEl.appendChild(div);
   }
@@ -61,6 +105,8 @@ searchEl.addEventListener('input', () => {
   const query = searchEl.value.trim();
   fillBtn.disabled = true;
   selectedRecord = null;
+  selectedRate = null;
+  ratesBoxEl.style.display = 'none';
   if (query.length < 2) {
     resultsEl.innerHTML = '';
     return;
@@ -78,11 +124,19 @@ searchEl.addEventListener('input', () => {
 
 fillBtn.addEventListener('click', async () => {
   if (!selectedRecord) return;
-  const plan = buildFillPlan(selectedRecord.fields);
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.url?.includes('/site-customization') && !tab?.url?.includes('/sites/create')) {
-    msgEl.textContent = 'Abrí la tab de Site Customization (o de creación de site) en Albie antes de rellenar.';
+  let plan;
+  if (isRatesUrl(tab?.url)) {
+    if (!selectedRate) {
+      msgEl.textContent = 'Elegí primero una tarifa de la lista.';
+      return;
+    }
+    plan = buildRatePlan(selectedRate, selectedRecord.fields);
+  } else if (isSiteFormUrl(tab?.url)) {
+    plan = buildFillPlan(selectedRecord.fields);
+  } else {
+    msgEl.textContent = 'Abrí en Albie la página de Site Customization, de creación de site o de creación de tarifa antes de rellenar.';
     return;
   }
 
